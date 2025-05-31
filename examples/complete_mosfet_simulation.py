@@ -106,30 +106,36 @@ class CompleteMOSFETSimulation:
         Nd = np.zeros(total_points)
         Na = np.zeros(total_points)
         
-        # Define regions
+        # Define regions - CORRECTED MOSFET STRUCTURE
+        # Source and drain are at TOP surface near gate-oxide interface
         source_end = self.sim_params['nx'] // 4
         drain_start = 3 * self.sim_params['nx'] // 4
-        junction_depth = self.sim_params['ny'] // 3
-        
+        surface_depth = self.sim_params['ny'] // 3  # Top 1/3 is near surface
+
+        self.log(f"   🔧 CORRECTED MOSFET STRUCTURE:")
+        self.log(f"      Source region: x = 0 to {source_end} (TOP surface)")
+        self.log(f"      Channel region: x = {source_end} to {drain_start} (under gate)")
+        self.log(f"      Drain region: x = {drain_start} to {self.sim_params['nx']} (TOP surface)")
+        self.log(f"      Surface depth: y = {surface_depth} to {self.sim_params['ny']} (near gate-oxide)")
+
         for i in range(total_points):
             x_idx = i % self.sim_params['nx']
             y_idx = i // self.sim_params['nx']
-            
-            if x_idx < source_end:
-                # Source region
-                if y_idx < junction_depth:
+
+            # Default: P-type substrate everywhere
+            Na[i] = self.device_params['Na_substrate']
+
+            # N+ regions ONLY at top surface (near gate-oxide)
+            if y_idx >= surface_depth:  # Top surface region
+                if x_idx < source_end:
+                    # N+ Source at top surface
                     Nd[i] = self.device_params['Nd_source']
-                else:
-                    Na[i] = self.device_params['Na_substrate']
-            elif x_idx >= drain_start:
-                # Drain region
-                if y_idx < junction_depth:
+                    Na[i] = 0  # Override substrate doping
+                elif x_idx >= drain_start:
+                    # N+ Drain at top surface
                     Nd[i] = self.device_params['Nd_drain']
-                else:
-                    Na[i] = self.device_params['Na_substrate']
-            else:
-                # Channel region
-                Na[i] = self.device_params['Na_substrate']
+                    Na[i] = 0  # Override substrate doping
+                # Channel region (between source and drain) remains P-type at surface
         
         self.sim.set_doping(Nd, Na)
         
@@ -241,17 +247,22 @@ class CompleteMOSFETSimulation:
                 else:
                     p = self.ni * np.exp(-V_2d / 0.026)
                 
-                # Add substrate doping effects
-                # P-type substrate
-                p += 1e17 * (1 - np.exp(-Y * 2))
-                
-                # N+ source/drain regions
+                # Add doping effects - CORRECTED MOSFET STRUCTURE
+                # P-type substrate (everywhere as base)
+                p += self.device_params['Na_substrate'] * np.ones_like(p)
+
+                # N+ source/drain regions at TOP surface (near gate-oxide)
                 source_region = X < 0.25
                 drain_region = X > 0.75
-                junction_region = Y < 0.3
-                
-                n[source_region & junction_region] += 1e20
-                n[drain_region & junction_region] += 1e20
+                surface_region = Y > 0.7  # TOP surface (near gate-oxide)
+
+                # N+ doping ONLY at top surface
+                n[source_region & surface_region] += self.device_params['Nd_source']
+                n[drain_region & surface_region] += self.device_params['Nd_drain']
+
+                # Remove substrate doping where N+ regions are
+                p[source_region & surface_region] = self.ni * np.exp(-V_2d[source_region & surface_region] / 0.026)
+                p[drain_region & surface_region] = self.ni * np.exp(-V_2d[drain_region & surface_region] / 0.026)
                 
                 return n, p
             
@@ -600,30 +611,38 @@ class CompleteMOSFETSimulation:
         length_um = self.device_params['length'] * 1e6
         width_um = self.device_params['width'] * 1e6
 
-        # Substrate
-        substrate = patches.Rectangle((0, 0), length_um, width_um*0.7,
+        # CORRECTED MOSFET STRUCTURE - N+ regions at TOP surface
+
+        # P-type substrate (entire device)
+        substrate = patches.Rectangle((0, 0), length_um, width_um,
                                     facecolor='brown', alpha=0.3, label='P-substrate')
         plt.gca().add_patch(substrate)
 
-        # Source region
-        source = patches.Rectangle((0, 0), length_um*0.25, width_um*0.3,
-                                 facecolor='blue', alpha=0.7, label='N+ Source')
+        # N+ Source region at TOP surface (near gate-oxide)
+        source = patches.Rectangle((0, width_um*0.7), length_um*0.25, width_um*0.3,
+                                 facecolor='blue', alpha=0.8, label='N+ Source (surface)')
         plt.gca().add_patch(source)
 
-        # Drain region
-        drain = patches.Rectangle((length_um*0.75, 0), length_um*0.25, width_um*0.3,
-                                facecolor='blue', alpha=0.7, label='N+ Drain')
+        # N+ Drain region at TOP surface (near gate-oxide)
+        drain = patches.Rectangle((length_um*0.75, width_um*0.7), length_um*0.25, width_um*0.3,
+                                facecolor='blue', alpha=0.8, label='N+ Drain (surface)')
         plt.gca().add_patch(drain)
 
-        # Gate oxide
-        oxide = patches.Rectangle((length_um*0.25, width_um*0.7), length_um*0.5, width_um*0.1,
-                                facecolor='lightblue', alpha=0.8, label='Gate Oxide')
+        # Gate oxide (on top of channel)
+        oxide = patches.Rectangle((length_um*0.25, width_um*0.85), length_um*0.5, width_um*0.05,
+                                facecolor='lightblue', alpha=0.9, label='Gate Oxide')
         plt.gca().add_patch(oxide)
 
-        # Gate
-        gate = patches.Rectangle((length_um*0.25, width_um*0.8), length_um*0.5, width_um*0.1,
-                               facecolor='gray', alpha=0.8, label='Gate')
+        # Gate metal (on top of oxide)
+        gate = patches.Rectangle((length_um*0.25, width_um*0.9), length_um*0.5, width_um*0.1,
+                               facecolor='gray', alpha=0.9, label='Gate Metal')
         plt.gca().add_patch(gate)
+
+        # Add channel region annotation
+        channel = patches.Rectangle((length_um*0.25, width_um*0.7), length_um*0.5, width_um*0.15,
+                                  facecolor='none', edgecolor='red', linewidth=2,
+                                  linestyle='--', alpha=0.8, label='Channel Region')
+        plt.gca().add_patch(channel)
 
         plt.xlim(0, length_um)
         plt.ylim(0, width_um)
@@ -632,27 +651,40 @@ class CompleteMOSFETSimulation:
         plt.title('Device Structure')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        # Plot 13: Doping Profile (1D cut)
+        # Plot 13: Doping Profile (1D cut at surface)
         plt.subplot(4, 6, 13)
         x_profile = np.linspace(0, length_um, 100)
 
-        # Create doping profile
+        # Create CORRECTED doping profile at TOP surface
         doping_profile = np.ones_like(x_profile) * self.device_params['Na_substrate']
 
-        # Source region
+        # N+ Source region at surface
         source_mask = x_profile < length_um * 0.25
         doping_profile[source_mask] = self.device_params['Nd_source']
 
-        # Drain region
+        # N+ Drain region at surface
         drain_mask = x_profile > length_um * 0.75
         doping_profile[drain_mask] = self.device_params['Nd_drain']
 
-        plt.semilogy(x_profile, np.abs(doping_profile), 'k-', linewidth=2)
+        # Channel region remains P-type at surface
+        channel_mask = (x_profile >= length_um * 0.25) & (x_profile <= length_um * 0.75)
+        doping_profile[channel_mask] = self.device_params['Na_substrate']
+
+        plt.semilogy(x_profile, np.abs(doping_profile), 'k-', linewidth=3, label='Surface doping')
+
+        # Add substrate doping reference line
+        plt.axhline(self.device_params['Na_substrate'], color='brown', linestyle=':',
+                   alpha=0.7, label='Substrate (P-type)')
+
         plt.axvline(length_um * 0.25, color='blue', linestyle='--', alpha=0.7, label='Source edge')
         plt.axvline(length_um * 0.75, color='blue', linestyle='--', alpha=0.7, label='Drain edge')
+
+        # Highlight channel region
+        plt.axvspan(length_um * 0.25, length_um * 0.75, alpha=0.2, color='red', label='Channel')
+
         plt.xlabel('Position x (μm)')
         plt.ylabel('Doping Concentration (/m³)')
-        plt.title('Doping Profile (Surface)')
+        plt.title('Surface Doping Profile (CORRECTED)')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
