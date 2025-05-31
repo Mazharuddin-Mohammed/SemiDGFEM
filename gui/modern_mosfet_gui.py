@@ -473,28 +473,32 @@ class SimulationWorker(QObject):
         y = np.linspace(0, self.config.width, ny)
         X, Y = np.meshgrid(x, y)
 
-        # CORRECTED MOSFET STRUCTURE - REVERTED TO ORIGINAL + AIR REGIONS
-        # Simple structure with gate-oxide stack sandwiched between air regions
+        # SIMPLE PLANAR MOSFET: GATE-OXIDE ON TOP, ADJACENT TO SOURCE & DRAIN
         L = self.config.length
         W = self.config.width
 
-        # Define device regions (back to original simple approach)
-        source_end = L * 0.25      # Source extends to 25% of channel length
-        drain_start = L * 0.75     # Drain starts at 75% of channel length
-        channel_depth = W * 0.7    # Channel/surface region starts at 70% of width
+        # Simple lateral structure
+        source_end = L * 0.25      # Source region: 0 to 25%
+        gate_start = L * 0.25      # Gate starts adjacent to source
+        gate_end = L * 0.75        # Gate ends adjacent to drain
+        drain_start = L * 0.75     # Drain region: 75% to 100%
 
-        self.log_message.emit(f"🔧 CORRECTED MOSFET Structure (Original + Air Regions):")
+        # Simple vertical structure
+        substrate_top = W * 0.7    # Substrate: 0 to 70%
+        surface_top = W * 0.9      # Surface layer: 70% to 90%
+        gate_top = W               # Gate-oxide stack: 90% to 100% (on top)
+
+        self.log_message.emit(f"🔧 SIMPLE PLANAR MOSFET: Gate-oxide on top, adjacent to source & drain")
         self.log_message.emit(f"   Device dimensions: {L*1e9:.0f} nm × {W*1e6:.1f} μm")
-        self.log_message.emit(f"   P-substrate: 0 to {channel_depth*1e6:.1f} μm (bulk)")
-        self.log_message.emit(f"   Surface layer: {channel_depth*1e6:.1f} to {W*1e6:.1f} μm")
+        self.log_message.emit(f"   Vertical structure:")
+        self.log_message.emit(f"     P-substrate: 0 to {substrate_top*1e6:.0f} nm (70%)")
+        self.log_message.emit(f"     Surface layer: {substrate_top*1e6:.0f} to {surface_top*1e6:.0f} nm (20%)")
+        self.log_message.emit(f"     Gate-oxide stack: {surface_top*1e6:.0f} to {gate_top*1e6:.0f} nm (10% - ON TOP)")
         self.log_message.emit(f"   Lateral structure:")
-        self.log_message.emit(f"     Source region: 0 to {source_end*1e9:.1f} nm")
-        self.log_message.emit(f"     Channel region: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm")
-        self.log_message.emit(f"     Drain region: {drain_start*1e9:.1f} to {L*1e9:.1f} nm")
-        self.log_message.emit(f"   Top structure:")
-        self.log_message.emit(f"     Air above source: 0 to {source_end*1e9:.1f} nm")
-        self.log_message.emit(f"     Gate-oxide stack: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm (sandwiched)")
-        self.log_message.emit(f"     Air above drain: {drain_start*1e9:.1f} to {L*1e9:.1f} nm")
+        self.log_message.emit(f"     Source: 0 to {source_end*1e9:.0f} nm")
+        self.log_message.emit(f"     Gate (adjacent): {gate_start*1e9:.0f} to {gate_end*1e9:.0f} nm")
+        self.log_message.emit(f"     Drain: {drain_start*1e9:.0f} to {L*1e9:.0f} nm")
+        self.log_message.emit(f"   Gate-oxide stack is ON TOP and ADJACENT to source & drain regions")
 
         # Potential distribution (reverted to original simple approach)
         V_channel = Vs + (Vd - Vs) * (X / self.config.length)
@@ -502,61 +506,53 @@ class SimulationWorker(QObject):
         substrate_effect = Vsub * (1 - Y / self.config.width)
         V = V_channel + gate_coupling + substrate_effect
 
-        # Carrier densities (reverted to original approach with air regions)
+        # Simple carrier densities for planar MOSFET
         n = np.zeros_like(V)
         p = np.zeros_like(V)
 
         for i in range(ny):
             for j in range(nx):
-                # Determine doping based on original approach
-                if Y[i, j] > channel_depth:  # Surface region
-                    if X[i, j] < source_end:  # Source region
-                        if Y[i, j] > 0.9 * self.config.width:  # Air above source
-                            # Air region - no carriers
-                            Nd_local = 0
-                            Na_local = 0
-                            n[i, j] = 0.0
-                            p[i, j] = 0.0
-                        else:  # N+ Source at surface
-                            Nd_local = self.config.Nd_source
-                            Na_local = 0
-                    elif X[i, j] > drain_start:  # Drain region
-                        if Y[i, j] > 0.9 * self.config.width:  # Air above drain
-                            # Air region - no carriers
-                            Nd_local = 0
-                            Na_local = 0
-                            n[i, j] = 0.0
-                            p[i, j] = 0.0
-                        else:  # N+ Drain at surface
-                            Nd_local = self.config.Nd_drain
-                            Na_local = 0
-                    else:  # Channel region
-                        if Y[i, j] > 0.9 * self.config.width:  # Gate-oxide stack
-                            # Gate oxide/metal - no carriers in semiconductor sense
-                            Nd_local = 0
-                            Na_local = 0
-                            n[i, j] = 0.0
-                            p[i, j] = 0.0
-                        else:  # P-Channel at surface
-                            Nd_local = 0
-                            Na_local = self.config.Na_substrate
-                else:  # Bulk substrate
+                x_pos = X[i, j]
+                y_pos = Y[i, j]
+
+                # Simple structure: substrate → surface → gate-oxide (on top)
+                if y_pos <= substrate_top:  # P-substrate (bulk)
                     Nd_local = 0
                     Na_local = self.config.Na_substrate
 
-                # Calculate carriers (only for semiconductor regions)
-                if Y[i, j] <= 0.9 * self.config.width:  # Semiconductor regions only
-                    if Nd_local > Na_local:
-                        n[i, j] = Nd_local * np.exp(V[i, j] / Vt)
-                        p[i, j] = ni**2 / n[i, j]
-                    else:
-                        p[i, j] = Na_local * np.exp(-V[i, j] / Vt)
-                        n[i, j] = ni**2 / p[i, j]
+                elif y_pos <= surface_top:  # Surface layer
+                    if x_pos <= source_end:  # N+ Source
+                        Nd_local = self.config.Nd_source
+                        Na_local = 0
+                    elif x_pos >= drain_start:  # N+ Drain
+                        Nd_local = self.config.Nd_drain
+                        Na_local = 0
+                    else:  # P-Channel
+                        Nd_local = 0
+                        Na_local = self.config.Na_substrate
 
-                # Add inversion layer (original approach)
-                if (0.25 <= X[i, j]/self.config.length <= 0.75 and
-                    Y[i, j] > channel_depth and Y[i, j] <= 0.9 * self.config.width and Vg > Vth):
-                    n_inv = 1e20 * (Vg - Vth) * np.exp(-5 * (1 - Y[i, j]/self.config.width))
+                else:  # Gate-oxide stack (on top)
+                    if gate_start <= x_pos <= gate_end:  # Gate-oxide stack
+                        n[i, j] = 0.0  # No carriers in gate oxide
+                        p[i, j] = 0.0
+                        continue
+                    else:  # Air/vacuum outside gate
+                        n[i, j] = 0.0
+                        p[i, j] = 0.0
+                        continue
+
+                # Calculate carriers for semiconductor regions
+                if Nd_local > Na_local:
+                    n[i, j] = Nd_local * np.exp(V[i, j] / Vt)
+                    p[i, j] = ni**2 / n[i, j]
+                else:
+                    p[i, j] = Na_local * np.exp(-V[i, j] / Vt)
+                    n[i, j] = ni**2 / p[i, j]
+
+                # Add inversion layer in channel under gate
+                if (gate_start <= x_pos <= gate_end and
+                    substrate_top <= y_pos <= surface_top and Vg > Vth):
+                    n_inv = 1e20 * (Vg - Vth) * np.exp(-5 * (surface_top - y_pos) / (surface_top - substrate_top))
                     n[i, j] += n_inv
 
         # Current densities (reverted to original simple approach)

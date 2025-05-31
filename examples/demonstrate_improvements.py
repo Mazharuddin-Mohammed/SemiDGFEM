@@ -22,26 +22,30 @@ def demonstrate_device_geometry():
     width = 1e-6     # 1 μm
     nx, ny = 40, 20
     
-    # CORRECTED MOSFET STRUCTURE - REVERTED TO ORIGINAL + AIR REGIONS
-    # Simple structure with gate-oxide stack sandwiched between air regions
+    # SIMPLE PLANAR MOSFET: GATE-OXIDE ON TOP, ADJACENT TO SOURCE & DRAIN
 
-    # Define device regions (back to original simple approach)
-    source_end = length * 0.25      # Source extends to 25% of channel length
-    drain_start = length * 0.75     # Drain starts at 75% of channel length
-    channel_depth = width * 0.7     # Channel/surface region starts at 70% of width
+    # Simple lateral structure
+    source_end = length * 0.25      # Source region: 0 to 25%
+    gate_start = length * 0.25      # Gate starts adjacent to source
+    gate_end = length * 0.75        # Gate ends adjacent to drain
+    drain_start = length * 0.75     # Drain region: 75% to 100%
 
-    print("🔬 CORRECTED MOSFET Structure (Original + Air Regions):")
+    # Simple vertical structure
+    substrate_top = width * 0.7    # Substrate: 0 to 70%
+    surface_top = width * 0.9      # Surface layer: 70% to 90%
+    gate_top = width               # Gate-oxide stack: 90% to 100% (on top)
+
+    print("🔬 SIMPLE PLANAR MOSFET: Gate-oxide on top, adjacent to source & drain")
     print(f"   Device dimensions: {length*1e9:.0f} nm × {width*1e6:.1f} μm")
-    print(f"   P-substrate: 0 to {channel_depth*1e6:.1f} μm (bulk)")
-    print(f"   Surface layer: {channel_depth*1e6:.1f} to {width*1e6:.1f} μm")
+    print(f"   Vertical structure:")
+    print(f"     P-substrate: 0 to {substrate_top*1e6:.0f} nm (70%)")
+    print(f"     Surface layer: {substrate_top*1e6:.0f} to {surface_top*1e6:.0f} nm (20%)")
+    print(f"     Gate-oxide stack: {surface_top*1e6:.0f} to {gate_top*1e6:.0f} nm (10% - ON TOP)")
     print(f"   Lateral structure:")
-    print(f"     Source region: 0 to {source_end*1e9:.1f} nm")
-    print(f"     Channel region: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm")
-    print(f"     Drain region: {drain_start*1e9:.1f} to {length*1e9:.1f} nm")
-    print(f"   Top structure:")
-    print(f"     Air above source: 0 to {source_end*1e9:.1f} nm (top 10%)")
-    print(f"     Gate-oxide stack: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm (sandwiched)")
-    print(f"     Air above drain: {drain_start*1e9:.1f} to {length*1e9:.1f} nm (top 10%)")
+    print(f"     Source: 0 to {source_end*1e9:.0f} nm")
+    print(f"     Gate (adjacent): {gate_start*1e9:.0f} to {gate_end*1e9:.0f} nm")
+    print(f"     Drain: {drain_start*1e9:.0f} to {length*1e9:.0f} nm")
+    print(f"   Gate-oxide stack is ON TOP and ADJACENT to source & drain regions")
     print()
     
     # Create coordinate arrays
@@ -49,52 +53,50 @@ def demonstrate_device_geometry():
     y = np.linspace(0, width, ny)
     X, Y = np.meshgrid(x, y)
     
-    # Count regions for corrected MOSFET structure (original + air regions)
-    n_plus_source = 0
-    n_plus_drain = 0
-    p_channel = 0
+    # Count regions for simple planar MOSFET structure
     p_substrate = 0
+    n_source_surface = 0
+    p_channel_surface = 0
+    n_drain_surface = 0
     gate_oxide_stack = 0
-    air_source = 0
-    air_drain = 0
+    air_vacuum = 0
 
     for i in range(ny):
         for j in range(nx):
             x_pos = X[i, j]
             y_pos = Y[i, j]
 
-            if y_pos > channel_depth:  # Surface region
-                if x_pos < source_end:  # Source region
-                    if y_pos > 0.9 * width:  # Air above source
-                        air_source += 1
-                    else:  # N+ Source at surface
-                        n_plus_source += 1
-                elif x_pos > drain_start:  # Drain region
-                    if y_pos > 0.9 * width:  # Air above drain
-                        air_drain += 1
-                    else:  # N+ Drain at surface
-                        n_plus_drain += 1
-                else:  # Channel region
-                    if y_pos > 0.9 * width:  # Gate-oxide stack
-                        gate_oxide_stack += 1
-                    else:  # P-Channel at surface
-                        p_channel += 1
-            else:  # Bulk substrate
+            if y_pos <= substrate_top:  # P-substrate (bulk)
                 p_substrate += 1
+
+            elif y_pos <= surface_top:  # Surface layer
+                if x_pos <= source_end:  # N+ Source
+                    n_source_surface += 1
+                elif x_pos >= drain_start:  # N+ Drain
+                    n_drain_surface += 1
+                else:  # P-Channel
+                    p_channel_surface += 1
+
+            else:  # Gate-oxide stack (on top)
+                if gate_start <= x_pos <= gate_end:  # Gate-oxide stack
+                    gate_oxide_stack += 1
+                else:  # Air/vacuum outside gate
+                    air_vacuum += 1
     
     total_points = nx * ny
     
-    print("📊 CORRECTED MOSFET REGION STATISTICS (Original + Air):")
-    print(f"   P-substrate: {p_substrate} points ({p_substrate/total_points*100:.1f}%)")
-    print(f"   N+ Source: {n_plus_source} points ({n_plus_source/total_points*100:.1f}%)")
-    print(f"   P-Channel: {p_channel} points ({p_channel/total_points*100:.1f}%)")
-    print(f"   N+ Drain: {n_plus_drain} points ({n_plus_drain/total_points*100:.1f}%)")
-    print(f"   Gate-oxide stack: {gate_oxide_stack} points ({gate_oxide_stack/total_points*100:.1f}%)")
-    print(f"   Air above source: {air_source} points ({air_source/total_points*100:.1f}%)")
-    print(f"   Air above drain: {air_drain} points ({air_drain/total_points*100:.1f}%)")
+    print("📊 SIMPLE PLANAR MOSFET REGION STATISTICS:")
+    print(f"   P-substrate (bulk): {p_substrate} points ({p_substrate/total_points*100:.1f}%)")
+    print(f"   Surface layer:")
+    print(f"     N+ Source: {n_source_surface} points ({n_source_surface/total_points*100:.1f}%)")
+    print(f"     P-Channel: {p_channel_surface} points ({p_channel_surface/total_points*100:.1f}%)")
+    print(f"     N+ Drain: {n_drain_surface} points ({n_drain_surface/total_points*100:.1f}%)")
+    print(f"   Top layer:")
+    print(f"     Gate-oxide stack: {gate_oxide_stack} points ({gate_oxide_stack/total_points*100:.1f}%) [ON TOP, ADJACENT]")
+    print(f"     Air/vacuum: {air_vacuum} points ({air_vacuum/total_points*100:.1f}%)")
     print(f"   Total grid points: {total_points}")
-    print(f"   Semiconductor: {p_substrate + n_plus_source + p_channel + n_plus_drain} points ({(p_substrate + n_plus_source + p_channel + n_plus_drain)/total_points*100:.1f}%)")
-    print(f"   Air regions: {air_source + air_drain} points ({(air_source + air_drain)/total_points*100:.1f}%)")
+    print(f"   Total semiconductor: {p_substrate + n_source_surface + p_channel_surface + n_drain_surface} points ({(p_substrate + n_source_surface + p_channel_surface + n_drain_surface)/total_points*100:.1f}%)")
+    print(f"   Gate-oxide stack is ON TOP and ADJACENT to source & drain")
     print()
     
     return {
@@ -102,20 +104,22 @@ def demonstrate_device_geometry():
             'length': length,
             'width': width,
             'source_end': source_end,
+            'gate_start': gate_start,
+            'gate_end': gate_end,
             'drain_start': drain_start,
-            'channel_depth': channel_depth
+            'substrate_top': substrate_top,
+            'surface_top': surface_top,
+            'gate_top': gate_top
         },
         'statistics': {
             'p_substrate': p_substrate,
-            'n_plus_source': n_plus_source,
-            'p_channel': p_channel,
-            'n_plus_drain': n_plus_drain,
+            'n_source_surface': n_source_surface,
+            'p_channel_surface': p_channel_surface,
+            'n_drain_surface': n_drain_surface,
             'gate_oxide_stack': gate_oxide_stack,
-            'air_source': air_source,
-            'air_drain': air_drain,
+            'air_vacuum': air_vacuum,
             'total_points': total_points,
-            'semiconductor': p_substrate + n_plus_source + p_channel + n_plus_drain,
-            'air_regions': air_source + air_drain
+            'total_semiconductor': p_substrate + n_source_surface + p_channel_surface + n_drain_surface
         }
     }
 
@@ -244,12 +248,12 @@ def main():
     print("🎯 IMPROVEMENTS SUMMARY:")
     print("=" * 60)
     print()
-    print("✅ CORRECTED MOSFET STRUCTURE (Original + Air Regions):")
-    print("   • Reverted to original simple structure before ohmic contacts")
-    print("   • Added air regions above source and drain (top 10%)")
-    print("   • Gate-oxide stack sandwiched between air regions")
-    print("   • Simple and functional device physics")
-    print("   • No complex layer stacks or discontinuities")
+    print("✅ SIMPLE PLANAR MOSFET STRUCTURE:")
+    print("   • Gate-oxide stack ON TOP of device (top 10%)")
+    print("   • Gate-oxide ADJACENT to source (0-25nm) and drain (75-100nm)")
+    print("   • Simple three-layer structure: substrate → surface → gate-oxide")
+    print("   • Standard planar MOSFET configuration")
+    print("   • Gate-oxide stack positioned on top, adjacent to source & drain")
     print()
     print("✅ I-V CURVE REFINEMENTS:")
     print(f"   • Resolution improved by {iv_results['resolution']['improvement_factor']:.1f}x")
