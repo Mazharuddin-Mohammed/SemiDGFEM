@@ -22,8 +22,8 @@ std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
     auto elements = mesh.get_elements();
     int n_nodes = grid_x.size();
     int n_elements = elements.size();
-    const int order = 3; // [MODIFICATION]: Changed to P3
-    int dofs_per_element = 10; // [MODIFICATION]: P3 has 10 DOFs
+    const int order = 3; // P3
+    int dofs_per_element = 10;
     int n_dofs = n_elements * dofs_per_element;
     V_.resize(n_dofs, 0.0);
 
@@ -51,14 +51,12 @@ std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
     VecSetType(x, VECMPI);
     VecDuplicate(x, &b);
 
-    // [MODIFICATION]: Updated quadrature for P3 (7-point)
     std::vector<std::vector<double>> quad_points = {
         {1.0/3.0, 1.0/3.0}, {0.6, 0.2}, {0.2, 0.6}, {0.2, 0.2},
         {0.8, 0.1}, {0.1, 0.8}, {0.4, 0.4}
     };
     std::vector<double> quad_weights = {0.225, 0.125, 0.125, 0.125, 0.1, 0.1, 0.1};
 
-    // [MODIFICATION]: P3 basis functions
     auto phi = [&](double xi, double eta, int j) {
         double zeta = 1.0 - xi - eta;
         if (j == 0) return zeta * (3.0 * zeta - 1.0) * (3.0 * zeta - 2.0) / 2.0;
@@ -112,7 +110,7 @@ std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
         double b3 = (y1 - y2) / (2.0 * area), c3 = (x2 - x1) / (2.0 * area);
 
         double eps = device_.get_epsilon_at((x1 + x2 + x3) / 3.0, (y1 + y2 + y3) / 3.0);
-        double K[10][10] = {0}, f[10] = {0}; // [MODIFICATION]: Adjusted for 10 DOFs
+        double K[10][10] = {0}, f[10] = {0};
         int base_idx = e * dofs_per_element;
 
         for (size_t q = 0; q < quad_points.size(); ++q) {
@@ -183,4 +181,75 @@ std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
     V_ = V_nodes;
     return V_;
 }
+
+// [MODIFICATION]: Self-consistent Poisson solver
+std::vector<double> Poisson::solve_2d_self_consistent(const std::vector<double>& bc, 
+                                                     std::vector<double>& n, 
+                                                     std::vector<double>& p, 
+                                                     const std::vector<double>& Nd, 
+                                                     const std::vector<double>& Na, 
+                                                     int max_iter, double tol) {
+    if (method_ != Method::DG || mesh_type_ != MeshType::Structured) return V_;
+    if (bc.size() != 4) throw std::invalid_argument("2D DG requires 4 boundary conditions");
+
+    Mesh mesh(device_, mesh_type_);
+    auto grid_x = mesh.get_grid_points_x();
+    auto grid_y = mesh.get_grid_points_y();
+    int n_nodes = grid_x.size();
+    const double q = 1.602e-19, kT = 0.0259, ni = 1e10 * 1e6;
+
+    V_.resize(n_nodes, 0.0);
+    for (int iter = 0; iter < max_iter; ++iter) {
+        std::vector<double> rho(n_nodes, 0.0);
+        for (size_t i = 0; i < n_nodes; ++i) {
+            double doping = (Nd.size() > i ? Nd[i] : 0.0) - (Na.size() > i ? Na[i] : 0.0);
+            rho[i] = q * (p[i] - n[i] + doping);
+        }
+        set_charge_density(rho);
+        std::vector<double> V_new = solve_2d(bc);
+
+        double max_change = 0.0;
+        for (size_t i = 0; i < n_nodes; ++i) {
+            max_change = std::max(max_change, std::abs(V_new[i] - V_[i]));
+            V_[i] = 0.9 * V_[i] + 0.1 * V_new[i]; // Damping for stability
+            n[i] = ni * std::exp(V_[i] / kT);
+            p[i] = ni * std::exp(-V_[i] / kT);
+        }
+        if (max_change < tol) break;
+    }
+    return V_;
+}
 } // namespace simulator
+
+// [MODIFICATION]: Cython bindings
+extern "C" {
+    Poisson* create_poisson(Device* device, int method, int mesh_type) {
+        return new Poisson(*device, static_cast<Method>(method), static_cast<MeshType>(mesh_type));
+    }
+    void poisson_set_charge_density(Poisson* poisson, double* rho, int size) {
+        std::vector<double> rho_vec(rho, rho + size);
+        poisson->set_charge_density(rho_vec);
+    }
+    void poisson_solve_2d(Poisson* poisson, double* bc, int bc_size, double* V, int V_size) {
+        std::vector<double> bc_vec(bc, bc + bc_size);
+        auto result = poisson->solve_2d(bc_vec);
+        for (int i = 0; i < std::min(V_size, (int)result.size()); ++i) {
+            V[i] = result[i];
+        }
+    }
+    void poisson_solve_2d_self_consistent(Poisson* poisson, double* bc, int bc_size, 
+                                          double* n, double* p, double* Nd, double* Na, int size, 
+                                          int max_iter, double tol, double* V, int V_size) {
+        std::vector<double> bc_vec(bc, bc + bc_size);
+        std::vector<double> n_vec(n, n + size), p_vec(p, p + size);
+        std::vector<double> Nd_vec(Nd, Nd + size), Na_vec(Na, Na + size);
+        auto result = poisson->solve_2d_self_consistent(bc_vec, n_vec, p_vec, Nd_vec, Na_vec, max_iter, tol);
+        for (int i = 0; i < std::min(V_size, (int)result.size()); ++i) {
+            V[i] = result[i];
+        }
+        for (int i = 0; i < size; ++i) {
+            n[i] = n_vec[i];
+            p[i] = p_vec[i];
+        }
+    }
+}
