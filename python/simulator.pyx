@@ -50,6 +50,12 @@ cdef class Simulator:
     cdef int num_points_x, num_points_y
     cdef str mesh_type, method
 
+    # Python-accessible attributes
+    cdef public str _method
+    cdef public str _mesh_type
+    cdef public int _num_points_x
+    cdef public int _num_points_y
+
     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,
                   method="DG", mesh_type="Structured", regions=None):
         # Declare variables at the beginning
@@ -65,6 +71,12 @@ cdef class Simulator:
         self.num_points_y = num_points_y
         self.method = method
         self.mesh_type = mesh_type
+
+        # Set public attributes
+        self._num_points_x = num_points_x
+        self._num_points_y = num_points_y
+        self._method = method
+        self._mesh_type = mesh_type
 
         regions = regions or []
         for r in regions:
@@ -160,3 +172,24 @@ cdef class Simulator:
             "Jn": Jn,
             "Jp": Jp
         }
+
+    # Python properties to access C attributes
+    @property
+    def method(self):
+        """Get the numerical method"""
+        return self._method
+
+    @property
+    def mesh_type(self):
+        """Get the mesh type"""
+        return self._mesh_type
+
+    @property
+    def num_points_x(self):
+        """Get number of grid points in x direction"""
+        return self._num_points_x
+
+    @property
+    def num_points_y(self):
+        """Get number of grid points in y direction"""
+        return self._num_points_y
