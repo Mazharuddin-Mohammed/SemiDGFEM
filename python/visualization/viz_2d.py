@@ -1,29 +1,25 @@
+from visualization.vulkan_renderer.vulkan_context import VulkanRenderer
 import numpy as np
-import matplotlib.pyplot as plt
 
-def plot_2d_potential(ax, x, y, V, title):
-    X, Y = np.meshgrid(x, y)
-    V = np.array(V).reshape(len(y), len(x))
-    c = ax.contourf(X, Y, V, cmap='viridis')
-    ax.colorbar(c, label='Potential (V)')
-    ax.set_title(title)
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
+def plot_2d_potential(data, window):
+    renderer = VulkanRenderer({"x": data["x"], "y": data["y"], "values": data["potential"]}, plot_type="contour")
+    window.setVulkanRenderer(renderer)
+    return renderer
 
-def plot_2d_quantity(ax, x, y, quantity, title):
-    X, Y = np.meshgrid(x, y)
-    quantity = np.array(quantity).reshape(len(y), len(x))
-    c = ax.contourf(X, Y, quantity, cmap='plasma')
-    ax.colorbar(c, label=title)
-    ax.set_title(title)
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
+def plot_2d_quantity(data, quantity, window):
+    renderer = VulkanRenderer({"x": data["x"], "y": data["y"], "values": data[quantity]}, plot_type="contour")
+    window.setVulkanRenderer(renderer)
+    return renderer
 
-def plot_current_vectors(ax, x, y, Jx, Jy, title):
-    X, Y = np.meshgrid(x, y)
-    Jx = np.array(Jx).reshape(len(y), len(x))
-    Jy = np.array(Jy).reshape(len(y), len(x))
-    ax.quiver(X, Y, Jx, Jy)
-    ax.set_title(title)
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
+def plot_current_vectors(data, window):
+    Jx = data["Jn"][::2]
+    Jy = data["Jn"][1::2]
+    renderer = VulkanRenderer({"x": data["x"], "y": data["y"], "vectors": np.stack([Jx, Jy], axis=1)}, plot_type="vector")
+    window.setVulkanRenderer(renderer)
+    return renderer
+
+def plot_mesh(data, window):
+    # [Simplified]: Use contour plot for mesh outline
+    renderer = VulkanRenderer({"x": data["x"], "y": data["y"], "values": np.zeros_like(data["x"])}, plot_type="contour")
+    window.setVulkanRenderer(renderer)
+    return renderer
