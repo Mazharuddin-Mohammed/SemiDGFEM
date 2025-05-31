@@ -34,6 +34,19 @@
 - **Visualization**: Professional plots with matplotlib and GPU-accelerated rendering
 - **Data Export**: Multiple formats (HDF5, VTK, CSV) for post-processing
 
+## 🎯 Simulation Showcase
+
+### Heterostructure PN Diode Analysis
+
+**Device Structure:**
+![Device Structure](output/heterostructure_device_structure.png)
+
+**I-V Characteristics:**
+![I-V Characteristics](output/heterostructure_iv_characteristics.png)
+
+**Detailed Physics Results:**
+![Simulation Results](output/heterostructure_simulation_results.png)
+
 ## 📊 Performance Benchmarks
 
 | Feature | CPU Performance | GPU Performance | Speedup |
