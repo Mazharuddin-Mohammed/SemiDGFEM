@@ -1,11 +1,14 @@
 #include "driftdiffusion.hpp"
 #include "mesh.hpp"
+#include "amr_algorithms.hpp"
+#include "performance_optimization.hpp"
 #include <petscksp.h>
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <functional>
 
 namespace simulator {
 
@@ -304,42 +307,122 @@ std::map<std::string, std::vector<double>> DriftDiffusion::solve_structured_drif
             // Compute current densities
             compute_current_densities(V, n, p, Jn, Jp);
 
-            // Adaptive mesh refinement
+            // Advanced Adaptive Mesh Refinement
             if (use_amr) {
-                std::vector<bool> refine_flags(elements.size(), false);
-                for (size_t e = 0; e < elements.size(); ++e) {
-                    if (elements[e].size() >= 3) {
-                        int i1 = elements[e][0], i2 = elements[e][1], i3 = elements[e][2];
+                performance::PROFILE_SCOPE("AMR_Processing");
 
-                        // Check bounds
-                        if (i1 >= 0 && i1 < n_nodes && i2 >= 0 && i2 < n_nodes && i3 >= 0 && i3 < n_nodes) {
-                            double grad_x = std::abs(V[i2] - V[i1]) / std::max(std::abs(grid_x[i2] - grid_x[i1]), 1e-12);
-                            double grad_y = std::abs(V[i3] - V[i1]) / std::max(std::abs(grid_y[i3] - grid_y[i1]), 1e-12);
+                try {
+                    // Create advanced AMR controller
+                    amr::AMRController amr_controller(
+                        amr::ErrorEstimatorType::KELLY,
+                        amr::RefinementStrategy::EQUILIBRATION,
+                        5  // max refinement levels
+                    );
 
-                            if (grad_x > 1e5 || grad_y > 1e5) {
-                                refine_flags[e] = true;
+                    // Set refinement parameters
+                    amr_controller.set_refinement_parameters(
+                        0.2,    // refine_fraction
+                        0.05,   // coarsen_fraction
+                        1e-4,   // error_tolerance
+                        1e-7,   // min_element_size
+                        1e-3    // max_element_size
+                    );
+
+                    // Enable anisotropic refinement for boundary layers
+                    amr_controller.set_anisotropic_refinement(true, true);
+
+                    // Convert grid points to vertices format
+                    std::vector<std::array<double, 2>> vertices_amr(grid_x.size());
+                    for (size_t i = 0; i < grid_x.size(); ++i) {
+                        vertices_amr[i] = {grid_x[i], grid_y[i]};
+                    }
+
+                    // Compute error indicators using Kelly estimator
+                    auto error_indicators = amr_controller.compute_error_indicators(
+                        V, elements, vertices_amr
+                    );
+
+                    // Determine refinement decisions
+                    auto refinement_decisions = amr_controller.determine_refinement(
+                        error_indicators, elements, vertices_amr
+                    );
+
+                    // Check if refinement is needed
+                    bool needs_refinement = std::any_of(refinement_decisions.begin(),
+                                                       refinement_decisions.end(),
+                                                       [](const amr::ElementRefinement& r) {
+                                                           return r.refine || r.coarsen;
+                                                       });
+
+                    if (needs_refinement) {
+                        // Perform mesh refinement
+                        auto element_mapping = amr_controller.perform_refinement(
+                            refinement_decisions, elements, vertices_amr, V
+                        );
+
+                        // Update mesh data
+                        grid_x.resize(vertices_amr.size());
+                        grid_y.resize(vertices_amr.size());
+                        for (size_t i = 0; i < vertices_amr.size(); ++i) {
+                            grid_x[i] = vertices_amr[i][0];
+                            grid_y[i] = vertices_amr[i][1];
+                        }
+
+                        n_nodes = static_cast<int>(grid_x.size());
+
+                        // Interpolate carrier densities to new mesh
+                        std::vector<double> n_new(n_nodes, ni);
+                        std::vector<double> p_new(n_nodes, ni);
+                        std::vector<double> Jn_new(n_nodes, 0.0);
+                        std::vector<double> Jp_new(n_nodes, 0.0);
+
+                        // Simple interpolation (could be improved with proper DG projection)
+                        for (int i = 0; i < n_nodes; ++i) {
+                            if (i < static_cast<int>(n.size())) {
+                                n_new[i] = n[i];
+                                p_new[i] = p[i];
+                                Jn_new[i] = (i < static_cast<int>(Jn.size())) ? Jn[i] : 0.0;
+                                Jp_new[i] = (i < static_cast<int>(Jp.size())) ? Jp[i] : 0.0;
+                            }
+                        }
+
+                        // Update solution vectors
+                        n = std::move(n_new);
+                        p = std::move(p_new);
+                        Jn = std::move(Jn_new);
+                        Jp = std::move(Jp_new);
+
+                        // Get refinement statistics
+                        auto stats = amr_controller.get_last_refinement_stats();
+                        std::cout << "AMR: Refined " << stats.elements_refined
+                                 << " elements, coarsened " << stats.elements_coarsened
+                                 << " elements" << std::endl;
+
+                        // Check mesh quality
+                        auto quality = amr_controller.compute_mesh_quality(elements, vertices_amr);
+                        if (quality.num_bad_elements > 0) {
+                            std::cout << "Warning: " << quality.num_bad_elements
+                                     << " poor quality elements detected" << std::endl;
+                        }
+                    }
+
+                } catch (const std::exception& e) {
+                    std::cerr << "Advanced AMR failed: " << e.what() << std::endl;
+                    // Fallback to simple refinement
+                    std::vector<bool> refine_flags(elements.size(), false);
+                    for (size_t e = 0; e < elements.size(); ++e) {
+                        if (elements[e].size() >= 3) {
+                            int i1 = elements[e][0], i2 = elements[e][1], i3 = elements[e][2];
+                            if (i1 >= 0 && i1 < n_nodes && i2 >= 0 && i2 < n_nodes && i3 >= 0 && i3 < n_nodes) {
+                                double grad_x = std::abs(V[i2] - V[i1]) / std::max(std::abs(grid_x[i2] - grid_x[i1]), 1e-12);
+                                double grad_y = std::abs(V[i3] - V[i1]) / std::max(std::abs(grid_y[i3] - grid_y[i1]), 1e-12);
+                                if (grad_x > 1e5 || grad_y > 1e5) {
+                                    refine_flags[e] = true;
+                                }
                             }
                         }
                     }
-                }
-
-                try {
                     mesh.refine(refine_flags);
-                    // Update grid points after refinement
-                    grid_x = mesh.get_grid_points_x();
-                    grid_y = mesh.get_grid_points_y();
-                    elements = mesh.get_elements();
-                    n_nodes = static_cast<int>(grid_x.size());
-
-                    // Resize solution vectors
-                    V.resize(n_nodes, 0.0);
-                    n.resize(n_nodes, ni);
-                    p.resize(n_nodes, ni);
-                    Jn.resize(n_nodes, 0.0);
-                    Jp.resize(n_nodes, 0.0);
-                } catch (const std::exception& e) {
-                    // AMR failed, continue without refinement
-                    std::cerr << "AMR failed: " << e.what() << std::endl;
                 }
             }
 
@@ -394,31 +477,80 @@ std::map<std::string, std::vector<double>> DriftDiffusion::solve_unstructured_dr
 void DriftDiffusion::compute_carrier_densities(const std::vector<double>& V,
                                               std::vector<double>& n,
                                               std::vector<double>& p) const {
+    performance::PROFILE_FUNCTION();
+
     const double kT = 0.0259;          // Thermal voltage at 300K (V)
     const double ni = 1e10 * 1e6;      // Intrinsic carrier concentration (1/m³)
+    const double inv_kT = 1.0 / kT;    // Precompute inverse for efficiency
 
-    for (size_t i = 0; i < V.size(); ++i) {
-        if (i < Nd_.size() && i < Na_.size()) {
-            // Calculate quasi-Fermi levels and carrier densities
-            double Et = (Et_.size() > i) ? Et_[i] : 0.0;  // Trap level
-            double phi = V[i] - Et;  // Electrostatic potential relative to trap level
+    const size_t n_points = V.size();
 
-            // Boltzmann statistics (valid for non-degenerate semiconductors)
-            n[i] = ni * std::exp(phi / kT);
-            p[i] = ni * std::exp(-phi / kT);
+    // Use SIMD-optimized computation if available
+    if (performance::simd::VectorOps::has_avx2() && n_points >= 4) {
+        performance::PROFILE_SCOPE("SIMD_Carrier_Densities");
 
-            // Apply doping effects (simplified model)
-            if (Nd_[i] > Na_[i]) {
-                // n-type material
-                n[i] += (Nd_[i] - Na_[i]);
-            } else if (Na_[i] > Nd_[i]) {
-                // p-type material
-                p[i] += (Na_[i] - Nd_[i]);
+        // Prepare aligned arrays for SIMD operations
+        performance::memory::AlignedVector<double> phi_array(n_points);
+        performance::memory::AlignedVector<double> n_intrinsic(n_points);
+        performance::memory::AlignedVector<double> p_intrinsic(n_points);
+
+        // Compute electrostatic potential relative to trap levels
+        #pragma omp parallel for simd
+        for (size_t i = 0; i < n_points; ++i) {
+            double Et = (Et_.size() > i) ? Et_[i] : 0.0;
+            phi_array[i] = (V[i] - Et) * inv_kT;
+        }
+
+        // Vectorized exponential computation
+        #pragma omp parallel for simd
+        for (size_t i = 0; i < n_points; ++i) {
+            n_intrinsic[i] = ni * std::exp(phi_array[i]);
+            p_intrinsic[i] = ni * std::exp(-phi_array[i]);
+        }
+
+        // Apply doping effects with vectorization
+        #pragma omp parallel for
+        for (size_t i = 0; i < n_points; ++i) {
+            if (i < Nd_.size() && i < Na_.size()) {
+                n[i] = n_intrinsic[i];
+                p[i] = p_intrinsic[i];
+
+                // Apply doping effects
+                if (Nd_[i] > Na_[i]) {
+                    n[i] += (Nd_[i] - Na_[i]);
+                } else if (Na_[i] > Nd_[i]) {
+                    p[i] += (Na_[i] - Nd_[i]);
+                }
+
+                // Ensure positive concentrations
+                n[i] = std::max(n[i], ni);
+                p[i] = std::max(p[i], ni);
             }
+        }
+    } else {
+        // Standard computation for smaller arrays or when SIMD unavailable
+        #pragma omp parallel for
+        for (size_t i = 0; i < n_points; ++i) {
+            if (i < Nd_.size() && i < Na_.size()) {
+                // Calculate quasi-Fermi levels and carrier densities
+                double Et = (Et_.size() > i) ? Et_[i] : 0.0;
+                double phi = (V[i] - Et) * inv_kT;
 
-            // Ensure positive concentrations
-            n[i] = std::max(n[i], ni);
-            p[i] = std::max(p[i], ni);
+                // Boltzmann statistics (valid for non-degenerate semiconductors)
+                n[i] = ni * std::exp(phi);
+                p[i] = ni * std::exp(-phi);
+
+                // Apply doping effects
+                if (Nd_[i] > Na_[i]) {
+                    n[i] += (Nd_[i] - Na_[i]);
+                } else if (Na_[i] > Nd_[i]) {
+                    p[i] += (Na_[i] - Nd_[i]);
+                }
+
+                // Ensure positive concentrations
+                n[i] = std::max(n[i], ni);
+                p[i] = std::max(p[i], ni);
+            }
         }
     }
 }
