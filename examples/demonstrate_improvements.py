@@ -22,28 +22,41 @@ def demonstrate_device_geometry():
     width = 1e-6     # 1 μm
     nx, ny = 40, 20
     
-    # Define PROPER MOSFET geometry with continuous structure
-    # Gate-oxide on TOP, source/drain as ohmic contacts with proper boundary conditions
-    gate_oxide_thickness = 2e-9     # Gate oxide thickness (2 nm)
-    silicon_thickness = width - gate_oxide_thickness  # Silicon layer thickness
+    # REALISTIC MOSFET DEVICE STRUCTURE
+    # Standard planar MOSFET with proper geometry
+    W_total = width     # Total device width (1 μm)
 
-    # Device regions (continuous structure)
-    source_region_end = length * 0.25    # Source region boundary
-    drain_region_start = length * 0.75   # Drain region boundary
+    # Layer structure (from bottom to top)
+    substrate_thickness = W_total * 0.7    # P-substrate (700 nm)
+    well_thickness = W_total * 0.2         # P-well (200 nm)
+    gate_oxide_thickness = 2e-9            # Gate oxide (2 nm)
+    poly_gate_thickness = W_total * 0.1    # Polysilicon gate (100 nm)
 
-    # Doping regions (all in silicon layer, continuous)
-    source_doping_end = length * 0.3     # N+ source doping extent
-    drain_doping_start = length * 0.7    # N+ drain doping extent
+    # Lateral dimensions
+    gate_length = length * 0.5                  # Gate covers 50% of channel
+    gate_start = length * 0.25                  # Gate starts at 25% of device
+    gate_end = gate_start + gate_length         # Gate ends at 75% of device
 
-    print("🔬 PROPER MOSFET DEVICE STRUCTURE (Continuous):")
-    print(f"   Total device: {length*1e9:.0f} nm × {width*1e6:.2f} μm")
-    print(f"   Silicon layer: 0 to {silicon_thickness*1e6:.2f} μm (continuous)")
-    print(f"   Gate oxide: {silicon_thickness*1e6:.2f} to {width*1e6:.2f} μm (on TOP)")
-    print(f"   Source region: 0 to {source_region_end*1e9:.1f} nm (ohmic contact)")
-    print(f"   Channel region: {source_region_end*1e9:.1f} to {drain_region_start*1e9:.1f} nm (under gate)")
-    print(f"   Drain region: {drain_region_start*1e9:.1f} to {length*1e9:.1f} nm (ohmic contact)")
-    print(f"   N+ doping: Source (0-{source_doping_end*1e9:.1f}nm), Drain ({drain_doping_start*1e9:.1f}-{length*1e9:.1f}nm)")
-    print(f"   P-substrate: Continuous throughout silicon layer")
+    # Source/drain regions (lateral diffusion under gate)
+    source_length = length * 0.3                # Source region length
+    drain_start = length * 0.7                  # Drain starts at 70%
+    drain_length = length * 0.3                 # Drain region length
+
+    # Junction depths
+    source_drain_depth = well_thickness * 0.5  # S/D junction depth (100 nm)
+
+    print("🔬 REALISTIC MOSFET DEVICE STRUCTURE:")
+    print(f"   Device dimensions: {length*1e9:.0f} nm × {W_total*1e6:.1f} μm")
+    print(f"   Layer stack (bottom to top):")
+    print(f"     P-substrate: 0 to {substrate_thickness*1e6:.0f} nm")
+    print(f"     P-well: {substrate_thickness*1e6:.0f} to {(substrate_thickness+well_thickness)*1e6:.0f} nm")
+    print(f"     Gate oxide: {(substrate_thickness+well_thickness)*1e6:.0f} to {(substrate_thickness+well_thickness+gate_oxide_thickness)*1e6:.0f} nm")
+    print(f"     Poly gate: {(substrate_thickness+well_thickness+gate_oxide_thickness)*1e6:.0f} to {W_total*1e6:.0f} nm")
+    print(f"   Lateral structure:")
+    print(f"     Source: 0 to {source_length*1e9:.0f} nm (depth: {source_drain_depth*1e6:.0f} nm)")
+    print(f"     Gate: {gate_start*1e9:.0f} to {gate_end*1e9:.0f} nm")
+    print(f"     Drain: {drain_start*1e9:.0f} to {length*1e9:.0f} nm (depth: {source_drain_depth*1e6:.0f} nm)")
+    print(f"     Channel: Under gate in P-well region")
     print()
     
     # Create coordinate arrays
@@ -51,57 +64,81 @@ def demonstrate_device_geometry():
     y = np.linspace(0, width, ny)
     X, Y = np.meshgrid(x, y)
     
-    # Count regions with proper continuous structure
+    # Count regions for realistic MOSFET structure
+    p_substrate = 0
+    p_well = 0
     n_plus_source = 0
     n_plus_drain = 0
-    p_channel = 0
-    p_substrate = 0
     gate_oxide = 0
+    poly_gate = 0
+    air_vacuum = 0
 
     for i in range(ny):
         for j in range(nx):
             x_pos = X[i, j]
             y_pos = Y[i, j]
 
-            if y_pos < silicon_thickness:  # Silicon layer (continuous)
-                if x_pos < source_doping_end:  # N+ Source doping region
-                    n_plus_source += 1
-                elif x_pos > drain_doping_start:  # N+ Drain doping region
-                    n_plus_drain += 1
-                else:  # P-type channel region (silicon)
-                    p_channel += 1
-            else:  # Gate oxide layer (insulator)
-                gate_oxide += 1
+            if y_pos <= substrate_thickness:  # P-substrate
+                p_substrate += 1
+
+            elif y_pos <= substrate_thickness + well_thickness:  # P-well
+                if x_pos <= source_length and y_pos >= substrate_thickness + well_thickness - source_drain_depth:
+                    n_plus_source += 1  # N+ source diffusion
+                elif x_pos >= drain_start and y_pos >= substrate_thickness + well_thickness - source_drain_depth:
+                    n_plus_drain += 1   # N+ drain diffusion
+                else:
+                    p_well += 1         # P-well (channel region)
+
+            elif y_pos <= substrate_thickness + well_thickness + gate_oxide_thickness:  # Gate oxide
+                if gate_start <= x_pos <= gate_end:
+                    gate_oxide += 1
+                else:
+                    air_vacuum += 1
+
+            else:  # Polysilicon gate
+                if gate_start <= x_pos <= gate_end:
+                    poly_gate += 1
+                else:
+                    air_vacuum += 1
     
     total_points = nx * ny
     
-    print("📊 DEVICE REGION STATISTICS (Continuous Structure):")
-    print(f"   N+ Source doping: {n_plus_source} points ({n_plus_source/total_points*100:.1f}%)")
-    print(f"   N+ Drain doping: {n_plus_drain} points ({n_plus_drain/total_points*100:.1f}%)")
-    print(f"   P-Channel (silicon): {p_channel} points ({p_channel/total_points*100:.1f}%)")
-    print(f"   Gate oxide (insulator): {gate_oxide} points ({gate_oxide/total_points*100:.1f}%)")
+    print("📊 REALISTIC MOSFET REGION STATISTICS:")
+    print(f"   P-substrate: {p_substrate} points ({p_substrate/total_points*100:.1f}%)")
+    print(f"   P-well (channel): {p_well} points ({p_well/total_points*100:.1f}%)")
+    print(f"   N+ Source: {n_plus_source} points ({n_plus_source/total_points*100:.1f}%)")
+    print(f"   N+ Drain: {n_plus_drain} points ({n_plus_drain/total_points*100:.1f}%)")
+    print(f"   Gate oxide: {gate_oxide} points ({gate_oxide/total_points*100:.1f}%)")
+    print(f"   Poly gate: {poly_gate} points ({poly_gate/total_points*100:.1f}%)")
+    print(f"   Air/vacuum: {air_vacuum} points ({air_vacuum/total_points*100:.1f}%)")
     print(f"   Total grid points: {total_points}")
-    print(f"   Silicon layer: {n_plus_source + n_plus_drain + p_channel} points ({(n_plus_source + n_plus_drain + p_channel)/total_points*100:.1f}%)")
+    print(f"   Active silicon: {p_substrate + p_well + n_plus_source + n_plus_drain} points ({(p_substrate + p_well + n_plus_source + n_plus_drain)/total_points*100:.1f}%)")
     print()
     
     return {
         'geometry': {
             'length': length,
-            'width': width,
-            'silicon_thickness': silicon_thickness,
+            'width': W_total,
+            'substrate_thickness': substrate_thickness,
+            'well_thickness': well_thickness,
             'gate_oxide_thickness': gate_oxide_thickness,
-            'source_region_end': source_region_end,
-            'drain_region_start': drain_region_start,
-            'source_doping_end': source_doping_end,
-            'drain_doping_start': drain_doping_start
+            'poly_gate_thickness': poly_gate_thickness,
+            'gate_start': gate_start,
+            'gate_end': gate_end,
+            'source_length': source_length,
+            'drain_start': drain_start,
+            'source_drain_depth': source_drain_depth
         },
         'statistics': {
+            'p_substrate': p_substrate,
+            'p_well': p_well,
             'n_plus_source': n_plus_source,
             'n_plus_drain': n_plus_drain,
-            'p_channel': p_channel,
             'gate_oxide': gate_oxide,
+            'poly_gate': poly_gate,
+            'air_vacuum': air_vacuum,
             'total_points': total_points,
-            'silicon_points': n_plus_source + n_plus_drain + p_channel
+            'active_silicon': p_substrate + p_well + n_plus_source + n_plus_drain
         }
     }
 
@@ -230,12 +267,12 @@ def main():
     print("🎯 IMPROVEMENTS SUMMARY:")
     print("=" * 60)
     print()
-    print("✅ PROPER MOSFET STRUCTURE (CONTINUOUS):")
-    print("   • Gate-oxide layer on TOP of continuous silicon")
-    print("   • Source/drain regions with ohmic contact boundary conditions")
-    print("   • Continuous silicon layer with proper doping regions")
-    print("   • No discontinuities or sandwiched structures")
-    print("   • Realistic device physics with proper boundary conditions")
+    print("✅ REALISTIC MOSFET STRUCTURE:")
+    print("   • Standard planar MOSFET with proper layer stack")
+    print("   • P-substrate/P-well structure with N+ source/drain diffusions")
+    print("   • Gate oxide and polysilicon gate properly positioned")
+    print("   • Realistic junction depths and lateral dimensions")
+    print("   • Industry-standard device physics and geometry")
     print()
     print("✅ I-V CURVE REFINEMENTS:")
     print(f"   • Resolution improved by {iv_results['resolution']['improvement_factor']:.1f}x")
