@@ -2,6 +2,8 @@
 """
 Modern PySide6 GUI for MOSFET Simulator
 Features contemporary design with advanced physics configuration
+
+Author: Dr. Mazharuddin Mohammed
 """
 
 import sys
@@ -460,14 +462,30 @@ class SimulationWorker(QObject):
                 Id = 0.5 * mu_eff * Cox * W_over_L * (Vg - Vth)**2
                 region = "SATURATION"
 
-        # Generate 2D data
+        # Generate 2D data with proper device geometry
         nx, ny = self.config.nx, self.config.ny
         total_points = nx * ny
 
-        # Create coordinate arrays
+        # Create coordinate arrays with proper MOSFET geometry
+        # X-direction: Source (0 to L/4) | Channel (L/4 to 3L/4) | Drain (3L/4 to L)
+        # Y-direction: Substrate (0 to 2W/3) | Surface/Channel (2W/3 to W)
         x = np.linspace(0, self.config.length, nx)
         y = np.linspace(0, self.config.width, ny)
         X, Y = np.meshgrid(x, y)
+
+        # Define device regions with proper geometry
+        L = self.config.length
+        W = self.config.width
+        source_end = L * 0.25      # Source extends to 25% of channel length
+        drain_start = L * 0.75     # Drain starts at 75% of channel length
+        channel_depth = W * 0.67   # Channel/surface region starts at 67% of width
+
+        self.log_message.emit(f"🔧 Device geometry definition:")
+        self.log_message.emit(f"   Source region: 0 to {source_end*1e9:.1f} nm (x-direction)")
+        self.log_message.emit(f"   Channel region: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm")
+        self.log_message.emit(f"   Drain region: {drain_start*1e9:.1f} to {L*1e9:.1f} nm")
+        self.log_message.emit(f"   Surface depth: {channel_depth*1e6:.2f} to {W*1e6:.2f} μm (y-direction)")
+        self.log_message.emit(f"   Substrate depth: 0 to {channel_depth*1e6:.2f} μm")
 
         # Potential distribution
         V_channel = Vs + (Vd - Vs) * (X / self.config.length)
@@ -475,26 +493,33 @@ class SimulationWorker(QObject):
         substrate_effect = Vsub * (1 - Y / self.config.width)
         V = V_channel + gate_coupling + substrate_effect
 
-        # Carrier densities
+        # Carrier densities with proper device geometry
         n = np.zeros_like(V)
         p = np.zeros_like(V)
 
         for i in range(ny):
             for j in range(nx):
-                # Determine doping
-                if Y[i, j] > 0.7 * self.config.width:  # Surface
-                    if X[i, j] < 0.25 * self.config.length:  # Source
+                x_pos = X[i, j]
+                y_pos = Y[i, j]
+
+                # Determine doping based on proper MOSFET geometry
+                if y_pos > channel_depth:  # Surface region (near gate-oxide interface)
+                    if x_pos < source_end:  # N+ Source region at surface
                         Nd_local = self.config.Nd_source
                         Na_local = 0
-                    elif X[i, j] > 0.75 * self.config.length:  # Drain
+                        region_type = "N+ Source"
+                    elif x_pos > drain_start:  # N+ Drain region at surface
                         Nd_local = self.config.Nd_drain
                         Na_local = 0
-                    else:  # Channel
+                        region_type = "N+ Drain"
+                    else:  # Channel region at surface (P-type substrate)
                         Nd_local = 0
                         Na_local = self.config.Na_substrate
-                else:  # Bulk
+                        region_type = "P-Channel"
+                else:  # Bulk substrate region
                     Nd_local = 0
                     Na_local = self.config.Na_substrate
+                    region_type = "P-Substrate"
 
                 # Calculate carriers
                 if Nd_local > Na_local:
@@ -556,9 +581,9 @@ class IVSimulationWorker(QObject):
 
             import time
 
-            # Define voltage sweeps
-            Vg_values = np.linspace(0.0, 1.5, 8)  # Gate voltage sweep
-            Vd_values = np.linspace(0.0, 1.5, 15)  # Drain voltage sweep
+            # Define voltage sweeps with higher resolution for smooth curves
+            Vg_values = np.linspace(0.0, 1.5, 16)  # Gate voltage sweep (doubled resolution)
+            Vd_values = np.linspace(0.0, 1.5, 31)  # Drain voltage sweep (doubled resolution)
             Vs = 0.0  # Source grounded
             Vsub = 0.0  # Substrate grounded
 
@@ -1837,9 +1862,10 @@ class ModernMOSFETGUI(QMainWindow):
             ax.title.set_color('white')
 
         # Plot 1: Id vs Vd for different Vg (Output characteristics)
-        for i, Vg in enumerate(Vg_values[::2]):  # Plot every other Vg
-            ax1.plot(Vd_values, Id_matrix[i*2, :], 'o-', linewidth=2,
-                    label=f'Vg = {Vg:.1f}V', alpha=0.8)
+        # Plot every 3rd Vg for clarity with smooth curves
+        for i, Vg in enumerate(Vg_values[::3]):
+            ax1.plot(Vd_values, Id_matrix[i*3, :], '-', linewidth=2.5, marker='o', markersize=4,
+                    label=f'Vg = {Vg:.2f}V', alpha=0.8)
         ax1.set_xlabel('Drain Voltage (V)')
         ax1.set_ylabel('Drain Current (A)')
         ax1.set_yscale('log')
@@ -1848,9 +1874,10 @@ class ModernMOSFETGUI(QMainWindow):
         ax1.grid(True, alpha=0.3)
 
         # Plot 2: Id vs Vg for different Vd (Transfer characteristics)
-        for j, Vd in enumerate(Vd_values[::3]):  # Plot every third Vd
-            ax2.plot(Vg_values, Id_matrix[:, j*3], 's-', linewidth=2,
-                    label=f'Vd = {Vd:.1f}V', alpha=0.8)
+        # Plot every 5th Vd for clarity with smooth curves
+        for j, Vd in enumerate(Vd_values[::5]):
+            ax2.plot(Vg_values, Id_matrix[:, j*5], '-', linewidth=2.5, marker='s', markersize=4,
+                    label=f'Vd = {Vd:.2f}V', alpha=0.8)
         ax2.set_xlabel('Gate Voltage (V)')
         ax2.set_ylabel('Drain Current (A)')
         ax2.set_yscale('log')

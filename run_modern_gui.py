@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Launcher for Modern PySide6 MOSFET Simulator GUI
+
+Author: Dr. Mazharuddin Mohammed
 """
 
 import sys

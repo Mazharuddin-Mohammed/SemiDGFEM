@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Create comprehensive validation visualization showing all MOSFET simulator features
+
+Author: Dr. Mazharuddin Mohammed
 """
 
 import matplotlib.pyplot as plt

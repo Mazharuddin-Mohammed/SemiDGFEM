@@ -5,6 +5,8 @@ Comprehensive MOSFET Validation with Corrected Structure
 - Adaptive mesh refinement
 - Real-time logging and results visualization
 - Complete validation of simulator correctness
+
+Author: Dr. Mazharuddin Mohammed
 """
 
 import sys

@@ -1,3 +1,10 @@
+/**
+ * Advanced Physics Models for Semiconductor Device Simulation
+ * Includes effective mass models, advanced mobility, and SRH recombination
+ *
+ * Author: Dr. Mazharuddin Mohammed
+ */
+
 #pragma once
 
 #include <vector>

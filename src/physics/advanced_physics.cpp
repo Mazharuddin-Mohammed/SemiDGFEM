@@ -1,3 +1,10 @@
+/**
+ * Implementation of Advanced Physics Models
+ * Realistic semiconductor device physics with temperature dependence
+ *
+ * Author: Dr. Mazharuddin Mohammed
+ */
+
 #include "advanced_physics.hpp"
 #include <algorithm>
 #include <stdexcept>

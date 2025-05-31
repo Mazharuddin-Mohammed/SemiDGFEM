@@ -1,5 +1,7 @@
 # High Performance TCAD Software using Discontinuous Galerkin FEM
 
+**Author: Dr. Mazharuddin Mohammed**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/your-repo/SemiDGFEM/workflows/CI/badge.svg)](https://github.com/your-repo/SemiDGFEM/actions)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://semidgfem.readthedocs.io)
@@ -232,7 +234,7 @@ If you use SemiDGFEM in your research, please cite:
 ```bibtex
 @software{semidgfem2024,
   title={SemiDGFEM: High Performance TCAD Software using Discontinuous Galerkin FEM},
-  author={SemiDGFEM Development Team},
+  author={Dr. Mazharuddin Mohammed},
   year={2024},
   url={https://github.com/your-repo/SemiDGFEM},
   version={1.0.0}

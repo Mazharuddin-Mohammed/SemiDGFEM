@@ -2,6 +2,8 @@
 """
 Simple demonstration of comprehensive MOSFET validation
 Shows real-time logging and results as requested
+
+Author: Dr. Mazharuddin Mohammed
 """
 
 import numpy as np
