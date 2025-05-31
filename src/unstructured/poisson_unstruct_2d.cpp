@@ -3,23 +3,38 @@
 #include <petscksp.h>
 #include <vector>
 #include <cmath>
+#include <stdexcept>
+#include <algorithm>
+#include <iostream>
 
 namespace simulator {
-std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
-    if (method_ != Method::DG || mesh_type_ != MeshType::Unstructured) return V_;
-    if (bc.size() != 4) throw std::invalid_argument("2D DG requires 4 boundary conditions");
 
-    Mesh mesh(device_, mesh_type_);
-    mesh.generate_gmsh_mesh("device_2d.msh");
-    auto grid_x = mesh.get_grid_points_x();
-    auto grid_y = mesh.get_grid_points_y();
-    auto elements = mesh.get_elements();
-    int n_nodes = grid_x.size();
-    int n_elements = elements.size();
-    const int order = 3; // [MODIFICATION]: Changed to P3
-    int dofs_per_element = 10; // [MODIFICATION]: P3 has 10 DOFs
-    int n_dofs = n_elements * dofs_per_element;
-    V_.resize(n_dofs, 0.0);
+std::vector<double> Poisson::solve_unstructured_2d(const std::vector<double>& bc) {
+    try {
+        Mesh mesh(device_, mesh_type_);
+
+        // Generate unstructured mesh using GMSH
+        mesh.generate_gmsh_mesh("device_unstructured.msh");
+
+        auto grid_x = mesh.get_grid_points_x();
+        auto grid_y = mesh.get_grid_points_y();
+        auto elements = mesh.get_elements();
+
+        if (grid_x.empty() || grid_y.empty() || elements.empty()) {
+            throw std::runtime_error("Invalid unstructured mesh data");
+        }
+
+        int n_nodes = static_cast<int>(grid_x.size());
+        int n_elements = static_cast<int>(elements.size());
+        const int order = 3; // P3 elements
+        int dofs_per_element = 10; // P3 has 10 DOFs per triangular element
+        int n_dofs = n_elements * dofs_per_element;
+
+        if (n_dofs <= 0) {
+            throw std::runtime_error("Invalid number of degrees of freedom");
+        }
+
+        V_.resize(n_dofs, 0.0);
 
     std::vector<bool> is_boundary(n_nodes, false);
     double Lx = device_.get_extents()[0], Ly = device_.get_extents()[1];

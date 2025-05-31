@@ -3,53 +3,214 @@
 #include <petscksp.h>
 #include <vector>
 #include <cmath>
+#include <stdexcept>
+#include <algorithm>
+#include <iostream>
 
 namespace simulator {
+
+// PETSc objects structure for proper resource management
+struct Poisson::PETScObjects {
+    Mat A = nullptr;
+    Vec x = nullptr;
+    Vec b = nullptr;
+    KSP ksp = nullptr;
+    bool initialized = false;
+
+    ~PETScObjects() {
+        cleanup();
+    }
+
+    void cleanup() {
+        if (ksp) { KSPDestroy(&ksp); ksp = nullptr; }
+        if (A) { MatDestroy(&A); A = nullptr; }
+        if (x) { VecDestroy(&x); x = nullptr; }
+        if (b) { VecDestroy(&b); b = nullptr; }
+        initialized = false;
+    }
+};
+
 Poisson::Poisson(const Device& device, Method method, MeshType mesh_type)
-    : device_(device), method_(method), mesh_type_(mesh_type) {}
+    : device_(device), method_(method), mesh_type_(mesh_type),
+      petsc_objects_(std::make_unique<PETScObjects>()) {
+
+    if (!device.is_valid()) {
+        throw std::invalid_argument("Invalid device provided to Poisson constructor");
+    }
+
+    if (method != Method::DG) {
+        throw std::invalid_argument("Only DG method is currently supported");
+    }
+
+    try {
+        initialize_petsc();
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to initialize Poisson solver: " + std::string(e.what()));
+    }
+}
+
+Poisson::~Poisson() {
+    cleanup_petsc_objects();
+}
+
+Poisson::Poisson(const Poisson& other)
+    : device_(other.device_), method_(other.method_), mesh_type_(other.mesh_type_),
+      rho_(other.rho_), V_(other.V_), petsc_objects_(std::make_unique<PETScObjects>()) {
+    initialize_petsc();
+}
+
+Poisson& Poisson::operator=(const Poisson& other) {
+    if (this != &other) {
+        cleanup_petsc_objects();
+        device_ = other.device_;
+        method_ = other.method_;
+        mesh_type_ = other.mesh_type_;
+        rho_ = other.rho_;
+        V_ = other.V_;
+        petsc_objects_ = std::make_unique<PETScObjects>();
+        initialize_petsc();
+    }
+    return *this;
+}
+
+Poisson::Poisson(Poisson&& other) noexcept
+    : device_(other.device_), method_(other.method_), mesh_type_(other.mesh_type_),
+      rho_(std::move(other.rho_)), V_(std::move(other.V_)),
+      petsc_objects_(std::move(other.petsc_objects_)) {
+}
+
+Poisson& Poisson::operator=(Poisson&& other) noexcept {
+    if (this != &other) {
+        cleanup_petsc_objects();
+        device_ = other.device_;
+        method_ = other.method_;
+        mesh_type_ = other.mesh_type_;
+        rho_ = std::move(other.rho_);
+        V_ = std::move(other.V_);
+        petsc_objects_ = std::move(other.petsc_objects_);
+    }
+    return *this;
+}
 
 void Poisson::set_charge_density(const std::vector<double>& rho) {
+    if (rho.empty()) {
+        throw std::invalid_argument("Charge density vector cannot be empty");
+    }
     rho_ = rho;
 }
 
-std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
-    if (method_ != Method::DG || mesh_type_ != MeshType::Structured) return V_;
-    if (bc.size() != 4) throw std::invalid_argument("2D DG requires 4 boundary conditions");
+void Poisson::initialize_petsc() {
+    static bool petsc_initialized = false;
+    if (!petsc_initialized) {
+        PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+        petsc_initialized = true;
+    }
+    petsc_objects_->initialized = true;
+}
 
-    Mesh mesh(device_, mesh_type_);
-    auto grid_x = mesh.get_grid_points_x();
-    auto grid_y = mesh.get_grid_points_y();
-    auto elements = mesh.get_elements();
-    int n_nodes = grid_x.size();
-    int n_elements = elements.size();
-    const int order = 3; // P3
-    int dofs_per_element = 10;
-    int n_dofs = n_elements * dofs_per_element;
-    V_.resize(n_dofs, 0.0);
+void Poisson::cleanup_petsc_objects() {
+    if (petsc_objects_) {
+        petsc_objects_->cleanup();
+    }
+}
 
-    std::vector<bool> is_boundary(n_nodes, false);
-    double Lx = device_.get_extents()[0], Ly = device_.get_extents()[1];
-    for (int i = 0; i < n_nodes; ++i) {
-        double x = grid_x[i], y = grid_y[i];
-        if (x <= 1e-10) { V_[i] = bc[0]; is_boundary[i] = true; }
-        else if (x >= Lx - 1e-10) { V_[i] = bc[1]; is_boundary[i] = true; }
-        else if (y <= 1e-10) { V_[i] = bc[2]; is_boundary[i] = true; }
-        else if (y >= Ly - 1e-10) { V_[i] = bc[3]; is_boundary[i] = true; }
+bool Poisson::is_valid() const {
+    return device_.is_valid() && petsc_objects_ && petsc_objects_->initialized;
+}
+
+void Poisson::validate() const {
+    if (!is_valid()) {
+        throw std::runtime_error("Poisson solver is in invalid state");
+    }
+}
+
+void Poisson::validate_inputs(const std::vector<double>& bc) const {
+    if (bc.size() != 4) {
+        throw std::invalid_argument("2D Poisson solver requires exactly 4 boundary conditions");
     }
 
-    PetscInitialize(nullptr, nullptr, nullptr, nullptr);
-    Mat A;
-    Vec x, b;
-    KSP ksp;
+    for (size_t i = 0; i < bc.size(); ++i) {
+        if (!std::isfinite(bc[i])) {
+            throw std::invalid_argument("Boundary condition " + std::to_string(i) + " is not finite");
+        }
+    }
+}
 
-    MatCreate(PETSC_COMM_WORLD, &A);
-    MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, n_dofs, n_dofs);
-    MatSetType(A, MATMPIAIJ);
-    MatSetUp(A);
-    VecCreate(PETSC_COMM_WORLD, &x);
-    VecSetSizes(x, PETSC_DECIDE, n_dofs);
-    VecSetType(x, VECMPI);
-    VecDuplicate(x, &b);
+std::vector<double> Poisson::solve_2d(const std::vector<double>& bc) {
+    validate();
+    validate_inputs(bc);
+
+    if (method_ != Method::DG) {
+        throw std::invalid_argument("Only DG method is supported");
+    }
+
+    if (mesh_type_ == MeshType::Structured) {
+        return solve_structured_2d(bc);
+    } else {
+        return solve_unstructured_2d(bc);
+    }
+}
+
+std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) {
+    try {
+        Mesh mesh(device_, mesh_type_);
+        auto grid_x = mesh.get_grid_points_x();
+        auto grid_y = mesh.get_grid_points_y();
+        auto elements = mesh.get_elements();
+
+        if (grid_x.empty() || grid_y.empty() || elements.empty()) {
+            throw std::runtime_error("Invalid mesh data");
+        }
+
+        int n_nodes = static_cast<int>(grid_x.size());
+        int n_elements = static_cast<int>(elements.size());
+        const int order = 3; // P3 elements
+        int dofs_per_element = 10; // P3 has 10 DOFs per triangular element
+        int n_dofs = n_elements * dofs_per_element;
+
+        if (n_dofs <= 0) {
+            throw std::runtime_error("Invalid number of degrees of freedom");
+        }
+
+        V_.resize(n_dofs, 0.0);
+
+        // Identify boundary nodes and set boundary conditions
+        std::vector<bool> is_boundary(n_nodes, false);
+        auto extents = device_.get_extents();
+        double Lx = extents[0], Ly = extents[1];
+        const double boundary_tol = 1e-10;
+
+        for (int i = 0; i < n_nodes; ++i) {
+            if (i >= static_cast<int>(grid_x.size()) || i >= static_cast<int>(grid_y.size())) {
+                throw std::runtime_error("Node index out of bounds");
+            }
+
+            double x = grid_x[i], y = grid_y[i];
+            if (x <= boundary_tol) {
+                V_[i] = bc[0]; is_boundary[i] = true;
+            } else if (x >= Lx - boundary_tol) {
+                V_[i] = bc[1]; is_boundary[i] = true;
+            } else if (y <= boundary_tol) {
+                V_[i] = bc[2]; is_boundary[i] = true;
+            } else if (y >= Ly - boundary_tol) {
+                V_[i] = bc[3]; is_boundary[i] = true;
+            }
+        }
+
+        // Clean up any existing PETSc objects
+        petsc_objects_->cleanup();
+
+        // Create PETSc objects with error checking
+        PetscErrorCode ierr;
+        ierr = MatCreate(PETSC_COMM_WORLD, &petsc_objects_->A); CHKERRQ(ierr);
+        ierr = MatSetSizes(petsc_objects_->A, PETSC_DECIDE, PETSC_DECIDE, n_dofs, n_dofs); CHKERRQ(ierr);
+        ierr = MatSetType(petsc_objects_->A, MATMPIAIJ); CHKERRQ(ierr);
+        ierr = MatSetUp(petsc_objects_->A); CHKERRQ(ierr);
+
+        ierr = VecCreate(PETSC_COMM_WORLD, &petsc_objects_->x); CHKERRQ(ierr);
+        ierr = VecSetSizes(petsc_objects_->x, PETSC_DECIDE, n_dofs); CHKERRQ(ierr);
+        ierr = VecSetType(petsc_objects_->x, VECMPI); CHKERRQ(ierr);
+        ierr = VecDuplicate(petsc_objects_->x, &petsc_objects_->b); CHKERRQ(ierr);
 
     std::vector<std::vector<double>> quad_points = {
         {1.0/3.0, 1.0/3.0}, {0.6, 0.2}, {0.2, 0.6}, {0.2, 0.2},

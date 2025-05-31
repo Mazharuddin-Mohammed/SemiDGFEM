@@ -16,10 +16,10 @@ link_directories(${PETSC_LIBRARY_DIRS})
 add_library(simulator SHARED
     src/device.cpp
     src/mesh.cpp
-    src/2d/dg/structured/poisson_dg_struct_2d.cpp
-    src/2d/dg/structured/driftdiffusion_dg_struct_2d.cpp
-    src/2d/dg/unstructured/poisson_dg_unstruct_2d.cpp
-    src/2d/dg/unstructured/driftdiffusion_dg_unstruct_2d.cpp
+    src/structured/poisson_struct_2d.cpp
+    src/structured/driftdiffusion_struct_2d.cpp
+    src/unstructured/poisson_unstruct_2d.cpp
+    src/unstructured/driftdiffusion_unstruct_2d.cpp
 )
 
 target_link_libraries(simulator ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${GMSH_LIBRARY} ${Vulkan_LIBRARIES})

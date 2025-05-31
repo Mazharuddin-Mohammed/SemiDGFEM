@@ -3,114 +3,562 @@
 #include <petscksp.h>
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
+#include <iostream>
+#include <memory>
 
 namespace simulator {
+
+// PETSc objects structure for proper resource management
+struct DriftDiffusion::PETScObjects {
+    Mat A_n = nullptr, A_p = nullptr;
+    Vec x_n = nullptr, x_p = nullptr;
+    Vec b_n = nullptr, b_p = nullptr;
+    KSP ksp_n = nullptr, ksp_p = nullptr;
+    bool initialized = false;
+
+    ~PETScObjects() {
+        cleanup();
+    }
+
+    void cleanup() {
+        if (ksp_n) { KSPDestroy(&ksp_n); ksp_n = nullptr; }
+        if (ksp_p) { KSPDestroy(&ksp_p); ksp_p = nullptr; }
+        if (A_n) { MatDestroy(&A_n); A_n = nullptr; }
+        if (A_p) { MatDestroy(&A_p); A_p = nullptr; }
+        if (x_n) { VecDestroy(&x_n); x_n = nullptr; }
+        if (x_p) { VecDestroy(&x_p); x_p = nullptr; }
+        if (b_n) { VecDestroy(&b_n); b_n = nullptr; }
+        if (b_p) { VecDestroy(&b_p); b_p = nullptr; }
+        initialized = false;
+    }
+};
+
 DriftDiffusion::DriftDiffusion(const Device& device, Method method, MeshType mesh_type, int order)
-    : device_(device), method_(method), mesh_type_(mesh_type), order_(order), poisson_(device, method, mesh_type) {}
+    : device_(device), method_(method), mesh_type_(mesh_type), order_(order),
+      poisson_(std::make_unique<Poisson>(device, method, mesh_type)),
+      petsc_objects_(std::make_unique<PETScObjects>()),
+      convergence_residual_(0.0) {
+
+    if (!device.is_valid()) {
+        throw std::invalid_argument("Invalid device provided to DriftDiffusion constructor");
+    }
+
+    if (method != Method::DG) {
+        throw std::invalid_argument("Only DG method is currently supported");
+    }
+
+    validate_order();
+
+    try {
+        initialize_petsc();
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to initialize DriftDiffusion solver: " + std::string(e.what()));
+    }
+}
+
+DriftDiffusion::~DriftDiffusion() {
+    cleanup_petsc_objects();
+}
+
+DriftDiffusion::DriftDiffusion(const DriftDiffusion& other)
+    : device_(other.device_), method_(other.method_), mesh_type_(other.mesh_type_),
+      order_(other.order_), Nd_(other.Nd_), Na_(other.Na_), Et_(other.Et_),
+      poisson_(std::make_unique<Poisson>(*other.poisson_)),
+      petsc_objects_(std::make_unique<PETScObjects>()),
+      convergence_residual_(other.convergence_residual_) {
+    initialize_petsc();
+}
+
+DriftDiffusion& DriftDiffusion::operator=(const DriftDiffusion& other) {
+    if (this != &other) {
+        cleanup_petsc_objects();
+        device_ = other.device_;
+        method_ = other.method_;
+        mesh_type_ = other.mesh_type_;
+        order_ = other.order_;
+        Nd_ = other.Nd_;
+        Na_ = other.Na_;
+        Et_ = other.Et_;
+        poisson_ = std::make_unique<Poisson>(*other.poisson_);
+        petsc_objects_ = std::make_unique<PETScObjects>();
+        convergence_residual_ = other.convergence_residual_;
+        initialize_petsc();
+    }
+    return *this;
+}
+
+DriftDiffusion::DriftDiffusion(DriftDiffusion&& other) noexcept
+    : device_(other.device_), method_(other.method_), mesh_type_(other.mesh_type_),
+      order_(other.order_), Nd_(std::move(other.Nd_)), Na_(std::move(other.Na_)),
+      Et_(std::move(other.Et_)), poisson_(std::move(other.poisson_)),
+      petsc_objects_(std::move(other.petsc_objects_)),
+      convergence_residual_(other.convergence_residual_) {
+}
+
+DriftDiffusion& DriftDiffusion::operator=(DriftDiffusion&& other) noexcept {
+    if (this != &other) {
+        cleanup_petsc_objects();
+        device_ = other.device_;
+        method_ = other.method_;
+        mesh_type_ = other.mesh_type_;
+        order_ = other.order_;
+        Nd_ = std::move(other.Nd_);
+        Na_ = std::move(other.Na_);
+        Et_ = std::move(other.Et_);
+        poisson_ = std::move(other.poisson_);
+        petsc_objects_ = std::move(other.petsc_objects_);
+        convergence_residual_ = other.convergence_residual_;
+    }
+    return *this;
+}
 
 void DriftDiffusion::set_doping(const std::vector<double>& Nd, const std::vector<double>& Na) {
+    if (Nd.empty() || Na.empty()) {
+        throw std::invalid_argument("Doping arrays cannot be empty");
+    }
+
+    if (Nd.size() != Na.size()) {
+        throw std::invalid_argument("Nd and Na arrays must have the same size");
+    }
+
+    if (std::any_of(Nd.begin(), Nd.end(), [](double x) { return x < 0 || !std::isfinite(x); }) ||
+        std::any_of(Na.begin(), Na.end(), [](double x) { return x < 0 || !std::isfinite(x); })) {
+        throw std::invalid_argument("Doping concentrations must be non-negative and finite");
+    }
+
     Nd_ = Nd;
     Na_ = Na;
 }
 
 void DriftDiffusion::set_trap_level(const std::vector<double>& Et) {
+    if (Et.empty()) {
+        throw std::invalid_argument("Trap level array cannot be empty");
+    }
+
+    if (std::any_of(Et.begin(), Et.end(), [](double x) { return !std::isfinite(x); })) {
+        throw std::invalid_argument("All trap levels must be finite");
+    }
+
     Et_ = Et;
 }
 
-std::map<std::string, std::vector<double>> DriftDiffusion::solve_drift_diffusion(
-    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr, 
-    int poisson_max_iter, double poisson_tol) {
-    Mesh mesh(device_, mesh_type_);
-    auto grid_x = mesh.get_grid_points_x();
-    auto grid_y = mesh.get_grid_points_y();
-    auto elements = mesh.get_elements();
-    int n_nodes = grid_x.size();
-    std::vector<double> V(n_nodes, 0.0), n(n_nodes, 1e10), p(n_nodes, 1e10);
-    std::vector<double> Jn(2 * n_nodes, 0.0), Jp(2 * n_nodes, 0.0);
+// Helper methods implementation
+void DriftDiffusion::initialize_petsc() {
+    static bool petsc_initialized = false;
+    if (!petsc_initialized) {
+        PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+        petsc_initialized = true;
+    }
+    petsc_objects_->initialized = true;
+}
 
-    const double q = 1.602e-19, kT = 0.0259, mu_n = 1000e-4, mu_p = 400e-4;
-    const double ni = 1e10 * 1e6;
+void DriftDiffusion::cleanup_petsc_objects() {
+    if (petsc_objects_) {
+        petsc_objects_->cleanup();
+    }
+}
 
-    // [MODIFICATION]: Use self-consistent Poisson solver
-    V = poisson_.solve_2d_self_consistent(bc, n, p, Nd_, Na_, poisson_max_iter, poisson_tol);
+bool DriftDiffusion::is_valid() const {
+    return device_.is_valid() && poisson_ && poisson_->is_valid() &&
+           petsc_objects_ && petsc_objects_->initialized;
+}
 
-    for (int step = 0; step < max_steps; ++step) {
-        std::vector<double> Ex(n_nodes, 0.0), Ey(n_nodes, 0.0);
-        for (size_t e = 0; e < elements.size(); ++e) {
-            int i1 = elements[e][0], i2 = elements[e][1], i3 = elements[e][2];
-            double dx12 = grid_x[i2] - grid_x[i1], dy12 = grid_y[i2] - grid_y[i1];
-            double dx13 = grid_x[i3] - grid_x[i1], dy13 = grid_y[i3] - grid_y[i1];
-            Ex[i1] += -(V[i2] - V[i1]) / dx12 + -(V[i3] - V[i1]) / dx13;
-            Ey[i1] += -(V[i2] - V[i1]) / dy12 + -(V[i3] - V[i1]) / dy13;
-        }
+void DriftDiffusion::validate() const {
+    if (!is_valid()) {
+        throw std::runtime_error("DriftDiffusion solver is in invalid state");
+    }
+}
 
-        for (size_t i = 0; i < n_nodes; ++i) {
-            double n_new = ni * std::exp((V[i] - (Et_.size() > i ? Et_[i] : 0.0)) / kT);
-            double p_new = ni * std::exp(-((V[i] - (Et_.size() > i ? Et_[i] : 0.0)) / kT));
-            n[i] = 0.9 * n[i] + 0.1 * n_new;
-            p[i] = 0.9 * p[i] + 0.1 * p_new;
+void DriftDiffusion::validate_order() const {
+    if (order_ < 2 || order_ > 3) {
+        throw std::invalid_argument("Order must be 2 (P2) or 3 (P3)");
+    }
+}
 
-            Jn[2 * i] = q * mu_n * (n[i] * Ex[i] + kT * mu_n * (n[i + 1] - n[i]) / (grid_x[i + 1] - grid_x[i]));
-            Jn[2 * i + 1] = q * mu_n * (n[i] * Ey[i] + kT * mu_n * (n[i + (int)std::sqrt(n_nodes)] - n[i]) / (grid_y[i + (int)std::sqrt(n_nodes)] - grid_y[i]));
-            Jp[2 * i] = q * mu_p * (p[i] * Ex[i] - kT * mu_p * (p[i + 1] - p[i]) / (grid_x[i + 1] - grid_x[i]));
-            Jp[2 * i + 1] = q * mu_p * (p[i] * Ey[i] - kT * mu_p * (p[i + (int)std::sqrt(n_nodes)] - p[i]) / (grid_y[i + (int)std::sqrt(n_nodes)] - grid_y[i]));
-        }
-
-        if (use_amr) {
-            std::vector<bool> refine_flags(elements.size(), false);
-            for (size_t e = 0; e < elements.size(); ++e) {
-                auto elem = elements[e];
-                double grad_x = std::abs(V[elem[1]] - V[elem[0]]) / (grid_x[elem[1]] - grid_x[elem[0]]);
-                double grad_y = std::abs(V[elem[2]] - V[elem[0]]) / (grid_y[elem[2]] - grid_y[elem[0]]);
-                if (grad_x > 1e5 || grad_y > 1e5) refine_flags[e] = true;
-            }
-            mesh.refine(refine_flags);
-        }
-
-        // [MODIFICATION]: Update potential with self-consistent solver
-        V = poisson_.solve_2d_self_consistent(bc, n, p, Nd_, Na_, poisson_max_iter, poisson_tol);
-
-        double max_change = 0.0;
-        for (size_t i = 0; i < n_nodes; ++i) {
-            max_change = std::max(max_change, std::abs(V[i] - (n[i] - p[i])));
-        }
-        if (max_change < 1e-6) break;
+void DriftDiffusion::validate_inputs(const std::vector<double>& bc) const {
+    if (bc.size() != 4) {
+        throw std::invalid_argument("2D drift-diffusion solver requires exactly 4 boundary conditions");
     }
 
-    std::map<std::string, std::vector<double>> results;
-    results["potential"] = V;
-    results["n"] = n;
-    results["p"] = p;
-    results["Jn"] = Jn;
-    results["Jp"] = Jp;
-    return results;
+    for (size_t i = 0; i < bc.size(); ++i) {
+        if (!std::isfinite(bc[i])) {
+            throw std::invalid_argument("Boundary condition " + std::to_string(i) + " is not finite");
+        }
+    }
 }
+
+void DriftDiffusion::validate_doping() const {
+    if (Nd_.empty() || Na_.empty()) {
+        throw std::runtime_error("Doping profiles must be set before solving");
+    }
+
+    if (Nd_.size() != Na_.size()) {
+        throw std::runtime_error("Nd and Na arrays must have the same size");
+    }
+}
+
+size_t DriftDiffusion::get_dof_count() const {
+    if (!is_valid()) return 0;
+
+    try {
+        Mesh mesh(device_, mesh_type_);
+        return mesh.get_num_nodes();
+    } catch (...) {
+        return 0;
+    }
+}
+
+double DriftDiffusion::get_convergence_residual() const {
+    return convergence_residual_;
+}
+
+std::map<std::string, std::vector<double>> DriftDiffusion::solve_drift_diffusion(
+    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
+    int poisson_max_iter, double poisson_tol) {
+
+    validate();
+    validate_inputs(bc);
+    validate_doping();
+
+    if (mesh_type_ == MeshType::Structured) {
+        return solve_structured_drift_diffusion(bc, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol);
+    } else {
+        return solve_unstructured_drift_diffusion(bc, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol);
+    }
+}
+
+std::map<std::string, std::vector<double>> DriftDiffusion::solve_structured_drift_diffusion(
+    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
+    int poisson_max_iter, double poisson_tol) {
+
+    try {
+        Mesh mesh(device_, mesh_type_);
+        auto grid_x = mesh.get_grid_points_x();
+        auto grid_y = mesh.get_grid_points_y();
+        auto elements = mesh.get_elements();
+
+        if (grid_x.empty() || grid_y.empty() || elements.empty()) {
+            throw std::runtime_error("Invalid mesh data");
+        }
+
+        int n_nodes = static_cast<int>(grid_x.size());
+
+        // Initialize solution vectors
+        std::vector<double> V(n_nodes, 0.0);
+        std::vector<double> n(n_nodes, 1e10 * 1e6);  // Intrinsic carrier concentration
+        std::vector<double> p(n_nodes, 1e10 * 1e6);
+        std::vector<double> Jn(n_nodes, 0.0);
+        std::vector<double> Jp(n_nodes, 0.0);
+
+        // Physical constants
+        const double q = 1.602e-19;        // Elementary charge (C)
+        const double kT = 0.0259;          // Thermal voltage at 300K (V)
+        const double mu_n = 1000e-4;       // Electron mobility (m²/V·s)
+        const double mu_p = 400e-4;        // Hole mobility (m²/V·s)
+        const double ni = 1e10 * 1e6;      // Intrinsic carrier concentration (1/m³)
+
+        // Validate doping array sizes
+        if (Nd_.size() != static_cast<size_t>(n_nodes) || Na_.size() != static_cast<size_t>(n_nodes)) {
+            throw std::runtime_error("Doping array size must match number of mesh nodes");
+        }
+
+        // Initial Poisson solve
+        V = poisson_->solve_2d_self_consistent(bc, n, p, Nd_, Na_, poisson_max_iter, poisson_tol);
+
+        // Store previous solution for convergence checking
+        std::vector<double> V_old = V;
+        std::vector<double> n_old = n;
+        std::vector<double> p_old = p;
+
+        // Main iteration loop
+        for (int step = 0; step < max_steps; ++step) {
+            // Update carrier densities based on current potential
+            compute_carrier_densities(V, n, p);
+
+            // Compute electric field
+            std::vector<double> Ex(n_nodes, 0.0), Ey(n_nodes, 0.0);
+
+            // Calculate electric field using finite differences
+            for (int i = 0; i < n_nodes; ++i) {
+                // Find neighboring nodes for gradient calculation
+                // This is a simplified approach - in practice, you'd use proper DG gradients
+                if (i > 0 && i < n_nodes - 1) {
+                    Ex[i] = -(V[i + 1] - V[i - 1]) / (grid_x[i + 1] - grid_x[i - 1]);
+                }
+
+                // For y-direction, we need to be more careful with 2D indexing
+                int nx = static_cast<int>(std::sqrt(n_nodes)); // Assuming square grid
+                int ix = i % nx;
+                int iy = i / nx;
+
+                if (iy > 0 && iy < nx - 1) {
+                    int i_up = (iy + 1) * nx + ix;
+                    int i_down = (iy - 1) * nx + ix;
+                    if (i_up < n_nodes && i_down >= 0) {
+                        Ey[i] = -(V[i_up] - V[i_down]) / (grid_y[i_up] - grid_y[i_down]);
+                    }
+                }
+            }
+
+            // Compute current densities
+            compute_current_densities(V, n, p, Jn, Jp);
+
+            // Adaptive mesh refinement
+            if (use_amr) {
+                std::vector<bool> refine_flags(elements.size(), false);
+                for (size_t e = 0; e < elements.size(); ++e) {
+                    if (elements[e].size() >= 3) {
+                        int i1 = elements[e][0], i2 = elements[e][1], i3 = elements[e][2];
+
+                        // Check bounds
+                        if (i1 >= 0 && i1 < n_nodes && i2 >= 0 && i2 < n_nodes && i3 >= 0 && i3 < n_nodes) {
+                            double grad_x = std::abs(V[i2] - V[i1]) / std::max(std::abs(grid_x[i2] - grid_x[i1]), 1e-12);
+                            double grad_y = std::abs(V[i3] - V[i1]) / std::max(std::abs(grid_y[i3] - grid_y[i1]), 1e-12);
+
+                            if (grad_x > 1e5 || grad_y > 1e5) {
+                                refine_flags[e] = true;
+                            }
+                        }
+                    }
+                }
+
+                try {
+                    mesh.refine(refine_flags);
+                    // Update grid points after refinement
+                    grid_x = mesh.get_grid_points_x();
+                    grid_y = mesh.get_grid_points_y();
+                    elements = mesh.get_elements();
+                    n_nodes = static_cast<int>(grid_x.size());
+
+                    // Resize solution vectors
+                    V.resize(n_nodes, 0.0);
+                    n.resize(n_nodes, ni);
+                    p.resize(n_nodes, ni);
+                    Jn.resize(n_nodes, 0.0);
+                    Jp.resize(n_nodes, 0.0);
+                } catch (const std::exception& e) {
+                    // AMR failed, continue without refinement
+                    std::cerr << "AMR failed: " << e.what() << std::endl;
+                }
+            }
+
+            // Update potential with self-consistent Poisson solver
+            try {
+                V = poisson_->solve_2d_self_consistent(bc, n, p, Nd_, Na_, poisson_max_iter, poisson_tol);
+            } catch (const std::exception& e) {
+                std::cerr << "Poisson solve failed: " << e.what() << std::endl;
+                break;
+            }
+
+            // Check convergence
+            if (check_convergence(V_old, V, 1e-6)) {
+                convergence_residual_ = 0.0;
+                for (size_t i = 0; i < V.size(); ++i) {
+                    convergence_residual_ += std::abs(V[i] - V_old[i]);
+                }
+                convergence_residual_ /= V.size();
+                break;
+            }
+
+            // Update old solutions
+            V_old = V;
+            n_old = n;
+            p_old = p;
+        }
+
+        // Prepare results
+        std::map<std::string, std::vector<double>> results;
+        results["potential"] = V;
+        results["n"] = n;
+        results["p"] = p;
+        results["Jn"] = Jn;
+        results["Jp"] = Jp;
+
+        return results;
+
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Structured drift-diffusion solve failed: " + std::string(e.what()));
+    }
+}
+
+std::map<std::string, std::vector<double>> DriftDiffusion::solve_unstructured_drift_diffusion(
+    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
+    int poisson_max_iter, double poisson_tol) {
+
+    // For now, delegate to structured solver
+    // In a full implementation, this would use unstructured DG methods
+    return solve_structured_drift_diffusion(bc, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol);
+}
+
+void DriftDiffusion::compute_carrier_densities(const std::vector<double>& V,
+                                              std::vector<double>& n,
+                                              std::vector<double>& p) const {
+    const double kT = 0.0259;          // Thermal voltage at 300K (V)
+    const double ni = 1e10 * 1e6;      // Intrinsic carrier concentration (1/m³)
+
+    for (size_t i = 0; i < V.size(); ++i) {
+        if (i < Nd_.size() && i < Na_.size()) {
+            // Calculate quasi-Fermi levels and carrier densities
+            double Et = (Et_.size() > i) ? Et_[i] : 0.0;  // Trap level
+            double phi = V[i] - Et;  // Electrostatic potential relative to trap level
+
+            // Boltzmann statistics (valid for non-degenerate semiconductors)
+            n[i] = ni * std::exp(phi / kT);
+            p[i] = ni * std::exp(-phi / kT);
+
+            // Apply doping effects (simplified model)
+            if (Nd_[i] > Na_[i]) {
+                // n-type material
+                n[i] += (Nd_[i] - Na_[i]);
+            } else if (Na_[i] > Nd_[i]) {
+                // p-type material
+                p[i] += (Na_[i] - Nd_[i]);
+            }
+
+            // Ensure positive concentrations
+            n[i] = std::max(n[i], ni);
+            p[i] = std::max(p[i], ni);
+        }
+    }
+}
+
+void DriftDiffusion::compute_current_densities(const std::vector<double>& V,
+                                              const std::vector<double>& n,
+                                              const std::vector<double>& p,
+                                              std::vector<double>& Jn,
+                                              std::vector<double>& Jp) const {
+    const double q = 1.602e-19;        // Elementary charge (C)
+    const double kT = 0.0259;          // Thermal voltage at 300K (V)
+    const double mu_n = 1000e-4;       // Electron mobility (m²/V·s)
+    const double mu_p = 400e-4;        // Hole mobility (m²/V·s)
+
+    // Simplified current density calculation
+    // In a full implementation, this would use proper DG gradients
+    for (size_t i = 0; i < V.size(); ++i) {
+        if (i > 0 && i < V.size() - 1) {
+            // Electric field (simplified finite difference)
+            double Ex = -(V[i + 1] - V[i - 1]) / 2.0;  // Assuming unit spacing
+
+            // Electron current density (drift + diffusion)
+            double Dn = mu_n * kT / q;  // Einstein relation
+            double grad_n = (n[i + 1] - n[i - 1]) / 2.0;
+            Jn[i] = q * mu_n * n[i] * Ex + q * Dn * grad_n;
+
+            // Hole current density (drift + diffusion)
+            double Dp = mu_p * kT / q;  // Einstein relation
+            double grad_p = (p[i + 1] - p[i - 1]) / 2.0;
+            Jp[i] = q * mu_p * p[i] * Ex - q * Dp * grad_p;
+        } else {
+            Jn[i] = 0.0;
+            Jp[i] = 0.0;
+        }
+    }
+}
+
+bool DriftDiffusion::check_convergence(const std::vector<double>& V_old,
+                                      const std::vector<double>& V_new,
+                                      double tolerance) const {
+    if (V_old.size() != V_new.size()) return false;
+
+    double max_change = 0.0;
+    for (size_t i = 0; i < V_old.size(); ++i) {
+        max_change = std::max(max_change, std::abs(V_new[i] - V_old[i]));
+    }
+
+    return max_change < tolerance;
+}
+
 } // namespace simulator
 
-// [MODIFICATION]: Cython bindings
+// C interface implementation
 extern "C" {
-    DriftDiffusion* create_drift_diffusion(Device* device, int method, int mesh_type, int order) {
-        return new DriftDiffusion(*device, static_cast<Method>(method), static_cast<MeshType>(mesh_type), order);
-    }
-    void drift_diffusion_set_doping(DriftDiffusion* dd, double* Nd, double* Na, int size) {
-        std::vector<double> Nd_vec(Nd, Nd + size), Na_vec(Na, Na + size);
-        dd->set_doping(Nd_vec, Na_vec);
-    }
-    void drift_diffusion_set_trap_level(DriftDiffusion* dd, double* Et, int size) {
-        std::vector<double> Et_vec(Et, Et + size);
-        dd->set_trap_level(Et_vec);
-    }
-    void drift_diffusion_solve(DriftDiffusion* dd, double* bc, int bc_size, double Vg, 
-                               int max_steps, bool use_amr, int poisson_max_iter, double poisson_tol, 
-                               double* results, int result_cols, int result_rows) {
-        std::vector<double> bc_vec(bc, bc + bc_size);
-        auto result_map = dd->solve_drift_diffusion(bc_vec, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol);
-        int idx = 0;
-        for (const auto& key : {"potential", "n", "p", "Jn", "Jp"}) {
-            auto& vec = result_map[key];
-            for (size_t i = 0; i < vec.size() && idx < result_cols * result_rows; ++i) {
-                results[idx++] = vec[i];
-            }
+    simulator::DriftDiffusion* create_drift_diffusion(simulator::Device* device, int method, int mesh_type, int order) {
+        if (!device) return nullptr;
+        try {
+            return new simulator::DriftDiffusion(*device, static_cast<simulator::Method>(method),
+                                               static_cast<simulator::MeshType>(mesh_type), order);
+        } catch (...) {
+            return nullptr;
         }
+    }
+
+    void destroy_drift_diffusion(simulator::DriftDiffusion* dd) {
+        delete dd;
+    }
+
+    int drift_diffusion_is_valid(simulator::DriftDiffusion* dd) {
+        if (!dd) return 0;
+        return dd->is_valid() ? 1 : 0;
+    }
+
+    int drift_diffusion_set_doping(simulator::DriftDiffusion* dd, double* Nd, double* Na, int size) {
+        if (!dd || !Nd || !Na || size <= 0) return -1;
+        try {
+            std::vector<double> Nd_vec(Nd, Nd + size);
+            std::vector<double> Na_vec(Na, Na + size);
+            dd->set_doping(Nd_vec, Na_vec);
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int drift_diffusion_set_trap_level(simulator::DriftDiffusion* dd, double* Et, int size) {
+        if (!dd || !Et || size <= 0) return -1;
+        try {
+            std::vector<double> Et_vec(Et, Et + size);
+            dd->set_trap_level(Et_vec);
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int drift_diffusion_solve(simulator::DriftDiffusion* dd, double* bc, int bc_size, double Vg,
+                             int max_steps, int use_amr, int poisson_max_iter, double poisson_tol,
+                             double* V, double* n, double* p, double* Jn, double* Jp, int size) {
+        if (!dd || !bc || !V || !n || !p || !Jn || !Jp || bc_size != 4 || size <= 0) return -1;
+
+        try {
+            std::vector<double> bc_vec(bc, bc + bc_size);
+            auto results = dd->solve_drift_diffusion(bc_vec, Vg, max_steps, use_amr != 0,
+                                                    poisson_max_iter, poisson_tol);
+
+            // Copy results to output arrays
+            auto& V_result = results["potential"];
+            auto& n_result = results["n"];
+            auto& p_result = results["p"];
+            auto& Jn_result = results["Jn"];
+            auto& Jp_result = results["Jp"];
+
+            int copy_size = std::min(size, static_cast<int>(V_result.size()));
+            for (int i = 0; i < copy_size; ++i) {
+                V[i] = V_result[i];
+                n[i] = n_result[i];
+                p[i] = p_result[i];
+                Jn[i] = (i < static_cast<int>(Jn_result.size())) ? Jn_result[i] : 0.0;
+                Jp[i] = (i < static_cast<int>(Jp_result.size())) ? Jp_result[i] : 0.0;
+            }
+
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    size_t drift_diffusion_get_dof_count(simulator::DriftDiffusion* dd) {
+        if (!dd) return 0;
+        return dd->get_dof_count();
+    }
+
+    double drift_diffusion_get_convergence_residual(simulator::DriftDiffusion* dd) {
+        if (!dd) return 0.0;
+        return dd->get_convergence_residual();
+    }
+
+    int drift_diffusion_get_order(simulator::DriftDiffusion* dd) {
+        if (!dd) return 0;
+        return dd->get_order();
     }
 }

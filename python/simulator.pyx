@@ -1,16 +1,22 @@
 # distutils: language = c++
-# distutils: sources = src/device.cpp src/mesh.cpp src/2d/dg/structured/poisson_dg_struct_2d.cpp src/2d/dg/structured/driftdiffusion_dg_struct_2d.cpp src/2d/dg/unstructured/poisson_dg_unstruct_2d.cpp src/2d/dg/unstructured/driftdiffusion_dg_unstruct_2d.cpp
-# distutils: include_dirs = include
-# distutils: libraries = simulator petsc gmsh boost_numeric_ublas vulkan
-# distutils: library_dirs = /usr/lib
+# distutils: sources = ../src/device.cpp ../src/mesh.cpp ../src/structured/poisson_struct_2d.cpp ../src/structured/driftdiffusion_struct_2d.cpp ../src/unstructured/poisson_unstruct_2d.cpp
+# distutils: include_dirs = ../include
+# distutils: libraries = petsc gmsh boost_numeric_ublas
+# distutils: library_dirs = /usr/lib/x86_64-linux-gnu/petsc /usr/lib/x86_64-linux-gnu
 
 cimport cython
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp.map cimport map
 from libcpp cimport bool
+from libcpp.memory cimport unique_ptr, make_unique
+from cython.operator cimport dereference as deref
 import numpy as np
 cimport numpy as np
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 cdef extern from "device.hpp" namespace "simulator":
     cppclass Device:
