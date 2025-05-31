@@ -20,10 +20,27 @@ find_library(GMSH_LIBRARY gmsh)
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
 
+# Optional GPU support
+option(ENABLE_CUDA "Enable CUDA support" OFF)
+option(ENABLE_OPENCL "Enable OpenCL support" OFF)
+
+if(ENABLE_CUDA)
+    find_package(CUDA REQUIRED)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    add_definitions(-DENABLE_CUDA)
+endif()
+
+if(ENABLE_OPENCL)
+    find_package(OpenCL REQUIRED)
+    add_definitions(-DENABLE_OPENCL)
+endif()
+
 include_directories(${PETSC_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} include ${Vulkan_INCLUDE_DIRS})
 link_directories(${PETSC_LIBRARY_DIRS})
 
-add_library(simulator SHARED
+# Collect source files
+set(SIMULATOR_SOURCES
     src/device.cpp
     src/mesh.cpp
     src/structured/poisson_struct_2d.cpp
@@ -35,7 +52,15 @@ add_library(simulator SHARED
     src/amr/amr_algorithms.cpp
     src/performance/simd_kernels.cpp
     src/performance/parallel_computing.cpp
+    src/gpu/gpu_context.cpp
 )
+
+# Add CUDA sources if enabled
+if(ENABLE_CUDA)
+    list(APPEND SIMULATOR_SOURCES src/gpu/cuda_kernels.cu)
+endif()
+
+add_library(simulator SHARED ${SIMULATOR_SOURCES})
 
 target_link_libraries(simulator
     ${PETSC_LIBRARIES}
@@ -44,6 +69,20 @@ target_link_libraries(simulator
     ${Vulkan_LIBRARIES}
     OpenMP::OpenMP_CXX
 )
+
+# Add GPU libraries if enabled
+if(ENABLE_CUDA)
+    target_link_libraries(simulator
+        CUDA::cudart
+        CUDA::cublas
+        CUDA::cusparse
+        CUDA::cusolver
+    )
+endif()
+
+if(ENABLE_OPENCL)
+    target_link_libraries(simulator OpenCL::OpenCL)
+endif()
 
 # Set target properties for optimization
 set_target_properties(simulator PROPERTIES
