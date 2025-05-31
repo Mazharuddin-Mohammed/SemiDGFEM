@@ -1,79 +1,191 @@
 #include "driftdiffusion.hpp"
 #include "mesh.hpp"
+#include "dg_assembly.hpp"
+#include "dg_basis_functions.hpp"
 #include <petscksp.h>
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
+#include <iostream>
+#include <functional>
 
 namespace simulator {
-std::map<std::string, std::vector<double>> DriftDiffusion::solve_drift_diffusion(
-    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr) {
-    Mesh mesh(device_, mesh_type_);
-    mesh.generate_gmsh_mesh("device_2d.msh");
-    auto grid_x = mesh.get_grid_points_x();
-    auto grid_y = mesh.get_grid_points_y();
-    auto elements = mesh.get_elements();
-    int n_nodes = grid_x.size();
-    std::vector<double> V(n_nodes, 0.0), n(n_nodes, 1e10), p(n_nodes, 1e10);
-    std::vector<double> Jn(2 * n_nodes, 0.0), Jp(2 * n_nodes, 0.0);
 
-    const double q = 1.602e-19, kT = 0.0259, mu_n = 1000e-4, mu_p = 400e-4;
-    const double ni = 1e10 * 1e6;
-    for (int step = 0; step < max_steps; ++step) {
-        std::vector<double> rho(n_nodes, 0.0);
-        for (size_t i = 0; i < n_nodes; ++i) {
-            double doping = (Nd_.size() > i ? Nd_[i] : 0.0) - (Na_.size() > i ? Na_[i] : 0.0);
-            rho[i] = q * (p[i] - n[i] + doping);
-        }
-        poisson_.set_charge_density(rho);
-        V = poisson_.solve_2d(bc);
+// Implementation of unstructured DG methods for drift-diffusion solver
+std::map<std::string, std::vector<double>> DriftDiffusion::solve_unstructured_drift_diffusion(
+    const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
+    int poisson_max_iter, double poisson_tol) {
 
-        // [MODIFICATION]: Compute electric field using P3 potential
-        std::vector<double> Ex(n_nodes, 0.0), Ey(n_nodes, 0.0);
-        for (size_t e = 0; e < elements.size(); ++e) {
-            int i1 = elements[e][0], i2 = elements[e][1], i3 = elements[e][2];
-            double dx12 = grid_x[i2] - grid_x[i1], dy12 = grid_y[i2] - grid_y[i1];
-            double dx13 = grid_x[i3] - grid_x[i1], dy13 = grid_y[i3] - grid_y[i1];
-            Ex[i1] += -(V[i2] - V[i1]) / dx12 + -(V[i3] - V[i1]) / dx13;
-            Ey[i1] += -(V[i2] - V[i1]) / dy12 + -(V[i3] - V[i1]) / dy13;
+    try {
+        Mesh mesh(device_, mesh_type_);
+
+        // Generate unstructured mesh
+        mesh.generate_gmsh_mesh("device_unstructured_dd.msh");
+
+        auto grid_x = mesh.get_grid_points_x();
+        auto grid_y = mesh.get_grid_points_y();
+        auto elements = mesh.get_elements();
+
+        if (grid_x.empty() || grid_y.empty() || elements.empty()) {
+            throw std::runtime_error("Invalid unstructured mesh data");
         }
 
-        for (size_t i = 0; i < n_nodes; ++i) {
-            double n_new = ni * std::exp((V[i] - (Et_.size() > i ? Et_[i] : 0.0)) / kT);
-            double p_new = ni * std::exp(-((V[i] - (Et_.size() > i ? Et_[i] : 0.0)) / kT));
-            n[i] = 0.9 * n[i] + 0.1 * n_new;
-            p[i] = 0.9 * p[i] + 0.1 * p_new;
+        int n_nodes = static_cast<int>(grid_x.size());
+        int n_elements = static_cast<int>(elements.size());
 
-            // [MODIFIED]: Current calculation using P3-derived fields
-            Jn[2 * i] = q * mu_n * (n[i] * Ex[i] + kT * mu_n * (n[i + 1] - n[i]) / (grid_x[i + 1] - grid_x[i]));
-            Jn[2 * i + 1] = q * mu_n * (n[i] * Ey[i] + kT * mu_n * (n[i + (int)std::sqrt(n_nodes)] - n[i]) / (grid_y[i + (int)std::sqrt(n_nodes)] - grid_y[i]));
-            Jp[2 * i] = q * mu_p * (p[i] * Ex[i] - kT * mu_p * (p[i + 1] - p[i]) / (grid_x[i + 1] - grid_x[i]));
-            Jp[2 * i + 1] = q * mu_p * (p[i] * Ey[i] - kT * mu_p * (p[i + (int)std::sqrt(n_nodes)] - p[i])) / (grid_y[i + (int)std::sqrt(n_nodes)] - grid_y[i]));
+        // Create DG assembly object
+        dg::DGAssembly dg_assembler(order_, 50.0);
+        int dofs_per_element = dg_assembler.get_dofs_per_element();
+        int n_dofs = n_elements * dofs_per_element;
+
+        // Initialize solution vectors
+        std::vector<double> V(n_dofs, 0.0);
+        std::vector<double> n(n_dofs, 1e10 * 1e6);  // Intrinsic carrier concentration
+        std::vector<double> p(n_dofs, 1e10 * 1e6);
+        std::vector<double> Jn(n_dofs, 0.0);
+        std::vector<double> Jp(n_dofs, 0.0);
+
+        // Physical constants
+        const double q = 1.602e-19;        // Elementary charge (C)
+        const double kT = 0.0259;          // Thermal voltage at 300K (V)
+        const double mu_n = 1000e-4;       // Electron mobility (m²/V·s)
+        const double mu_p = 400e-4;        // Hole mobility (m²/V·s)
+        const double ni = 1e10 * 1e6;      // Intrinsic carrier concentration (1/m³)
+
+        // Validate doping array sizes
+        if (Nd_.size() != static_cast<size_t>(n_nodes) || Na_.size() != static_cast<size_t>(n_nodes)) {
+            throw std::runtime_error("Doping array size must match number of mesh nodes");
         }
 
-        if (use_amr) {
-            std::vector<bool> refine_flags(elements.size(), false);
-            for (size_t e = 0; e < elements.size(); ++e) {
-                auto elem = elements[e];
-                double grad_x = std::abs(V[elem[1]] - V[elem[0]]) / (grid_x[elem[1]] - grid_x[elem[0]]);
-                double grad_y = std::abs(V[elem[2]] - V[elem[0]]) / (grid_y[elem[2]] - grid_y[elem[0]]);
-                if (grad_x > 1e5 || grad_y > 1e5) refine_flags[e] = true;
+        // Initial Poisson solve
+        V = solve_unstructured_poisson(bc, n, p);
+
+        // Store previous solution for convergence checking
+        std::vector<double> V_old = V;
+        std::vector<double> n_old = n;
+        std::vector<double> p_old = p;
+
+        // Main iteration loop
+        for (int step = 0; step < max_steps; ++step) {
+            // Update carrier densities
+            compute_unstructured_carrier_densities(V, n, p, elements, dofs_per_element);
+
+            // Solve continuity equations for electrons and holes
+            solve_unstructured_continuity_equations(V, n, p, Jn, Jp, elements, dofs_per_element);
+
+            // Adaptive mesh refinement
+            if (use_amr) {
+                try {
+                    perform_unstructured_amr(mesh, V, elements, dofs_per_element);
+
+                    // Update mesh data after refinement
+                    grid_x = mesh.get_grid_points_x();
+                    grid_y = mesh.get_grid_points_y();
+                    elements = mesh.get_elements();
+                    n_nodes = static_cast<int>(grid_x.size());
+                    n_elements = static_cast<int>(elements.size());
+                    n_dofs = n_elements * dofs_per_element;
+
+                    // Resize solution vectors
+                    V.resize(n_dofs, 0.0);
+                    n.resize(n_dofs, ni);
+                    p.resize(n_dofs, ni);
+                    Jn.resize(n_dofs, 0.0);
+                    Jp.resize(n_dofs, 0.0);
+                } catch (const std::exception& e) {
+                    std::cerr << "Unstructured AMR failed: " << e.what() << std::endl;
+                }
             }
-            mesh.refine(refine_flags);
+
+            // Update potential with self-consistent Poisson solver
+            try {
+                V = solve_unstructured_poisson(bc, n, p);
+            } catch (const std::exception& e) {
+                std::cerr << "Unstructured Poisson solve failed: " << e.what() << std::endl;
+                break;
+            }
+
+            // Check convergence
+            if (check_unstructured_convergence(V_old, V, 1e-6)) {
+                convergence_residual_ = compute_residual_norm(V_old, V);
+                break;
+            }
+
+            // Update old solutions
+            V_old = V;
+            n_old = n;
+            p_old = p;
         }
 
-        double max_change = 0.0;
-        for (size_t i = 0; i < n_nodes; ++i) {
-            max_change = std::max(max_change, std::abs(V[i] - (n[i] - p[i])));
-        }
-        if (max_change < 1e-6) break;
+        // Convert DG solution to nodal values for output
+        auto nodal_results = convert_dg_to_nodal(V, n, p, Jn, Jp, elements, grid_x, grid_y, dofs_per_element);
+
+        return nodal_results;
+
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Unstructured drift-diffusion solve failed: " + std::string(e.what()));
+    }
+}
+
+// Helper method implementations for unstructured DG
+std::vector<double> DriftDiffusion::solve_unstructured_poisson(
+    const std::vector<double>& bc,
+    const std::vector<double>& n,
+    const std::vector<double>& p) {
+
+    // Use the Poisson solver with updated charge density
+    std::vector<double> rho(n.size());
+    const double q = 1.602e-19;
+
+    for (size_t i = 0; i < n.size(); ++i) {
+        double Nd_val = (i < Nd_.size()) ? Nd_[i] : 0.0;
+        double Na_val = (i < Na_.size()) ? Na_[i] : 0.0;
+        rho[i] = q * (p[i] - n[i] + Nd_val - Na_val);
     }
 
-    std::map<std::string, std::vector<double>> results;
-    results["potential"] = V;
-    results["n"] = n;
-    results["p"] = p;
-    results["Jn"] = Jn;
-    results["Jp"] = Jp;
-    return results;
+    poisson_->set_charge_density(rho);
+    return poisson_->solve_2d(bc);
 }
+
+void DriftDiffusion::compute_unstructured_carrier_densities(
+    const std::vector<double>& V,
+    std::vector<double>& n,
+    std::vector<double>& p,
+    const std::vector<std::vector<int>>& elements,
+    int dofs_per_element) const {
+
+    const double kT = 0.0259;          // Thermal voltage at 300K (V)
+    const double ni = 1e10 * 1e6;      // Intrinsic carrier concentration (1/m³)
+
+    // For DG methods, carrier densities are computed at DOF locations
+    for (size_t e = 0; e < elements.size(); ++e) {
+        for (int dof = 0; dof < dofs_per_element; ++dof) {
+            int global_dof = e * dofs_per_element + dof;
+
+            if (global_dof < static_cast<int>(V.size())) {
+                // Calculate quasi-Fermi levels and carrier densities
+                double Et = (Et_.size() > global_dof) ? Et_[global_dof] : 0.0;
+                double phi = V[global_dof] - Et;
+
+                // Boltzmann statistics
+                n[global_dof] = ni * std::exp(phi / kT);
+                p[global_dof] = ni * std::exp(-phi / kT);
+
+                // Apply doping effects
+                if (global_dof < static_cast<int>(Nd_.size()) && global_dof < static_cast<int>(Na_.size())) {
+                    if (Nd_[global_dof] > Na_[global_dof]) {
+                        n[global_dof] += (Nd_[global_dof] - Na_[global_dof]);
+                    } else if (Na_[global_dof] > Nd_[global_dof]) {
+                        p[global_dof] += (Na_[global_dof] - Nd_[global_dof]);
+                    }
+                }
+
+                // Ensure positive concentrations
+                n[global_dof] = std::max(n[global_dof], ni);
+                p[global_dof] = std::max(p[global_dof], ni);
+            }
+        }
+    }
+}
+
 } // namespace simulator

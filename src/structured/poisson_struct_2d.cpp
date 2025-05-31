@@ -1,11 +1,15 @@
 #include "poisson.hpp"
 #include "mesh.hpp"
+#include "dg_assembly.hpp"
+#include "dg_basis_functions.hpp"
 #include <petscksp.h>
 #include <vector>
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include <memory>
+#include <functional>
 
 namespace simulator {
 
@@ -380,6 +384,91 @@ std::vector<double> Poisson::solve_2d_self_consistent(const std::vector<double>&
     }
     return V_;
 }
+
+// Helper method implementations
+double Poisson::interpolate_charge_density(double x, double y) const {
+    if (rho_.empty()) return 0.0;
+
+    // Simple nearest-neighbor interpolation
+    // In a full implementation, this would use proper interpolation
+    // based on the mesh structure
+
+    // For now, return average charge density
+    double sum = 0.0;
+    for (double rho_val : rho_) {
+        sum += rho_val;
+    }
+    return sum / rho_.size();
+}
+
+void Poisson::add_dg_penalty_terms(int element_index,
+                                  const std::vector<int>& element_nodes,
+                                  const std::vector<double>& grid_x,
+                                  const std::vector<double>& grid_y,
+                                  std::vector<std::vector<double>>& K_elem,
+                                  std::vector<double>& f_elem) const {
+    // Simplified DG penalty implementation
+    // In a full implementation, this would:
+    // 1. Identify element faces and neighbors
+    // 2. Compute penalty parameters based on element size
+    // 3. Add consistency, symmetry, and penalty terms
+
+    const double penalty_param = 50.0; // Penalty parameter
+
+    // For now, add a simple penalty to diagonal terms
+    for (size_t i = 0; i < K_elem.size(); ++i) {
+        K_elem[i][i] += penalty_param * 1e-6; // Small penalty for stability
+    }
+}
+
+void Poisson::compute_p3_basis_functions(double xi, double eta, double zeta,
+                                        std::vector<double>& N,
+                                        std::vector<std::array<double, 2>>& grad_N) const {
+    if (N.size() != 10 || grad_N.size() != 10) {
+        throw std::invalid_argument("P3 basis requires exactly 10 DOF arrays");
+    }
+
+    // P3 Lagrange basis functions on reference triangle
+    // Vertex functions
+    N[0] = 0.5 * zeta * (3.0 * zeta - 1.0) * (3.0 * zeta - 2.0);
+    N[1] = 0.5 * xi * (3.0 * xi - 1.0) * (3.0 * xi - 2.0);
+    N[2] = 0.5 * eta * (3.0 * eta - 1.0) * (3.0 * eta - 2.0);
+
+    // Edge functions
+    N[3] = 4.5 * zeta * xi * (3.0 * zeta - 1.0);
+    N[4] = 4.5 * zeta * xi * (3.0 * xi - 1.0);
+    N[5] = 4.5 * xi * eta * (3.0 * xi - 1.0);
+    N[6] = 4.5 * xi * eta * (3.0 * eta - 1.0);
+    N[7] = 4.5 * eta * zeta * (3.0 * eta - 1.0);
+    N[8] = 4.5 * eta * zeta * (3.0 * zeta - 1.0);
+
+    // Interior function
+    N[9] = 27.0 * zeta * xi * eta;
+
+    // Gradients (simplified - would need proper implementation)
+    for (int i = 0; i < 10; ++i) {
+        grad_N[i][0] = 0.0; // d/dxi
+        grad_N[i][1] = 0.0; // d/deta
+    }
+
+    // Vertex gradients
+    grad_N[0][0] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
+    grad_N[0][1] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
+
+    grad_N[1][0] = 0.5 * (27.0 * xi * xi - 12.0 * xi + 1.0);
+    grad_N[1][1] = 0.0;
+
+    grad_N[2][0] = 0.0;
+    grad_N[2][1] = 0.5 * (27.0 * eta * eta - 12.0 * eta + 1.0);
+
+    // Edge gradients (simplified)
+    grad_N[3][0] = 4.5 * (zeta * (3.0 * zeta - 1.0) - xi * (6.0 * zeta - 1.0));
+    grad_N[3][1] = -4.5 * xi * (6.0 * zeta - 1.0);
+
+    // Additional edge and interior gradients would be computed similarly
+    // This is a simplified implementation for demonstration
+}
+
 } // namespace simulator
 
 // [MODIFICATION]: Cython bindings

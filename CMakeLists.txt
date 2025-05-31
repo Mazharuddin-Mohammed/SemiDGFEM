@@ -20,6 +20,8 @@ add_library(simulator SHARED
     src/structured/driftdiffusion_struct_2d.cpp
     src/unstructured/poisson_unstruct_2d.cpp
     src/unstructured/driftdiffusion_unstruct_2d.cpp
+    src/dg_math/dg_basis_functions.cpp
+    src/dg_math/dg_assembly.cpp
 )
 
 target_link_libraries(simulator ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${GMSH_LIBRARY} ${Vulkan_LIBRARIES})
