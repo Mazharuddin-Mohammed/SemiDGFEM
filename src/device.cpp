@@ -1,3 +1,9 @@
+/**
+ * Device geometry and material properties implementation
+ *
+ * Author: Dr. Mazharuddin Mohammed
+ */
+
 #include "device.hpp"
 #include <cmath>
 #include <stdexcept>

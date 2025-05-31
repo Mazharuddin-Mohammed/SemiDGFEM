@@ -1,3 +1,9 @@
+/**
+ * Mesh generation and adaptive mesh refinement implementation
+ *
+ * Author: Dr. Mazharuddin Mohammed
+ */
+
 #include "mesh.hpp"
 #include <gmsh.h>
 #include <cmath>

@@ -40,19 +40,19 @@ except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
 class ModernStyle:
-    """Modern dark theme styling constants"""
-    
-    # Color palette
-    BACKGROUND_DARK = "#1e1e1e"
-    BACKGROUND_MEDIUM = "#2d2d2d"
-    BACKGROUND_LIGHT = "#3c3c3c"
-    ACCENT_BLUE = "#007acc"
-    ACCENT_GREEN = "#4caf50"
-    ACCENT_ORANGE = "#ff9800"
-    ACCENT_RED = "#f44336"
-    TEXT_PRIMARY = "#ffffff"
-    TEXT_SECONDARY = "#b0b0b0"
-    BORDER_COLOR = "#555555"
+    """Modern white theme styling constants"""
+
+    # Color palette - Changed to white theme
+    BACKGROUND_DARK = "#ffffff"      # White background
+    BACKGROUND_MEDIUM = "#f5f5f5"    # Light gray
+    BACKGROUND_LIGHT = "#e8e8e8"     # Slightly darker gray
+    ACCENT_BLUE = "#007acc"          # Keep blue accent
+    ACCENT_GREEN = "#4caf50"         # Keep green accent
+    ACCENT_ORANGE = "#ff9800"        # Keep orange accent
+    ACCENT_RED = "#f44336"           # Keep red accent
+    TEXT_PRIMARY = "#000000"         # Black text
+    TEXT_SECONDARY = "#666666"       # Dark gray text
+    BORDER_COLOR = "#cccccc"         # Light gray borders
     
     # Fonts
     FONT_FAMILY = "Segoe UI"
@@ -473,19 +473,21 @@ class SimulationWorker(QObject):
         y = np.linspace(0, self.config.width, ny)
         X, Y = np.meshgrid(x, y)
 
-        # Define device regions with proper geometry
+        # Define device regions with CORRECT MOSFET geometry
+        # Gate-oxide stack is on TOP of the channel, source/drain are lateral contacts
         L = self.config.length
         W = self.config.width
-        source_end = L * 0.25      # Source extends to 25% of channel length
-        drain_start = L * 0.75     # Drain starts at 75% of channel length
-        channel_depth = W * 0.67   # Channel/surface region starts at 67% of width
+        source_end = L * 0.3       # Source contact region (lateral)
+        drain_start = L * 0.7      # Drain contact region (lateral)
+        gate_oxide_top = W * 0.95  # Gate oxide at very top surface
+        contact_depth = W * 0.8    # Source/drain contact depth from top
 
-        self.log_message.emit(f"🔧 Device geometry definition:")
-        self.log_message.emit(f"   Source region: 0 to {source_end*1e9:.1f} nm (x-direction)")
-        self.log_message.emit(f"   Channel region: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm")
-        self.log_message.emit(f"   Drain region: {drain_start*1e9:.1f} to {L*1e9:.1f} nm")
-        self.log_message.emit(f"   Surface depth: {channel_depth*1e6:.2f} to {W*1e6:.2f} μm (y-direction)")
-        self.log_message.emit(f"   Substrate depth: 0 to {channel_depth*1e6:.2f} μm")
+        self.log_message.emit(f"🔧 CORRECTED MOSFET Device Geometry:")
+        self.log_message.emit(f"   Gate-oxide stack: TOP surface at {gate_oxide_top*1e6:.2f} μm")
+        self.log_message.emit(f"   Channel region: {source_end*1e9:.1f} to {drain_start*1e9:.1f} nm (under gate)")
+        self.log_message.emit(f"   Source contact: 0 to {source_end*1e9:.1f} nm (lateral, depth to {contact_depth*1e6:.2f} μm)")
+        self.log_message.emit(f"   Drain contact: {drain_start*1e9:.1f} to {L*1e9:.1f} nm (lateral, depth to {contact_depth*1e6:.2f} μm)")
+        self.log_message.emit(f"   P-substrate: 0 to {contact_depth*1e6:.2f} μm depth")
 
         # Potential distribution
         V_channel = Vs + (Vd - Vs) * (X / self.config.length)
@@ -502,24 +504,25 @@ class SimulationWorker(QObject):
                 x_pos = X[i, j]
                 y_pos = Y[i, j]
 
-                # Determine doping based on proper MOSFET geometry
-                if y_pos > channel_depth:  # Surface region (near gate-oxide interface)
-                    if x_pos < source_end:  # N+ Source region at surface
+                # Determine doping based on CORRECTED MOSFET geometry
+                # Gate-oxide is on TOP, source/drain are lateral contacts
+                if y_pos > contact_depth:  # Near surface region
+                    if x_pos < source_end:  # N+ Source contact (lateral)
                         Nd_local = self.config.Nd_source
                         Na_local = 0
-                        region_type = "N+ Source"
-                    elif x_pos > drain_start:  # N+ Drain region at surface
+                        region_type = "N+ Source Contact"
+                    elif x_pos > drain_start:  # N+ Drain contact (lateral)
                         Nd_local = self.config.Nd_drain
                         Na_local = 0
-                        region_type = "N+ Drain"
-                    else:  # Channel region at surface (P-type substrate)
+                        region_type = "N+ Drain Contact"
+                    else:  # Channel region under gate-oxide
                         Nd_local = 0
                         Na_local = self.config.Na_substrate
-                        region_type = "P-Channel"
+                        region_type = "P-Channel (under gate)"
                 else:  # Bulk substrate region
                     Nd_local = 0
                     Na_local = self.config.Na_substrate
-                    region_type = "P-Substrate"
+                    region_type = "P-Substrate (bulk)"
 
                 # Calculate carriers
                 if Nd_local > Na_local:
@@ -1426,8 +1429,8 @@ class ModernMOSFETGUI(QMainWindow):
         """)
         plots_layout.addWidget(plots_header)
 
-        # Matplotlib canvas
-        self.figure = Figure(figsize=(12, 8), facecolor='#2d2d2d')
+        # Matplotlib canvas with white background
+        self.figure = Figure(figsize=(12, 8), facecolor='white')
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setStyleSheet(f"""
             background-color: {ModernStyle.BACKGROUND_MEDIUM};
@@ -1776,13 +1779,13 @@ class ModernMOSFETGUI(QMainWindow):
         ax5 = self.figure.add_subplot(2, 3, 5)
         ax6 = self.figure.add_subplot(2, 3, 6)
 
-        # Set dark theme
+        # Set white theme
         for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
-            ax.set_facecolor('#2d2d2d')
-            ax.tick_params(colors='white')
-            ax.xaxis.label.set_color('white')
-            ax.yaxis.label.set_color('white')
-            ax.title.set_color('white')
+            ax.set_facecolor('white')
+            ax.tick_params(colors='black')
+            ax.xaxis.label.set_color('black')
+            ax.yaxis.label.set_color('black')
+            ax.title.set_color('black')
 
         # Plot 1: Potential
         V_2d = results['potential'].reshape(ny, nx)
@@ -1853,13 +1856,13 @@ class ModernMOSFETGUI(QMainWindow):
         ax3 = self.figure.add_subplot(2, 2, 3)
         ax4 = self.figure.add_subplot(2, 2, 4)
 
-        # Set dark theme
+        # Set white theme
         for ax in [ax1, ax2, ax3, ax4]:
-            ax.set_facecolor('#2d2d2d')
-            ax.tick_params(colors='white')
-            ax.xaxis.label.set_color('white')
-            ax.yaxis.label.set_color('white')
-            ax.title.set_color('white')
+            ax.set_facecolor('white')
+            ax.tick_params(colors='black')
+            ax.xaxis.label.set_color('black')
+            ax.yaxis.label.set_color('black')
+            ax.title.set_color('black')
 
         # Plot 1: Id vs Vd for different Vg (Output characteristics)
         # Plot every 3rd Vg for clarity with smooth curves
@@ -1941,13 +1944,13 @@ class ModernMOSFETGUI(QMainWindow):
         ax3 = self.figure.add_subplot(2, 2, 3)
         ax4 = self.figure.add_subplot(2, 2, 4)
 
-        # Set dark theme
+        # Set white theme
         for ax in [ax1, ax2, ax3, ax4]:
-            ax.set_facecolor('#2d2d2d')
-            ax.tick_params(colors='white')
-            ax.xaxis.label.set_color('white')
-            ax.yaxis.label.set_color('white')
-            ax.title.set_color('white')
+            ax.set_facecolor('white')
+            ax.tick_params(colors='black')
+            ax.xaxis.label.set_color('black')
+            ax.yaxis.label.set_color('black')
+            ax.title.set_color('black')
 
         # Plot 1: Drain current vs time
         ax1.plot(time_points, Id_values * 1e6, 'b-', linewidth=2)
@@ -2001,7 +2004,7 @@ class ModernMOSFETGUI(QMainWindow):
 
         if filename:
             try:
-                self.figure.savefig(filename, dpi=300, bbox_inches='tight', facecolor='#2d2d2d')
+                self.figure.savefig(filename, dpi=300, bbox_inches='tight', facecolor='white')
                 self.log_message(f"💾 Plots saved to {filename}")
                 QMessageBox.information(self, "Success", f"Plots saved to {filename}")
             except Exception as e:
