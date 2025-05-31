@@ -473,44 +473,43 @@ class SimulationWorker(QObject):
         y = np.linspace(0, self.config.width, ny)
         X, Y = np.meshgrid(x, y)
 
-        # REALISTIC MOSFET DEVICE STRUCTURE
-        # Standard planar MOSFET with proper geometry
+        # PROPER PLANAR MOSFET CONFIGURATION
+        # Gate-oxide stack on top, sandwiched between air regions above source/drain
         L = self.config.length          # Channel length (100 nm)
         W_total = self.config.width     # Total device width (1 μm)
 
-        # Layer structure (from bottom to top)
-        substrate_thickness = W_total * 0.7    # P-substrate (700 nm)
-        well_thickness = W_total * 0.2         # P-well (200 nm)
+        # Silicon layer structure (bottom part)
+        silicon_thickness = W_total * 0.8      # Silicon layer (800 nm)
+
+        # Top layer structure (gate stack region)
         gate_oxide_thickness = 2e-9            # Gate oxide (2 nm)
-        poly_gate_thickness = W_total * 0.1    # Polysilicon gate (100 nm)
+        poly_gate_thickness = W_total * 0.2 - gate_oxide_thickness  # Poly gate
 
         # Lateral dimensions
-        gate_length = L * 0.5                  # Gate covers 50% of channel
-        gate_start = L * 0.25                  # Gate starts at 25% of device
-        gate_end = gate_start + gate_length    # Gate ends at 75% of device
+        source_region_end = L * 0.25           # Source region end
+        gate_start = L * 0.25                  # Gate starts where source ends
+        gate_end = L * 0.75                    # Gate ends where drain starts
+        drain_region_start = L * 0.75          # Drain region start
 
-        # Source/drain regions (lateral diffusion under gate)
-        source_length = L * 0.3                # Source region length
-        drain_start = L * 0.7                  # Drain starts at 70%
-        drain_length = L * 0.3                 # Drain region length
+        # Doping regions in silicon
+        source_doping_end = L * 0.3            # N+ source doping extent
+        drain_doping_start = L * 0.7           # N+ drain doping extent
 
-        # Junction depths
-        source_drain_depth = well_thickness * 0.5  # S/D junction depth (100 nm)
-
-        self.log_message.emit(f"🔧 REALISTIC MOSFET DEVICE STRUCTURE:")
+        self.log_message.emit(f"🔧 PROPER PLANAR MOSFET CONFIGURATION:")
         self.log_message.emit(f"   Device dimensions: {L*1e9:.0f} nm × {W_total*1e6:.1f} μm")
-        self.log_message.emit(f"   Layer stack (bottom to top):")
-        self.log_message.emit(f"     P-substrate: 0 to {substrate_thickness*1e6:.0f} nm")
-        self.log_message.emit(f"     P-well: {substrate_thickness*1e6:.0f} to {(substrate_thickness+well_thickness)*1e6:.0f} nm")
-        self.log_message.emit(f"     Gate oxide: {(substrate_thickness+well_thickness)*1e6:.0f} to {(substrate_thickness+well_thickness+gate_oxide_thickness)*1e6:.0f} nm")
-        self.log_message.emit(f"     Poly gate: {(substrate_thickness+well_thickness+gate_oxide_thickness)*1e6:.0f} to {W_total*1e6:.0f} nm")
-        self.log_message.emit(f"   Lateral structure:")
-        self.log_message.emit(f"     Source: 0 to {source_length*1e9:.0f} nm (depth: {source_drain_depth*1e6:.0f} nm)")
-        self.log_message.emit(f"     Gate: {gate_start*1e9:.0f} to {gate_end*1e9:.0f} nm")
-        self.log_message.emit(f"     Drain: {drain_start*1e9:.0f} to {L*1e9:.0f} nm (depth: {source_drain_depth*1e6:.0f} nm)")
-        self.log_message.emit(f"     Channel: Under gate in P-well region")
+        self.log_message.emit(f"   Silicon layer: 0 to {silicon_thickness*1e6:.0f} nm (continuous)")
+        self.log_message.emit(f"   Top layer structure:")
+        self.log_message.emit(f"     Air above source: 0 to {source_region_end*1e9:.0f} nm")
+        self.log_message.emit(f"     Gate-oxide stack: {gate_start*1e9:.0f} to {gate_end*1e9:.0f} nm")
+        self.log_message.emit(f"       - Gate oxide: {silicon_thickness*1e6:.0f} to {(silicon_thickness+gate_oxide_thickness)*1e6:.0f} nm")
+        self.log_message.emit(f"       - Poly gate: {(silicon_thickness+gate_oxide_thickness)*1e6:.0f} to {W_total*1e6:.0f} nm")
+        self.log_message.emit(f"     Air above drain: {drain_region_start*1e9:.0f} to {L*1e9:.0f} nm")
+        self.log_message.emit(f"   Silicon doping:")
+        self.log_message.emit(f"     N+ Source: 0 to {source_doping_end*1e9:.0f} nm")
+        self.log_message.emit(f"     P-Channel: {source_doping_end*1e9:.0f} to {drain_doping_start*1e9:.0f} nm")
+        self.log_message.emit(f"     N+ Drain: {drain_doping_start*1e9:.0f} to {L*1e9:.0f} nm")
 
-        # Potential distribution for realistic MOSFET structure
+        # Potential distribution for proper planar MOSFET configuration
         V = np.zeros_like(X)
 
         for i in range(ny):
@@ -518,54 +517,42 @@ class SimulationWorker(QObject):
                 x_pos = X[i, j]
                 y_pos = Y[i, j]
 
-                # Determine device region
-                if y_pos <= substrate_thickness:  # P-substrate
-                    V[i, j] = Vsub
-
-                elif y_pos <= substrate_thickness + well_thickness:  # P-well
-                    if x_pos <= source_length:  # Source region
-                        # N+ source diffusion in P-well
-                        if y_pos >= substrate_thickness + well_thickness - source_drain_depth:
-                            V[i, j] = Vs  # Source contact potential
-                        else:
-                            # Graded potential in P-well
-                            V[i, j] = Vsub + 0.3 * (Vs - Vsub)
-
-                    elif x_pos >= drain_start:  # Drain region
-                        # N+ drain diffusion in P-well
-                        if y_pos >= substrate_thickness + well_thickness - source_drain_depth:
-                            V[i, j] = Vd  # Drain contact potential
-                        else:
-                            # Graded potential in P-well
-                            V[i, j] = Vsub + 0.3 * (Vd - Vsub)
-
-                    else:  # Channel region in P-well
-                        # Channel potential under gate influence
-                        alpha = (x_pos - source_length) / (drain_start - source_length)
+                # Determine device region and set potential
+                if y_pos <= silicon_thickness:  # Silicon layer (continuous)
+                    if x_pos <= source_doping_end:  # N+ Source region
+                        V[i, j] = Vs  # Source potential
+                    elif x_pos >= drain_doping_start:  # N+ Drain region
+                        V[i, j] = Vd  # Drain potential
+                    else:  # P-Channel region
+                        # Linear interpolation between source and drain
+                        alpha = (x_pos - source_doping_end) / (drain_doping_start - source_doping_end)
                         V_base = Vs + alpha * (Vd - Vs)
 
-                        # Gate coupling (stronger near surface)
-                        surface_distance = (substrate_thickness + well_thickness) - y_pos
-                        gate_coupling = 0.5 * (Vg - Vth) * np.exp(-surface_distance / (well_thickness * 0.3))
+                        # Gate coupling effect (only under gate)
+                        if gate_start <= x_pos <= gate_end:
+                            # Distance from silicon surface
+                            surface_distance = silicon_thickness - y_pos
+                            gate_coupling = 0.4 * (Vg - Vth) * np.exp(-surface_distance / (silicon_thickness * 0.2))
+                            V[i, j] = V_base + gate_coupling
+                        else:
+                            V[i, j] = V_base
 
-                        V[i, j] = V_base + gate_coupling + 0.1 * Vsub
+                        # Add substrate effect
+                        V[i, j] += 0.1 * Vsub * (y_pos / silicon_thickness)
 
-                elif y_pos <= substrate_thickness + well_thickness + gate_oxide_thickness:  # Gate oxide
-                    # Linear potential drop across gate oxide
-                    if gate_start <= x_pos <= gate_end:  # Under gate
-                        oxide_pos = (y_pos - substrate_thickness - well_thickness) / gate_oxide_thickness
-                        well_surface_potential = V[i-1, j] if i > 0 else 0
-                        V[i, j] = well_surface_potential + oxide_pos * (Vg - well_surface_potential)
-                    else:
-                        V[i, j] = 0  # No gate oxide outside gate region
+                else:  # Above silicon layer
+                    if gate_start <= x_pos <= gate_end:  # Gate stack region
+                        if y_pos <= silicon_thickness + gate_oxide_thickness:  # Gate oxide
+                            # Linear potential drop across gate oxide
+                            oxide_pos = (y_pos - silicon_thickness) / gate_oxide_thickness
+                            silicon_surface_potential = V[i-1, j] if i > 0 else 0
+                            V[i, j] = silicon_surface_potential + oxide_pos * (Vg - silicon_surface_potential)
+                        else:  # Polysilicon gate
+                            V[i, j] = Vg
+                    else:  # Air regions above source/drain
+                        V[i, j] = 0  # Air/vacuum potential
 
-                else:  # Polysilicon gate
-                    if gate_start <= x_pos <= gate_end:  # Gate electrode
-                        V[i, j] = Vg
-                    else:
-                        V[i, j] = 0  # No gate outside gate region
-
-        # Carrier densities for realistic MOSFET structure
+        # Carrier densities for proper planar MOSFET configuration
         n = np.zeros_like(V)
         p = np.zeros_like(V)
 
@@ -575,69 +562,54 @@ class SimulationWorker(QObject):
                 y_pos = Y[i, j]
 
                 # Determine doping and calculate carriers based on device region
-                if y_pos <= substrate_thickness:  # P-substrate
-                    Nd_local = 0
-                    Na_local = self.config.Na_substrate
-                    p[i, j] = Na_local * np.exp(-V[i, j] / Vt)
-                    n[i, j] = ni**2 / p[i, j]
-                    region_type = "P-substrate"
-
-                elif y_pos <= substrate_thickness + well_thickness:  # P-well
-                    if x_pos <= source_length and y_pos >= substrate_thickness + well_thickness - source_drain_depth:
-                        # N+ source diffusion
+                if y_pos <= silicon_thickness:  # Silicon layer (continuous)
+                    if x_pos <= source_doping_end:  # N+ Source region
                         Nd_local = self.config.Nd_source
                         Na_local = 0
                         n[i, j] = Nd_local * np.exp(V[i, j] / Vt)
                         p[i, j] = ni**2 / n[i, j]
                         region_type = "N+ Source"
 
-                    elif x_pos >= drain_start and y_pos >= substrate_thickness + well_thickness - source_drain_depth:
-                        # N+ drain diffusion
+                    elif x_pos >= drain_doping_start:  # N+ Drain region
                         Nd_local = self.config.Nd_drain
                         Na_local = 0
                         n[i, j] = Nd_local * np.exp(V[i, j] / Vt)
                         p[i, j] = ni**2 / n[i, j]
                         region_type = "N+ Drain"
 
-                    else:
-                        # P-well (channel region)
+                    else:  # P-Channel region
                         Nd_local = 0
-                        Na_local = self.config.Na_substrate * 0.5  # Lighter doping in well
+                        Na_local = self.config.Na_substrate
                         p[i, j] = Na_local * np.exp(-V[i, j] / Vt)
                         n[i, j] = ni**2 / p[i, j]
-                        region_type = "P-well"
+                        region_type = "P-Channel"
 
                         # Add inversion layer in channel under gate
                         if (gate_start <= x_pos <= gate_end and Vg > Vth):
-                            # Inversion layer forms near P-well surface
-                            surface_distance = (substrate_thickness + well_thickness) - y_pos
-                            if surface_distance < well_thickness * 0.2:  # Near surface
-                                inversion_density = 1e18 * (Vg - Vth) * np.exp(-surface_distance / (well_thickness * 0.1))
+                            # Inversion layer forms near silicon surface
+                            surface_distance = silicon_thickness - y_pos
+                            if surface_distance < silicon_thickness * 0.1:  # Near surface (top 10%)
+                                inversion_density = 1e18 * (Vg - Vth) * np.exp(-surface_distance / (silicon_thickness * 0.05))
                                 n[i, j] += inversion_density
                                 region_type = "Inversion layer"
 
-                elif y_pos <= substrate_thickness + well_thickness + gate_oxide_thickness:  # Gate oxide
-                    if gate_start <= x_pos <= gate_end:
-                        n[i, j] = 0.0  # No carriers in insulator
-                        p[i, j] = 0.0
-                        region_type = "Gate oxide"
-                    else:
+                else:  # Above silicon layer
+                    if gate_start <= x_pos <= gate_end:  # Gate stack region
+                        if y_pos <= silicon_thickness + gate_oxide_thickness:  # Gate oxide
+                            n[i, j] = 0.0  # No carriers in insulator
+                            p[i, j] = 0.0
+                            region_type = "Gate oxide"
+                        else:  # Polysilicon gate
+                            # Heavily doped polysilicon
+                            n[i, j] = 1e26  # Very high doping
+                            p[i, j] = ni**2 / n[i, j]
+                            region_type = "Poly gate"
+                    else:  # Air regions above source/drain
                         n[i, j] = 0.0
                         p[i, j] = 0.0
                         region_type = "Air/vacuum"
 
-                else:  # Polysilicon gate
-                    if gate_start <= x_pos <= gate_end:
-                        # Heavily doped polysilicon
-                        n[i, j] = 1e26  # Very high doping
-                        p[i, j] = ni**2 / n[i, j]
-                        region_type = "Poly gate"
-                    else:
-                        n[i, j] = 0.0
-                        p[i, j] = 0.0
-                        region_type = "Air/vacuum"
-
-        # Current densities for realistic MOSFET structure
+        # Current densities for proper planar MOSFET configuration
         Ex = -np.gradient(V, axis=1) / (L / nx)  # Proper scaling
         Ey = -np.gradient(V, axis=0) / (W_total / ny)  # Proper scaling
 
@@ -650,23 +622,25 @@ class SimulationWorker(QObject):
 
         for i in range(ny):
             for j in range(nx):
+                x_pos = X[i, j]
                 y_pos = Y[i, j]
 
                 # Current only in semiconductor regions
-                if y_pos <= substrate_thickness + well_thickness:  # Silicon regions
+                if y_pos <= silicon_thickness:  # Silicon layer
                     Jn[i, j] = q * mu_n * n[i, j] * np.sqrt(Ex[i, j]**2 + Ey[i, j]**2)
                     Jp[i, j] = q * mu_p * p[i, j] * np.sqrt(Ex[i, j]**2 + Ey[i, j]**2)
-                elif (y_pos <= substrate_thickness + well_thickness + gate_oxide_thickness and
-                      gate_start <= X[i, j] <= gate_end):  # Gate oxide
-                    # No current in insulator
-                    Jn[i, j] = 0.0
-                    Jp[i, j] = 0.0
-                elif y_pos > substrate_thickness + well_thickness + gate_oxide_thickness:  # Poly gate
-                    if gate_start <= X[i, j] <= gate_end:
-                        # High conductivity in poly gate
-                        Jn[i, j] = q * 0.1 * n[i, j] * np.sqrt(Ex[i, j]**2 + Ey[i, j]**2)
-                        Jp[i, j] = 0.0  # N-type poly
-                    else:
+
+                elif y_pos > silicon_thickness:  # Above silicon
+                    if gate_start <= x_pos <= gate_end:  # Gate stack region
+                        if y_pos <= silicon_thickness + gate_oxide_thickness:  # Gate oxide
+                            # No current in insulator
+                            Jn[i, j] = 0.0
+                            Jp[i, j] = 0.0
+                        else:  # Polysilicon gate
+                            # High conductivity in poly gate
+                            Jn[i, j] = q * 0.1 * n[i, j] * np.sqrt(Ex[i, j]**2 + Ey[i, j]**2)
+                            Jp[i, j] = 0.0  # N-type poly
+                    else:  # Air regions above source/drain
                         Jn[i, j] = 0.0
                         Jp[i, j] = 0.0
 
