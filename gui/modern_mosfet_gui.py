@@ -25,7 +25,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QFont, QPalette, QColor, QIcon, QPixmap, QPainter, QLinearGradient,
-    QBrush, QPen
+    QBrush, QPen, QTextCursor
 )
 
 # Try to import matplotlib for plotting
@@ -532,6 +532,336 @@ class SimulationWorker(QObject):
             'grid_size': (nx, ny)
         }
 
+class IVSimulationWorker(QObject):
+    """Worker thread for I-V characteristics simulation"""
+
+    # Signals
+    progress_updated = Signal(int)
+    log_message = Signal(str)
+    simulation_completed = Signal(dict)
+    simulation_failed = Signal(str)
+
+    def __init__(self, config: PhysicsConfig):
+        super().__init__()
+        self.config = config
+        self.is_running = False
+
+    def run_iv_characteristics(self):
+        """Run complete I-V characteristics simulation"""
+
+        try:
+            self.is_running = True
+            self.log_message.emit("🚀 Starting I-V characteristics simulation...")
+            self.progress_updated.emit(5)
+
+            import time
+
+            # Define voltage sweeps
+            Vg_values = np.linspace(0.0, 1.5, 8)  # Gate voltage sweep
+            Vd_values = np.linspace(0.0, 1.5, 15)  # Drain voltage sweep
+            Vs = 0.0  # Source grounded
+            Vsub = 0.0  # Substrate grounded
+
+            total_points = len(Vg_values) * len(Vd_values)
+            current_point = 0
+
+            self.log_message.emit(f"📊 I-V Simulation Parameters:")
+            self.log_message.emit(f"   Gate voltage: {Vg_values[0]:.1f}V to {Vg_values[-1]:.1f}V ({len(Vg_values)} points)")
+            self.log_message.emit(f"   Drain voltage: {Vd_values[0]:.1f}V to {Vd_values[-1]:.1f}V ({len(Vd_values)} points)")
+            self.log_message.emit(f"   Total simulation points: {total_points}")
+            self.log_message.emit(f"   Device: {self.config.length*1e9:.0f}nm × {self.config.width*1e6:.1f}μm")
+
+            # Storage for results
+            iv_results = {
+                'Vg_values': Vg_values,
+                'Vd_values': Vd_values,
+                'Id_matrix': np.zeros((len(Vg_values), len(Vd_values))),
+                'regions_matrix': np.empty((len(Vg_values), len(Vd_values)), dtype=object),
+                'simulation_time': 0,
+                'device_params': {
+                    'length': self.config.length,
+                    'width': self.config.width,
+                    'tox': self.config.tox,
+                    'temperature': self.config.temperature
+                }
+            }
+
+            start_time = time.time()
+
+            # Calculate threshold voltage once
+            ni = 1.45e16
+            k = 1.381e-23
+            q = 1.602e-19
+            T = self.config.temperature
+            Vt = k * T / q
+
+            phi_F = Vt * np.log(self.config.Na_substrate / ni)
+            epsilon_si = 11.7 * 8.854e-12
+            epsilon_ox = 3.9 * 8.854e-12
+            Cox = epsilon_ox / self.config.tox
+            gamma = np.sqrt(2 * q * epsilon_si * self.config.Na_substrate) / Cox
+            Vth = 2 * phi_F + gamma * np.sqrt(2 * phi_F)
+
+            self.log_message.emit(f"🔬 Calculated threshold voltage: {Vth:.3f} V")
+
+            # Sweep through all voltage combinations
+            for i, Vg in enumerate(Vg_values):
+                self.log_message.emit(f"")
+                self.log_message.emit(f"📈 Gate voltage sweep: Vg = {Vg:.2f}V ({i+1}/{len(Vg_values)})")
+
+                for j, Vd in enumerate(Vd_values):
+                    current_point += 1
+                    progress = int((current_point / total_points) * 90) + 5
+                    self.progress_updated.emit(progress)
+
+                    # Calculate drain current using realistic MOSFET model
+                    W_over_L = self.config.width / self.config.length
+                    mu_eff = 0.05  # Effective mobility (m²/V·s)
+
+                    if Vg < Vth:
+                        # Subthreshold region
+                        Id = 1e-15 * np.exp((Vg - Vth) / (10 * Vt))
+                        region = "SUBTHRESHOLD"
+                    else:
+                        if Vd < (Vg - Vth):
+                            # Linear region
+                            Id = mu_eff * Cox * W_over_L * ((Vg - Vth) * Vd - 0.5 * Vd**2)
+                            region = "LINEAR"
+                        else:
+                            # Saturation region
+                            Id = 0.5 * mu_eff * Cox * W_over_L * (Vg - Vth)**2
+                            region = "SATURATION"
+
+                    # Add channel length modulation in saturation
+                    if region == "SATURATION" and Vd > (Vg - Vth):
+                        lambda_clm = 0.1  # Channel length modulation parameter
+                        Id *= (1 + lambda_clm * (Vd - (Vg - Vth)))
+
+                    # Store results
+                    iv_results['Id_matrix'][i, j] = Id
+                    iv_results['regions_matrix'][i, j] = region
+
+                    # Log progress every 10 points
+                    if current_point % 10 == 0:
+                        self.log_message.emit(f"   Point {current_point}/{total_points}: Vd={Vd:.2f}V, Id={Id:.2e}A, {region}")
+
+                # Brief pause to show progress
+                time.sleep(0.05)
+
+            simulation_time = time.time() - start_time
+            iv_results['simulation_time'] = simulation_time
+
+            self.progress_updated.emit(95)
+
+            # Calculate statistics
+            Id_max = np.max(iv_results['Id_matrix'])
+            Id_min = np.min(iv_results['Id_matrix'][iv_results['Id_matrix'] > 0])
+            on_off_ratio = Id_max / Id_min if Id_min > 0 else float('inf')
+
+            # Count operating regions
+            regions_flat = iv_results['regions_matrix'].flatten()
+            subthreshold_count = np.sum(regions_flat == "SUBTHRESHOLD")
+            linear_count = np.sum(regions_flat == "LINEAR")
+            saturation_count = np.sum(regions_flat == "SATURATION")
+
+            self.log_message.emit(f"")
+            self.log_message.emit(f"📊 I-V CHARACTERISTICS COMPLETED:")
+            self.log_message.emit(f"   Simulation time: {simulation_time:.2f} seconds")
+            self.log_message.emit(f"   Total points simulated: {total_points}")
+            self.log_message.emit(f"   Current range: {Id_min:.2e} to {Id_max:.2e} A")
+            self.log_message.emit(f"   On/Off ratio: {on_off_ratio:.1e}")
+            self.log_message.emit(f"   Threshold voltage: {Vth:.3f} V")
+            self.log_message.emit(f"")
+            self.log_message.emit(f"📈 Operating region distribution:")
+            self.log_message.emit(f"   Subthreshold: {subthreshold_count} points ({subthreshold_count/total_points*100:.1f}%)")
+            self.log_message.emit(f"   Linear: {linear_count} points ({linear_count/total_points*100:.1f}%)")
+            self.log_message.emit(f"   Saturation: {saturation_count} points ({saturation_count/total_points*100:.1f}%)")
+
+            self.progress_updated.emit(100)
+            self.log_message.emit("✅ I-V characteristics simulation completed successfully!")
+
+            self.simulation_completed.emit(iv_results)
+
+        except Exception as e:
+            self.simulation_failed.emit(str(e))
+        finally:
+            self.is_running = False
+
+class TransientSimulationWorker(QObject):
+    """Worker thread for transient simulation"""
+
+    # Signals
+    progress_updated = Signal(int)
+    log_message = Signal(str)
+    simulation_completed = Signal(dict)
+    simulation_failed = Signal(str)
+
+    def __init__(self, config: PhysicsConfig):
+        super().__init__()
+        self.config = config
+        self.is_running = False
+
+    def run_transient_simulation(self, scenario_type="gate_step"):
+        """Run transient simulation with specified scenario"""
+
+        try:
+            self.is_running = True
+            self.log_message.emit(f"⚡ Starting transient simulation: {scenario_type}")
+            self.progress_updated.emit(5)
+
+            import time
+
+            # Define time parameters
+            total_time = 10e-9  # 10 ns
+            dt = 50e-12  # 50 ps time step
+            time_points = np.arange(0, total_time, dt)
+
+            self.log_message.emit(f"⏱️  Transient Simulation Parameters:")
+            self.log_message.emit(f"   Total time: {total_time*1e9:.1f} ns")
+            self.log_message.emit(f"   Time step: {dt*1e12:.0f} ps")
+            self.log_message.emit(f"   Number of time points: {len(time_points)}")
+            self.log_message.emit(f"   Scenario: {scenario_type}")
+
+            # Define voltage scenarios
+            if scenario_type == "gate_step":
+                self.log_message.emit(f"   Gate step: 0V → 1.0V at t = {total_time/2*1e9:.1f} ns")
+                Vg_func = lambda t: 1.0 if t > total_time/2 else 0.0
+                Vd_func = lambda t: 0.6  # Constant drain voltage
+                scenario_name = "Gate Step Response (0V→1V)"
+
+            elif scenario_type == "drain_pulse":
+                self.log_message.emit(f"   Drain pulse: 0.1V → 0.8V → 0.1V")
+                Vg_func = lambda t: 0.8  # Constant gate voltage
+                Vd_func = lambda t: 0.8 if total_time/4 < t < 3*total_time/4 else 0.1
+                scenario_name = "Drain Pulse (0.1V→0.8V→0.1V)"
+
+            elif scenario_type == "switching":
+                self.log_message.emit(f"   Switching: Gate ON/OFF with 2.5 ns period")
+                period = 2.5e-9
+                Vg_func = lambda t: 1.0 if (t % period) < (period/2) else 0.0
+                Vd_func = lambda t: 0.6  # Constant drain voltage
+                scenario_name = "Switching Transient (2.5ns period)"
+
+            # Storage for results
+            transient_results = {
+                'time_points': time_points,
+                'Vg_values': np.zeros(len(time_points)),
+                'Vd_values': np.zeros(len(time_points)),
+                'Id_values': np.zeros(len(time_points)),
+                'regions': [],
+                'scenario_type': scenario_type,
+                'scenario_name': scenario_name,
+                'simulation_time': 0,
+                'device_params': {
+                    'length': self.config.length,
+                    'width': self.config.width,
+                    'tox': self.config.tox,
+                    'temperature': self.config.temperature
+                }
+            }
+
+            start_time = time.time()
+
+            # Calculate threshold voltage
+            ni = 1.45e16
+            k = 1.381e-23
+            q = 1.602e-19
+            T = self.config.temperature
+            Vt = k * T / q
+
+            phi_F = Vt * np.log(self.config.Na_substrate / ni)
+            epsilon_si = 11.7 * 8.854e-12
+            epsilon_ox = 3.9 * 8.854e-12
+            Cox = epsilon_ox / self.config.tox
+            gamma = np.sqrt(2 * q * epsilon_si * self.config.Na_substrate) / Cox
+            Vth = 2 * phi_F + gamma * np.sqrt(2 * phi_F)
+
+            self.log_message.emit(f"🔬 Using threshold voltage: {Vth:.3f} V")
+
+            # Time stepping simulation
+            for i, t in enumerate(time_points):
+                progress = int((i / len(time_points)) * 90) + 5
+                if i % 20 == 0:  # Update progress every 20 points
+                    self.progress_updated.emit(progress)
+
+                # Get voltages at current time
+                Vg = Vg_func(t)
+                Vd = Vd_func(t)
+                Vs = 0.0
+                Vsub = 0.0
+
+                # Store voltages
+                transient_results['Vg_values'][i] = Vg
+                transient_results['Vd_values'][i] = Vd
+
+                # Calculate drain current (including capacitive effects)
+                W_over_L = self.config.width / self.config.length
+                mu_eff = 0.05  # Effective mobility
+
+                if Vg < Vth:
+                    # Subthreshold
+                    Id = 1e-15 * np.exp((Vg - Vth) / (10 * Vt))
+                    region = "SUBTHRESHOLD"
+                else:
+                    if Vd < (Vg - Vth):
+                        # Linear
+                        Id = mu_eff * Cox * W_over_L * ((Vg - Vth) * Vd - 0.5 * Vd**2)
+                        region = "LINEAR"
+                    else:
+                        # Saturation
+                        Id = 0.5 * mu_eff * Cox * W_over_L * (Vg - Vth)**2
+                        region = "SATURATION"
+
+                # Add simple capacitive transient effects
+                if i > 0:
+                    # Gate capacitance charging/discharging
+                    dVg_dt = (Vg - transient_results['Vg_values'][i-1]) / dt
+                    Cg = Cox * self.config.length * self.config.width  # Gate capacitance
+                    Ig_cap = Cg * dVg_dt  # Capacitive current
+
+                    # Modify drain current based on capacitive effects
+                    if abs(dVg_dt) > 1e9:  # Significant voltage change
+                        Id *= (1 + 0.1 * np.sign(dVg_dt))  # Simple transient effect
+
+                transient_results['Id_values'][i] = Id
+                transient_results['regions'].append(region)
+
+                # Log progress every 50 time points
+                if i % 50 == 0:
+                    self.log_message.emit(f"   t = {t*1e9:.2f} ns: Vg={Vg:.2f}V, Vd={Vd:.2f}V, Id={Id:.2e}A, {region}")
+
+            simulation_time = time.time() - start_time
+            transient_results['simulation_time'] = simulation_time
+
+            self.progress_updated.emit(95)
+
+            # Calculate statistics
+            Id_max = np.max(transient_results['Id_values'])
+            Id_min = np.min(transient_results['Id_values'][transient_results['Id_values'] > 0])
+            Id_avg = np.mean(transient_results['Id_values'])
+
+            # Calculate switching metrics
+            Id_diff = np.diff(transient_results['Id_values'])
+            max_di_dt = np.max(np.abs(Id_diff)) / dt
+
+            self.log_message.emit(f"")
+            self.log_message.emit(f"⚡ TRANSIENT SIMULATION COMPLETED:")
+            self.log_message.emit(f"   Simulation time: {simulation_time:.2f} seconds")
+            self.log_message.emit(f"   Time points simulated: {len(time_points)}")
+            self.log_message.emit(f"   Current range: {Id_min:.2e} to {Id_max:.2e} A")
+            self.log_message.emit(f"   Average current: {Id_avg:.2e} A")
+            self.log_message.emit(f"   Max dI/dt: {max_di_dt:.2e} A/s")
+
+            self.progress_updated.emit(100)
+            self.log_message.emit("✅ Transient simulation completed successfully!")
+
+            self.simulation_completed.emit(transient_results)
+
+        except Exception as e:
+            self.simulation_failed.emit(str(e))
+        finally:
+            self.is_running = False
+
 class ModernSlider(QWidget):
     """Custom modern slider with value display"""
 
@@ -731,6 +1061,24 @@ class ModernMOSFETGUI(QMainWindow):
         self.iv_button = QPushButton("📈 Generate I-V Curves")
         self.iv_button.clicked.connect(self.run_iv_simulation)
         button_layout.addWidget(self.iv_button)
+
+        # Transient simulations
+        transient_group = QGroupBox("⚡ Transient Simulations")
+        transient_layout = QVBoxLayout(transient_group)
+
+        self.gate_step_button = QPushButton("🔄 Gate Step Response")
+        self.gate_step_button.clicked.connect(lambda: self.run_transient_simulation("gate_step"))
+        transient_layout.addWidget(self.gate_step_button)
+
+        self.drain_pulse_button = QPushButton("📊 Drain Pulse")
+        self.drain_pulse_button.clicked.connect(lambda: self.run_transient_simulation("drain_pulse"))
+        transient_layout.addWidget(self.drain_pulse_button)
+
+        self.switching_button = QPushButton("🔀 Switching Transient")
+        self.switching_button.clicked.connect(lambda: self.run_transient_simulation("switching"))
+        transient_layout.addWidget(self.switching_button)
+
+        button_layout.addWidget(transient_group)
 
         # Stop simulation
         self.stop_button = QPushButton("⏹ Stop Simulation")
@@ -1171,8 +1519,66 @@ class ModernMOSFETGUI(QMainWindow):
 
     def run_iv_simulation(self):
         """Run I-V characteristics simulation"""
-        self.log_message("📈 I-V characteristics simulation not yet implemented")
-        QMessageBox.information(self, "Info", "I-V characteristics simulation will be implemented in the C++ backend")
+        if self.worker and self.worker.is_running:
+            return
+
+        self.log_message("📈 Starting I-V characteristics simulation...")
+
+        # Update UI
+        self.sim_button.setEnabled(False)
+        self.iv_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.progress_bar.setValue(0)
+
+        # Create worker for I-V simulation
+        self.worker = IVSimulationWorker(self.config)
+        self.worker_thread = QThread()
+        self.worker.moveToThread(self.worker_thread)
+
+        # Connect signals
+        self.worker.progress_updated.connect(self.progress_bar.setValue)
+        self.worker.log_message.connect(self.log_message)
+        self.worker.simulation_completed.connect(self.on_iv_simulation_completed)
+        self.worker.simulation_failed.connect(self.on_simulation_failed)
+
+        # Start I-V simulation
+        self.worker_thread.started.connect(self.worker.run_iv_characteristics)
+        self.worker_thread.start()
+
+        self.statusBar().showMessage("Running I-V characteristics simulation...")
+
+    def run_transient_simulation(self, scenario_type):
+        """Run transient simulation with specified scenario"""
+        if self.worker and self.worker.is_running:
+            return
+
+        self.log_message(f"⚡ Starting transient simulation: {scenario_type}")
+
+        # Update UI
+        self.sim_button.setEnabled(False)
+        self.iv_button.setEnabled(False)
+        self.gate_step_button.setEnabled(False)
+        self.drain_pulse_button.setEnabled(False)
+        self.switching_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.progress_bar.setValue(0)
+
+        # Create worker for transient simulation
+        self.worker = TransientSimulationWorker(self.config)
+        self.worker_thread = QThread()
+        self.worker.moveToThread(self.worker_thread)
+
+        # Connect signals
+        self.worker.progress_updated.connect(self.progress_bar.setValue)
+        self.worker.log_message.connect(self.log_message)
+        self.worker.simulation_completed.connect(self.on_transient_simulation_completed)
+        self.worker.simulation_failed.connect(self.on_simulation_failed)
+
+        # Start transient simulation
+        self.worker_thread.started.connect(lambda: self.worker.run_transient_simulation(scenario_type))
+        self.worker_thread.start()
+
+        self.statusBar().showMessage(f"Running transient simulation: {scenario_type}")
 
     def stop_simulation(self):
         """Stop current simulation"""
@@ -1182,6 +1588,9 @@ class ModernMOSFETGUI(QMainWindow):
 
         self.sim_button.setEnabled(True)
         self.iv_button.setEnabled(True)
+        self.gate_step_button.setEnabled(True)
+        self.drain_pulse_button.setEnabled(True)
+        self.switching_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.progress_bar.setValue(0)
 
@@ -1195,6 +1604,9 @@ class ModernMOSFETGUI(QMainWindow):
         # Update UI
         self.sim_button.setEnabled(True)
         self.iv_button.setEnabled(True)
+        self.gate_step_button.setEnabled(True)
+        self.drain_pulse_button.setEnabled(True)
+        self.switching_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.progress_bar.setValue(100)
 
@@ -1203,6 +1615,56 @@ class ModernMOSFETGUI(QMainWindow):
         self.update_summary()
 
         self.statusBar().showMessage("Simulation completed successfully")
+
+        # Clean up thread
+        if self.worker_thread:
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+
+    def on_iv_simulation_completed(self, results):
+        """Handle I-V simulation completion"""
+        self.simulation_results = results
+        self.simulation_results['type'] = 'iv_characteristics'
+
+        # Update UI
+        self.sim_button.setEnabled(True)
+        self.iv_button.setEnabled(True)
+        self.gate_step_button.setEnabled(True)
+        self.drain_pulse_button.setEnabled(True)
+        self.switching_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.progress_bar.setValue(100)
+
+        # Update plots and summary for I-V data
+        self.update_iv_plots()
+        self.update_iv_summary()
+
+        self.statusBar().showMessage("I-V characteristics completed successfully")
+
+        # Clean up thread
+        if self.worker_thread:
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+
+    def on_transient_simulation_completed(self, results):
+        """Handle transient simulation completion"""
+        self.simulation_results = results
+        self.simulation_results['type'] = 'transient'
+
+        # Update UI
+        self.sim_button.setEnabled(True)
+        self.iv_button.setEnabled(True)
+        self.gate_step_button.setEnabled(True)
+        self.drain_pulse_button.setEnabled(True)
+        self.switching_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.progress_bar.setValue(100)
+
+        # Update plots and summary for transient data
+        self.update_transient_plots()
+        self.update_transient_summary()
+
+        self.statusBar().showMessage("Transient simulation completed successfully")
 
         # Clean up thread
         if self.worker_thread:
@@ -1244,7 +1706,7 @@ class ModernMOSFETGUI(QMainWindow):
 
                 if self.auto_scroll.isChecked():
                     cursor = self.log_text.textCursor()
-                    cursor.movePosition(cursor.End)
+                    cursor.movePosition(QTextCursor.End)
                     self.log_text.setTextCursor(cursor)
 
         except queue.Empty:
@@ -1347,6 +1809,159 @@ class ModernMOSFETGUI(QMainWindow):
         self.figure.tight_layout()
         self.canvas.draw()
 
+    def update_iv_plots(self):
+        """Update I-V characteristics plots"""
+        if not MATPLOTLIB_AVAILABLE or not self.simulation_results:
+            return
+
+        self.figure.clear()
+
+        # Get I-V data
+        results = self.simulation_results
+        Vg_values = results['Vg_values']
+        Vd_values = results['Vd_values']
+        Id_matrix = results['Id_matrix']
+
+        # Create I-V plots
+        ax1 = self.figure.add_subplot(2, 2, 1)
+        ax2 = self.figure.add_subplot(2, 2, 2)
+        ax3 = self.figure.add_subplot(2, 2, 3)
+        ax4 = self.figure.add_subplot(2, 2, 4)
+
+        # Set dark theme
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.set_facecolor('#2d2d2d')
+            ax.tick_params(colors='white')
+            ax.xaxis.label.set_color('white')
+            ax.yaxis.label.set_color('white')
+            ax.title.set_color('white')
+
+        # Plot 1: Id vs Vd for different Vg (Output characteristics)
+        for i, Vg in enumerate(Vg_values[::2]):  # Plot every other Vg
+            ax1.plot(Vd_values, Id_matrix[i*2, :], 'o-', linewidth=2,
+                    label=f'Vg = {Vg:.1f}V', alpha=0.8)
+        ax1.set_xlabel('Drain Voltage (V)')
+        ax1.set_ylabel('Drain Current (A)')
+        ax1.set_yscale('log')
+        ax1.set_title('Output Characteristics (Id vs Vd)')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        # Plot 2: Id vs Vg for different Vd (Transfer characteristics)
+        for j, Vd in enumerate(Vd_values[::3]):  # Plot every third Vd
+            ax2.plot(Vg_values, Id_matrix[:, j*3], 's-', linewidth=2,
+                    label=f'Vd = {Vd:.1f}V', alpha=0.8)
+        ax2.set_xlabel('Gate Voltage (V)')
+        ax2.set_ylabel('Drain Current (A)')
+        ax2.set_yscale('log')
+        ax2.set_title('Transfer Characteristics (Id vs Vg)')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        # Plot 3: 2D contour plot of Id
+        X, Y = np.meshgrid(Vd_values, Vg_values)
+        contour = ax3.contourf(X, Y, np.log10(np.maximum(Id_matrix, 1e-20)),
+                              levels=20, cmap='plasma')
+        ax3.set_xlabel('Drain Voltage (V)')
+        ax3.set_ylabel('Gate Voltage (V)')
+        ax3.set_title('Current Density Map (log₁₀ A)')
+        self.figure.colorbar(contour, ax=ax3, shrink=0.8)
+
+        # Plot 4: Operating regions map
+        regions_matrix = results['regions_matrix']
+        region_map = np.zeros_like(Id_matrix)
+        for i in range(len(Vg_values)):
+            for j in range(len(Vd_values)):
+                if regions_matrix[i, j] == "SUBTHRESHOLD":
+                    region_map[i, j] = 0
+                elif regions_matrix[i, j] == "LINEAR":
+                    region_map[i, j] = 1
+                elif regions_matrix[i, j] == "SATURATION":
+                    region_map[i, j] = 2
+
+        im = ax4.imshow(region_map, aspect='auto', origin='lower',
+                       extent=[Vd_values[0], Vd_values[-1], Vg_values[0], Vg_values[-1]],
+                       cmap='viridis', alpha=0.8)
+        ax4.set_xlabel('Drain Voltage (V)')
+        ax4.set_ylabel('Gate Voltage (V)')
+        ax4.set_title('Operating Regions Map')
+
+        # Add colorbar with custom labels
+        cbar = self.figure.colorbar(im, ax=ax4, shrink=0.8)
+        cbar.set_ticks([0, 1, 2])
+        cbar.set_ticklabels(['Subthreshold', 'Linear', 'Saturation'])
+
+        self.figure.tight_layout()
+        self.canvas.draw()
+
+    def update_transient_plots(self):
+        """Update transient simulation plots"""
+        if not MATPLOTLIB_AVAILABLE or not self.simulation_results:
+            return
+
+        self.figure.clear()
+
+        # Get transient data
+        results = self.simulation_results
+        time_points = results['time_points'] * 1e9  # Convert to ns
+        Vg_values = results['Vg_values']
+        Vd_values = results['Vd_values']
+        Id_values = results['Id_values']
+
+        # Create transient plots
+        ax1 = self.figure.add_subplot(2, 2, 1)
+        ax2 = self.figure.add_subplot(2, 2, 2)
+        ax3 = self.figure.add_subplot(2, 2, 3)
+        ax4 = self.figure.add_subplot(2, 2, 4)
+
+        # Set dark theme
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.set_facecolor('#2d2d2d')
+            ax.tick_params(colors='white')
+            ax.xaxis.label.set_color('white')
+            ax.yaxis.label.set_color('white')
+            ax.title.set_color('white')
+
+        # Plot 1: Drain current vs time
+        ax1.plot(time_points, Id_values * 1e6, 'b-', linewidth=2)
+        ax1.set_xlabel('Time (ns)')
+        ax1.set_ylabel('Drain Current (μA)')
+        ax1.set_title(f"Drain Current vs Time\n{results['scenario_name']}")
+        ax1.grid(True, alpha=0.3)
+
+        # Plot 2: Gate and drain voltages vs time
+        ax2.plot(time_points, Vg_values, 'r-', linewidth=2, label='Gate Voltage')
+        ax2.plot(time_points, Vd_values, 'g-', linewidth=2, label='Drain Voltage')
+        ax2.set_xlabel('Time (ns)')
+        ax2.set_ylabel('Voltage (V)')
+        ax2.set_title('Applied Voltages vs Time')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        # Plot 3: Current vs gate voltage (dynamic transfer curve)
+        ax3.scatter(Vg_values, Id_values * 1e6, c=time_points, cmap='viridis', alpha=0.7)
+        ax3.set_xlabel('Gate Voltage (V)')
+        ax3.set_ylabel('Drain Current (μA)')
+        ax3.set_title('Dynamic Transfer Curve')
+        cbar = self.figure.colorbar(ax3.collections[0], ax=ax3, shrink=0.8)
+        cbar.set_label('Time (ns)')
+        ax3.grid(True, alpha=0.3)
+
+        # Plot 4: dI/dt vs time (current derivative)
+        if len(Id_values) > 1:
+            dt = (time_points[1] - time_points[0]) * 1e-9  # Convert back to seconds
+            dI_dt = np.diff(Id_values) / dt
+            time_diff = time_points[1:]
+
+            ax4.plot(time_diff, dI_dt, 'm-', linewidth=2)
+            ax4.set_xlabel('Time (ns)')
+            ax4.set_ylabel('dI/dt (A/s)')
+            ax4.set_title('Current Rate of Change')
+            ax4.grid(True, alpha=0.3)
+
+        self.figure.tight_layout()
+        self.canvas.draw()
+
     def save_plots(self):
         """Save plots to file"""
         if not MATPLOTLIB_AVAILABLE:
@@ -1407,6 +2022,134 @@ class ModernMOSFETGUI(QMainWindow):
         summary.append(f"   Drain: {bc[1]:.3f} V")
         summary.append(f"   Substrate: {bc[2]:.3f} V")
         summary.append(f"   Gate: {bc[3]:.3f} V")
+
+        self.summary_text.setPlainText("\n".join(summary))
+
+    def update_iv_summary(self):
+        """Update I-V characteristics summary"""
+        if not self.simulation_results:
+            return
+
+        results = self.simulation_results
+
+        summary = []
+        summary.append("📈 I-V CHARACTERISTICS RESULTS SUMMARY")
+        summary.append("=" * 50)
+        summary.append("")
+
+        # Device info
+        summary.append("🔧 DEVICE PARAMETERS:")
+        summary.append(f"   Channel Length: {self.config.length*1e9:.0f} nm")
+        summary.append(f"   Channel Width: {self.config.width*1e6:.1f} μm")
+        summary.append(f"   Oxide Thickness: {self.config.tox*1e9:.1f} nm")
+        summary.append(f"   Temperature: {self.config.temperature:.1f} K")
+        summary.append("")
+
+        # Simulation parameters
+        summary.append("📊 SIMULATION PARAMETERS:")
+        summary.append(f"   Gate voltage range: {results['Vg_values'][0]:.1f}V to {results['Vg_values'][-1]:.1f}V")
+        summary.append(f"   Drain voltage range: {results['Vd_values'][0]:.1f}V to {results['Vd_values'][-1]:.1f}V")
+        summary.append(f"   Total simulation points: {len(results['Vg_values']) * len(results['Vd_values'])}")
+        summary.append(f"   Simulation time: {results['simulation_time']:.2f} seconds")
+        summary.append("")
+
+        # Results analysis
+        Id_matrix = results['Id_matrix']
+        Id_max = np.max(Id_matrix)
+        Id_min = np.min(Id_matrix[Id_matrix > 0])
+        on_off_ratio = Id_max / Id_min if Id_min > 0 else float('inf')
+
+        summary.append("📈 I-V CHARACTERISTICS ANALYSIS:")
+        summary.append(f"   Maximum current: {Id_max:.2e} A")
+        summary.append(f"   Minimum current: {Id_min:.2e} A")
+        summary.append(f"   On/Off ratio: {on_off_ratio:.1e}")
+        summary.append("")
+
+        # Operating regions analysis
+        regions_flat = results['regions_matrix'].flatten()
+        total_points = len(regions_flat)
+        subthreshold_count = np.sum(regions_flat == "SUBTHRESHOLD")
+        linear_count = np.sum(regions_flat == "LINEAR")
+        saturation_count = np.sum(regions_flat == "SATURATION")
+
+        summary.append("🎯 OPERATING REGIONS DISTRIBUTION:")
+        summary.append(f"   Subthreshold: {subthreshold_count} points ({subthreshold_count/total_points*100:.1f}%)")
+        summary.append(f"   Linear: {linear_count} points ({linear_count/total_points*100:.1f}%)")
+        summary.append(f"   Saturation: {saturation_count} points ({saturation_count/total_points*100:.1f}%)")
+
+        self.summary_text.setPlainText("\n".join(summary))
+
+    def update_transient_summary(self):
+        """Update transient simulation summary"""
+        if not self.simulation_results:
+            return
+
+        results = self.simulation_results
+
+        summary = []
+        summary.append("⚡ TRANSIENT SIMULATION RESULTS SUMMARY")
+        summary.append("=" * 50)
+        summary.append("")
+
+        # Device info
+        summary.append("🔧 DEVICE PARAMETERS:")
+        summary.append(f"   Channel Length: {self.config.length*1e9:.0f} nm")
+        summary.append(f"   Channel Width: {self.config.width*1e6:.1f} μm")
+        summary.append(f"   Oxide Thickness: {self.config.tox*1e9:.1f} nm")
+        summary.append(f"   Temperature: {self.config.temperature:.1f} K")
+        summary.append("")
+
+        # Simulation parameters
+        time_points = results['time_points']
+        total_time = time_points[-1] - time_points[0]
+        dt = time_points[1] - time_points[0] if len(time_points) > 1 else 0
+
+        summary.append("⏱️  SIMULATION PARAMETERS:")
+        summary.append(f"   Scenario: {results['scenario_name']}")
+        summary.append(f"   Total time: {total_time*1e9:.1f} ns")
+        summary.append(f"   Time step: {dt*1e12:.0f} ps")
+        summary.append(f"   Number of time points: {len(time_points)}")
+        summary.append(f"   Simulation time: {results['simulation_time']:.2f} seconds")
+        summary.append("")
+
+        # Results analysis
+        Id_values = results['Id_values']
+        Vg_values = results['Vg_values']
+        Vd_values = results['Vd_values']
+
+        Id_max = np.max(Id_values)
+        Id_min = np.min(Id_values[Id_values > 0])
+        Id_avg = np.mean(Id_values)
+
+        summary.append("📈 TRANSIENT ANALYSIS:")
+        summary.append(f"   Maximum current: {Id_max:.2e} A")
+        summary.append(f"   Minimum current: {Id_min:.2e} A")
+        summary.append(f"   Average current: {Id_avg:.2e} A")
+        summary.append(f"   Current variation: {(Id_max - Id_min):.2e} A")
+        summary.append("")
+
+        # Voltage analysis
+        Vg_max = np.max(Vg_values)
+        Vg_min = np.min(Vg_values)
+        Vd_max = np.max(Vd_values)
+        Vd_min = np.min(Vd_values)
+
+        summary.append("⚡ VOLTAGE ANALYSIS:")
+        summary.append(f"   Gate voltage range: {Vg_min:.2f}V to {Vg_max:.2f}V")
+        summary.append(f"   Drain voltage range: {Vd_min:.2f}V to {Vd_max:.2f}V")
+        summary.append("")
+
+        # Dynamic analysis
+        if len(Id_values) > 1:
+            Id_diff = np.diff(Id_values)
+            max_di_dt = np.max(np.abs(Id_diff)) / dt
+
+            summary.append("🔄 DYNAMIC ANALYSIS:")
+            summary.append(f"   Maximum dI/dt: {max_di_dt:.2e} A/s")
+
+            # Count transitions
+            transitions = np.sum(np.abs(Id_diff) > np.std(Id_diff))
+            summary.append(f"   Significant transitions: {transitions}")
 
         self.summary_text.setPlainText("\n".join(summary))
 
