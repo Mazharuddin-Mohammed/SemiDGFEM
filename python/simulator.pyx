@@ -43,14 +43,6 @@ cdef extern from "poisson.hpp":
     int poisson_solve_2d(simulator_Poisson* poisson, double* bc, int bc_size, double* V, int V_size)
     int poisson_set_charge_density(simulator_Poisson* poisson, double* rho, int size)
 
-cdef extern from "device.hpp" namespace "simulator":
-    cppclass Device:
-        Device(double, double) except +
-        Device(double, double, vector[map[string, double]]) except +
-        double get_epsilon_at(double x, double y)
-        vector[double] get_extents()
-        bool is_valid()
-
 cdef class Simulator:
     cdef Device* device
     cdef simulator_Poisson* poisson
@@ -60,29 +52,59 @@ cdef class Simulator:
 
     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,
                   method="DG", mesh_type="Structured", regions=None):
+        # Declare variables at the beginning
+        cdef vector[map[string, double]] c_regions
+        cdef int mesh_enum, method_enum
+
+        # Initialize pointers to NULL for safety
+        self.device = NULL
+        self.poisson = NULL
+        self.dd = NULL
+
         self.num_points_x = num_points_x
         self.num_points_y = num_points_y
         self.method = method
         self.mesh_type = mesh_type
 
         regions = regions or []
-        cdef vector[map[string, double]] c_regions
         for r in regions:
             c_regions.push_back(r)
 
-        # Create C++ objects
-        if len(regions) > 0:
-            self.device = new Device(extents[0], extents[1], c_regions)
-        else:
-            self.device = new Device(extents[0], extents[1])
+        try:
+            # Create C++ objects with error checking
+            if len(regions) > 0:
+                self.device = new Device(extents[0], extents[1], c_regions)
+            else:
+                self.device = new Device(extents[0], extents[1])
 
-        # Use integer constants for enums
-        cdef int mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured
-        cdef int method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+            if self.device == NULL:
+                raise RuntimeError("Failed to create Device")
 
-        # Create using C interface
-        self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
-        self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
+            # Use integer constants for enums
+            mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured
+            method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+
+            # Create using C interface with error checking
+            self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
+            if self.poisson == NULL:
+                raise RuntimeError("Failed to create Poisson solver")
+
+            self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
+            if self.dd == NULL:
+                raise RuntimeError("Failed to create DriftDiffusion solver")
+
+        except Exception as e:
+            # Clean up on error
+            if self.dd:
+                destroy_drift_diffusion(self.dd)
+                self.dd = NULL
+            if self.poisson:
+                destroy_poisson(self.poisson)
+                self.poisson = NULL
+            if self.device:
+                del self.device
+                self.device = NULL
+            raise
 
     def __dealloc__(self):
         if self.dd:

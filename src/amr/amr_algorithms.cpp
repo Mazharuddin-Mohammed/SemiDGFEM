@@ -496,15 +496,45 @@ std::array<double, 2> compute_element_gradient(
 
 } // namespace utils
 
-// Missing function implementations
+// Advanced AMR implementations
 std::vector<double> AMRController::compute_residual_based_error(
     const std::vector<double>& solution,
     const std::vector<std::vector<int>>& elements,
     const std::vector<std::array<double, 2>>& nodes) {
 
-    // Simple stub implementation
-    (void)solution; (void)nodes; // Suppress warnings
-    std::vector<double> errors(elements.size(), 0.1); // Uniform error estimate
+    std::vector<double> errors(elements.size(), 0.0);
+
+    for (size_t elem_idx = 0; elem_idx < elements.size(); ++elem_idx) {
+        const auto& element = elements[elem_idx];
+        if (element.size() < 3) continue;
+
+        // Get element vertices
+        auto v1 = nodes[element[0]];
+        auto v2 = nodes[element[1]];
+        auto v3 = nodes[element[2]];
+
+        // Compute element area
+        double area = 0.5 * std::abs((v2[0] - v1[0]) * (v3[1] - v1[1]) -
+                                     (v3[0] - v1[0]) * (v2[1] - v1[1]));
+
+        if (area < 1e-12) continue;
+
+        // Get solution values at vertices
+        double u1 = (element[0] < solution.size()) ? solution[element[0]] : 0.0;
+        double u2 = (element[1] < solution.size()) ? solution[element[1]] : 0.0;
+        double u3 = (element[2] < solution.size()) ? solution[element[2]] : 0.0;
+
+        // Compute gradient-based error estimate
+        double grad_x = ((u2 - u1) * (v3[1] - v1[1]) - (u3 - u1) * (v2[1] - v1[1])) / (2.0 * area);
+        double grad_y = ((u3 - u1) * (v2[0] - v1[0]) - (u2 - u1) * (v3[0] - v1[0])) / (2.0 * area);
+
+        // Element diameter
+        double h = std::sqrt(area);
+
+        // Residual-based error estimate: η = h * ||∇u||
+        errors[elem_idx] = h * std::sqrt(grad_x * grad_x + grad_y * grad_y);
+    }
+
     return errors;
 }
 
@@ -513,9 +543,95 @@ std::vector<double> AMRController::compute_zz_error(
     const std::vector<std::vector<int>>& elements,
     const std::vector<std::array<double, 2>>& nodes) {
 
-    // Simple stub implementation
-    (void)solution; (void)nodes; // Suppress warnings
-    std::vector<double> errors(elements.size(), 0.05); // Uniform error estimate
+    std::vector<double> errors(elements.size(), 0.0);
+
+    // Zienkiewicz-Zhu error estimator based on gradient recovery
+    std::vector<std::array<double, 2>> recovered_gradients(nodes.size(), {0.0, 0.0});
+    std::vector<double> node_weights(nodes.size(), 0.0);
+
+    // Step 1: Compute element gradients and project to nodes
+    for (size_t elem_idx = 0; elem_idx < elements.size(); ++elem_idx) {
+        const auto& element = elements[elem_idx];
+        if (element.size() < 3) continue;
+
+        // Get element vertices
+        auto v1 = nodes[element[0]];
+        auto v2 = nodes[element[1]];
+        auto v3 = nodes[element[2]];
+
+        // Compute element area
+        double area = 0.5 * std::abs((v2[0] - v1[0]) * (v3[1] - v1[1]) -
+                                     (v3[0] - v1[0]) * (v2[1] - v1[1]));
+
+        if (area < 1e-12) continue;
+
+        // Get solution values at vertices
+        double u1 = (element[0] < solution.size()) ? solution[element[0]] : 0.0;
+        double u2 = (element[1] < solution.size()) ? solution[element[1]] : 0.0;
+        double u3 = (element[2] < solution.size()) ? solution[element[2]] : 0.0;
+
+        // Compute element gradient
+        double grad_x = ((u2 - u1) * (v3[1] - v1[1]) - (u3 - u1) * (v2[1] - v1[1])) / (2.0 * area);
+        double grad_y = ((u3 - u1) * (v2[0] - v1[0]) - (u2 - u1) * (v3[0] - v1[0])) / (2.0 * area);
+
+        // Project to nodes (area-weighted averaging)
+        for (int i = 0; i < 3; ++i) {
+            if (element[i] < recovered_gradients.size()) {
+                recovered_gradients[element[i]][0] += area * grad_x;
+                recovered_gradients[element[i]][1] += area * grad_y;
+                node_weights[element[i]] += area;
+            }
+        }
+    }
+
+    // Step 2: Normalize recovered gradients
+    for (size_t i = 0; i < recovered_gradients.size(); ++i) {
+        if (node_weights[i] > 1e-12) {
+            recovered_gradients[i][0] /= node_weights[i];
+            recovered_gradients[i][1] /= node_weights[i];
+        }
+    }
+
+    // Step 3: Compute error for each element
+    for (size_t elem_idx = 0; elem_idx < elements.size(); ++elem_idx) {
+        const auto& element = elements[elem_idx];
+        if (element.size() < 3) continue;
+
+        // Get element vertices and area
+        auto v1 = nodes[element[0]];
+        auto v2 = nodes[element[1]];
+        auto v3 = nodes[element[2]];
+
+        double area = 0.5 * std::abs((v2[0] - v1[0]) * (v3[1] - v1[1]) -
+                                     (v3[0] - v1[0]) * (v2[1] - v1[1]));
+
+        if (area < 1e-12) continue;
+
+        // Compute element gradient
+        double u1 = (element[0] < solution.size()) ? solution[element[0]] : 0.0;
+        double u2 = (element[1] < solution.size()) ? solution[element[1]] : 0.0;
+        double u3 = (element[2] < solution.size()) ? solution[element[2]] : 0.0;
+
+        double elem_grad_x = ((u2 - u1) * (v3[1] - v1[1]) - (u3 - u1) * (v2[1] - v1[1])) / (2.0 * area);
+        double elem_grad_y = ((u3 - u1) * (v2[0] - v1[0]) - (u2 - u1) * (v3[0] - v1[0])) / (2.0 * area);
+
+        // Average recovered gradient at element centroid
+        double recovered_grad_x = 0.0, recovered_grad_y = 0.0;
+        for (int i = 0; i < 3; ++i) {
+            if (element[i] < recovered_gradients.size()) {
+                recovered_grad_x += recovered_gradients[element[i]][0];
+                recovered_grad_y += recovered_gradients[element[i]][1];
+            }
+        }
+        recovered_grad_x /= 3.0;
+        recovered_grad_y /= 3.0;
+
+        // ZZ error estimate: ||∇u_h - ∇u*||
+        double diff_x = elem_grad_x - recovered_grad_x;
+        double diff_y = elem_grad_y - recovered_grad_y;
+        errors[elem_idx] = std::sqrt(area) * std::sqrt(diff_x * diff_x + diff_y * diff_y);
+    }
+
     return errors;
 }
 
@@ -525,9 +641,135 @@ std::array<double, 2> AMRController::detect_anisotropy_direction(
     const std::vector<std::vector<int>>& elements,
     const std::vector<std::array<double, 2>>& vertices) {
 
-    // Simple stub implementation - return horizontal direction
-    (void)element_id; (void)solution; (void)elements; (void)vertices; // Suppress warnings
-    return {1.0, 0.0}; // Horizontal direction vector
+    if (element_id < 0 || element_id >= static_cast<int>(elements.size())) {
+        return {1.0, 0.0}; // Default horizontal direction
+    }
+
+    const auto& element = elements[element_id];
+    if (element.size() < 3) {
+        return {1.0, 0.0};
+    }
+
+    // Get element vertices
+    auto v1 = vertices[element[0]];
+    auto v2 = vertices[element[1]];
+    auto v3 = vertices[element[2]];
+
+    // Compute element area
+    double area = 0.5 * std::abs((v2[0] - v1[0]) * (v3[1] - v1[1]) -
+                                 (v3[0] - v1[0]) * (v2[1] - v1[1]));
+
+    if (area < 1e-12) {
+        return {1.0, 0.0};
+    }
+
+    // Get solution values at vertices
+    double u1 = (element[0] < solution.size()) ? solution[element[0]] : 0.0;
+    double u2 = (element[1] < solution.size()) ? solution[element[1]] : 0.0;
+    double u3 = (element[2] < solution.size()) ? solution[element[2]] : 0.0;
+
+    // Compute gradient
+    double grad_x = ((u2 - u1) * (v3[1] - v1[1]) - (u3 - u1) * (v2[1] - v1[1])) / (2.0 * area);
+    double grad_y = ((u3 - u1) * (v2[0] - v1[0]) - (u2 - u1) * (v3[0] - v1[0])) / (2.0 * area);
+
+    // Compute Hessian approximation using neighboring elements
+    double hxx = 0.0, hxy = 0.0, hyy = 0.0;
+    int neighbor_count = 0;
+
+    // Find neighboring elements (simplified approach)
+    for (size_t other_id = 0; other_id < elements.size(); ++other_id) {
+        if (other_id == static_cast<size_t>(element_id)) continue;
+
+        const auto& other_element = elements[other_id];
+        if (other_element.size() < 3) continue;
+
+        // Check if elements share an edge (have 2 common vertices)
+        int common_vertices = 0;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (element[i] == other_element[j]) {
+                    common_vertices++;
+                    break;
+                }
+            }
+        }
+
+        if (common_vertices >= 2) {
+            // Compute gradient difference for Hessian approximation
+            auto ov1 = vertices[other_element[0]];
+            auto ov2 = vertices[other_element[1]];
+            auto ov3 = vertices[other_element[2]];
+
+            double other_area = 0.5 * std::abs((ov2[0] - ov1[0]) * (ov3[1] - ov1[1]) -
+                                               (ov3[0] - ov1[0]) * (ov2[1] - ov1[1]));
+
+            if (other_area > 1e-12) {
+                double ou1 = (other_element[0] < solution.size()) ? solution[other_element[0]] : 0.0;
+                double ou2 = (other_element[1] < solution.size()) ? solution[other_element[1]] : 0.0;
+                double ou3 = (other_element[2] < solution.size()) ? solution[other_element[2]] : 0.0;
+
+                double other_grad_x = ((ou2 - ou1) * (ov3[1] - ov1[1]) - (ou3 - ou1) * (ov2[1] - ov1[1])) / (2.0 * other_area);
+                double other_grad_y = ((ou3 - ou1) * (ov2[0] - ov1[0]) - (ou2 - ou1) * (ov3[0] - ov1[0])) / (2.0 * other_area);
+
+                // Element centroids
+                double cx1 = (v1[0] + v2[0] + v3[0]) / 3.0;
+                double cy1 = (v1[1] + v2[1] + v3[1]) / 3.0;
+                double cx2 = (ov1[0] + ov2[0] + ov3[0]) / 3.0;
+                double cy2 = (ov1[1] + ov2[1] + ov3[1]) / 3.0;
+
+                double dx = cx2 - cx1;
+                double dy = cy2 - cy1;
+                double dist = std::sqrt(dx*dx + dy*dy);
+
+                if (dist > 1e-12) {
+                    // Approximate second derivatives
+                    double dgx = other_grad_x - grad_x;
+                    double dgy = other_grad_y - grad_y;
+
+                    hxx += dgx * dx / (dist * dist);
+                    hxy += 0.5 * (dgx * dy + dgy * dx) / (dist * dist);
+                    hyy += dgy * dy / (dist * dist);
+                    neighbor_count++;
+                }
+            }
+        }
+    }
+
+    if (neighbor_count > 0) {
+        hxx /= neighbor_count;
+        hxy /= neighbor_count;
+        hyy /= neighbor_count;
+    }
+
+    // Compute eigenvalues of Hessian to determine anisotropy direction
+    double trace = hxx + hyy;
+    double det = hxx * hyy - hxy * hxy;
+    double discriminant = trace * trace - 4.0 * det;
+
+    if (discriminant >= 0) {
+        double lambda1 = 0.5 * (trace + std::sqrt(discriminant));
+        double lambda2 = 0.5 * (trace - std::sqrt(discriminant));
+
+        // Direction of maximum curvature (eigenvector of larger eigenvalue)
+        if (std::abs(lambda1) > std::abs(lambda2)) {
+            if (std::abs(hxy) > 1e-12) {
+                double norm = std::sqrt(hxy*hxy + (lambda1 - hyy)*(lambda1 - hyy));
+                return {hxy / norm, (lambda1 - hyy) / norm};
+            } else if (std::abs(hxx - lambda1) > 1e-12) {
+                return {1.0, 0.0};
+            } else {
+                return {0.0, 1.0};
+            }
+        }
+    }
+
+    // Default: direction of gradient (steepest descent)
+    double grad_norm = std::sqrt(grad_x*grad_x + grad_y*grad_y);
+    if (grad_norm > 1e-12) {
+        return {grad_x / grad_norm, grad_y / grad_norm};
+    }
+
+    return {1.0, 0.0}; // Default horizontal direction
 }
 
 std::unordered_map<int, std::vector<int>> AMRController::perform_refinement(
