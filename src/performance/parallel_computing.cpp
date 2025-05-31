@@ -353,5 +353,59 @@ template class memory::AlignedVector<double>;
 template class memory::AlignedVector<float>;
 template class memory::AlignedVector<int>;
 
+// Missing Profiler implementations
+void Profiler::start_timer(const std::string& name) {
+    auto now = std::chrono::high_resolution_clock::now();
+    start_times_[name] = now;
+}
+
+void Profiler::end_timer(const std::string& name) {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto it = start_times_.find(name);
+    if (it != start_times_.end()) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - it->second);
+        double elapsed_ms = duration.count() / 1000.0;
+
+        total_times_[name] += elapsed_ms;
+        call_counts_[name]++;
+
+        start_times_.erase(it);
+    }
+}
+
+void Profiler::reset() {
+    start_times_.clear();
+    total_times_.clear();
+    call_counts_.clear();
+}
+
+std::vector<Profiler::ProfileData> Profiler::get_profile_data() const {
+    std::vector<ProfileData> data;
+    double total_time = 0.0;
+
+    // Calculate total time
+    for (const auto& pair : total_times_) {
+        total_time += pair.second;
+    }
+
+    // Create profile data
+    for (const auto& pair : total_times_) {
+        ProfileData pd;
+        pd.name = pair.first;
+        pd.total_time = pair.second;
+        pd.call_count = call_counts_.at(pair.first);
+        pd.average_time = pd.total_time / pd.call_count;
+        pd.percentage = (total_time > 0) ? (pd.total_time / total_time * 100.0) : 0.0;
+        data.push_back(pd);
+    }
+
+    return data;
+}
+
+void Profiler::print_profile() const {
+    auto data = get_profile_data();
+    // Simple stub - in real implementation would format and print nicely
+}
+
 } // namespace performance
 } // namespace simulator

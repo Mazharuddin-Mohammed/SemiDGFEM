@@ -191,14 +191,19 @@ std::vector<double> Poisson::solve_unstructured_2d(const std::vector<double>& bc
     }
     V_ = V_nodes;
     return V_;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error in unstructured Poisson solver: " << e.what() << std::endl;
+        return V_;
+    }
 }
 
-// [MODIFICATION]: Self-consistent Poisson solver
-std::vector<double> Poisson::solve_2d_self_consistent(const std::vector<double>& bc, 
-                                                     std::vector<double>& n, 
-                                                     std::vector<double>& p, 
-                                                     const std::vector<double>& Nd, 
-                                                     const std::vector<double>& Na, 
+// [MODIFICATION]: Self-consistent Poisson solver (unstructured version)
+std::vector<double> Poisson::solve_2d_self_consistent_unstructured(const std::vector<double>& bc,
+                                                     std::vector<double>& n,
+                                                     std::vector<double>& p,
+                                                     const std::vector<double>& Nd,
+                                                     const std::vector<double>& Na,
                                                      int max_iter, double tol) {
     if (method_ != Method::DG || mesh_type_ != MeshType::Unstructured) return V_;
     if (bc.size() != 4) throw std::invalid_argument("2D DG requires 4 boundary conditions");
@@ -235,22 +240,22 @@ std::vector<double> Poisson::solve_2d_self_consistent(const std::vector<double>&
 
 // [MODIFICATION]: Cython bindings (same as structured version)
 extern "C" {
-      Poisson* create_poisson(Device* device, int method, int mesh_type) {
-        return new Poisson(*device, static_cast<Method>(method), static_cast<MeshType>(mesh_type));
+    simulator::Poisson* create_poisson_unstructured(simulator::Device* device, int method, int mesh_type) {
+        return new simulator::Poisson(*device, static_cast<simulator::Method>(method), static_cast<simulator::MeshType>(mesh_type));
     }
-    void poisson_set_charge_density(Poisson* poisson, double* rho, int size) {
+    void poisson_set_charge_density_unstructured(simulator::Poisson* poisson, double* rho, int size) {
         std::vector<double> rho_vec(rho, rho + size);
         poisson->set_charge_density(rho_vec);
     }
-    void poisson_solve_2d(Poisson* poisson, double* bc, int bc_size, double* V, int V_size) {
+    void poisson_solve_2d_unstructured(simulator::Poisson* poisson, double* bc, int bc_size, double* V, int V_size) {
         std::vector<double> bc_vec(bc, bc + bc_size);
         auto result = poisson->solve_2d(bc_vec);
         for (int i = 0; i < std::min(V_size, (int)result.size()); ++i) {
             V[i] = result[i];
         }
     }
-    void poisson_solve_2d_self_consistent(Poisson* poisson, double* bc, int bc_size, 
-                                          double* n, double* p, double* Nd, double* Na, int size, 
+    void poisson_solve_2d_self_consistent_unstructured(simulator::Poisson* poisson, double* bc, int bc_size,
+                                          double* n, double* p, double* Nd, double* Na, int size,
                                           int max_iter, double tol, double* V, int V_size) {
         std::vector<double> bc_vec(bc, bc + bc_size);
         std::vector<double> n_vec(n, n + size), p_vec(p, p + size);

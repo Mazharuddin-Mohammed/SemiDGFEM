@@ -70,10 +70,63 @@ private:
         const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
         int poisson_max_iter, double poisson_tol);
 
+    std::map<std::string, std::vector<double>> solve_structured_drift_diffusion_unstructured_fallback(
+        const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
+        int poisson_max_iter, double poisson_tol);
+
     // Physics calculations
     void compute_carrier_densities(const std::vector<double>& V,
                                  std::vector<double>& n,
                                  std::vector<double>& p) const;
+
+    // Unstructured mesh specific methods
+    std::vector<double> solve_unstructured_poisson(
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        const std::vector<double>& bc);
+
+    void compute_unstructured_carrier_densities(
+        const std::vector<double>& V,
+        std::vector<double>& n,
+        std::vector<double>& p,
+        const std::vector<std::vector<int>>& elements,
+        int num_nodes) const;
+
+    // Additional unstructured mesh helper methods
+    void solve_unstructured_continuity_equations(
+        const std::vector<double>& V,
+        std::vector<double>& n,
+        std::vector<double>& p,
+        std::vector<double>& Jn,
+        std::vector<double>& Jp,
+        const std::vector<std::vector<int>>& elements,
+        int dofs_per_element);
+
+    void perform_unstructured_amr(
+        const Mesh& mesh,
+        const std::vector<double>& V,
+        std::vector<std::vector<int>>& elements,
+        int dofs_per_element);
+
+    bool check_unstructured_convergence(
+        const std::vector<double>& V_old,
+        const std::vector<double>& V_new,
+        double tolerance) const;
+
+    double compute_residual_norm(
+        const std::vector<double>& V_old,
+        const std::vector<double>& V_new) const;
+
+    std::map<std::string, std::vector<double>> convert_dg_to_nodal(
+        const std::vector<double>& V,
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        const std::vector<double>& Jn,
+        const std::vector<double>& Jp,
+        const std::vector<std::vector<int>>& elements,
+        const std::vector<double>& grid_x,
+        const std::vector<double>& grid_y,
+        int dofs_per_element) const;
 
     void compute_current_densities(const std::vector<double>& V,
                                  const std::vector<double>& n,

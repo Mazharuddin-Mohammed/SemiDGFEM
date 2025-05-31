@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <unordered_set>
+#include <map>
 
 namespace simulator {
 namespace amr {
@@ -494,6 +495,52 @@ std::array<double, 2> compute_element_gradient(
 }
 
 } // namespace utils
+
+// Missing function implementations
+std::vector<double> AMRController::compute_residual_based_error(
+    const std::vector<double>& solution,
+    const std::vector<std::vector<int>>& elements,
+    const std::vector<std::array<double, 2>>& nodes) {
+
+    // Simple stub implementation
+    (void)solution; (void)nodes; // Suppress warnings
+    std::vector<double> errors(elements.size(), 0.1); // Uniform error estimate
+    return errors;
+}
+
+std::vector<double> AMRController::compute_zz_error(
+    const std::vector<double>& solution,
+    const std::vector<std::vector<int>>& elements,
+    const std::vector<std::array<double, 2>>& nodes) {
+
+    // Simple stub implementation
+    (void)solution; (void)nodes; // Suppress warnings
+    std::vector<double> errors(elements.size(), 0.05); // Uniform error estimate
+    return errors;
+}
+
+std::array<double, 2> AMRController::detect_anisotropy_direction(
+    int element_id,
+    const std::vector<double>& solution,
+    const std::vector<std::vector<int>>& elements,
+    const std::vector<std::array<double, 2>>& vertices) {
+
+    // Simple stub implementation - return horizontal direction
+    (void)element_id; (void)solution; (void)elements; (void)vertices; // Suppress warnings
+    return {1.0, 0.0}; // Horizontal direction vector
+}
+
+std::unordered_map<int, std::vector<int>> AMRController::perform_refinement(
+    const std::vector<ElementRefinement>& refinement_decisions,
+    std::vector<std::vector<int>>& elements,
+    std::vector<std::array<double, 2>>& vertices,
+    std::vector<double>& solution) {
+
+    // Simple stub implementation - no actual refinement
+    // In a real implementation, this would subdivide elements and interpolate solution
+    (void)refinement_decisions; (void)elements; (void)vertices; (void)solution; // Suppress warnings
+    return std::unordered_map<int, std::vector<int>>();
+}
 
 } // namespace amr
 } // namespace simulator

@@ -152,6 +152,8 @@ std::vector<QuadraturePoint> map_to_triangle_edge(
     const std::vector<LineQuadraturePoint>& line_points,
     const std::array<std::array<double, 2>, 2>& edge_vertices);
 
+std::vector<LineQuadraturePoint> get_line_quadrature(int order);
+
 } // namespace face_integration
 
 } // namespace dg

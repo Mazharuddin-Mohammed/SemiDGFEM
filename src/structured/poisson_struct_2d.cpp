@@ -66,7 +66,7 @@ Poisson::Poisson(const Poisson& other)
 Poisson& Poisson::operator=(const Poisson& other) {
     if (this != &other) {
         cleanup_petsc_objects();
-        device_ = other.device_;
+        // Note: device_ is a const reference and cannot be reassigned
         method_ = other.method_;
         mesh_type_ = other.mesh_type_;
         rho_ = other.rho_;
@@ -86,7 +86,7 @@ Poisson::Poisson(Poisson&& other) noexcept
 Poisson& Poisson::operator=(Poisson&& other) noexcept {
     if (this != &other) {
         cleanup_petsc_objects();
-        device_ = other.device_;
+        // Note: device_ is a const reference and cannot be reassigned
         method_ = other.method_;
         mesh_type_ = other.mesh_type_;
         rho_ = std::move(other.rho_);
@@ -206,15 +206,23 @@ std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) 
 
         // Create PETSc objects with error checking
         PetscErrorCode ierr;
-        ierr = MatCreate(PETSC_COMM_WORLD, &petsc_objects_->A); CHKERRQ(ierr);
-        ierr = MatSetSizes(petsc_objects_->A, PETSC_DECIDE, PETSC_DECIDE, n_dofs, n_dofs); CHKERRQ(ierr);
-        ierr = MatSetType(petsc_objects_->A, MATMPIAIJ); CHKERRQ(ierr);
-        ierr = MatSetUp(petsc_objects_->A); CHKERRQ(ierr);
+        ierr = MatCreate(PETSC_COMM_WORLD, &petsc_objects_->A);
+        if (ierr != 0) throw std::runtime_error("Failed to create PETSc matrix");
+        ierr = MatSetSizes(petsc_objects_->A, PETSC_DECIDE, PETSC_DECIDE, n_dofs, n_dofs);
+        if (ierr != 0) throw std::runtime_error("Failed to set matrix sizes");
+        ierr = MatSetType(petsc_objects_->A, MATMPIAIJ);
+        if (ierr != 0) throw std::runtime_error("Failed to set matrix type");
+        ierr = MatSetUp(petsc_objects_->A);
+        if (ierr != 0) throw std::runtime_error("Failed to set up matrix");
 
-        ierr = VecCreate(PETSC_COMM_WORLD, &petsc_objects_->x); CHKERRQ(ierr);
-        ierr = VecSetSizes(petsc_objects_->x, PETSC_DECIDE, n_dofs); CHKERRQ(ierr);
-        ierr = VecSetType(petsc_objects_->x, VECMPI); CHKERRQ(ierr);
-        ierr = VecDuplicate(petsc_objects_->x, &petsc_objects_->b); CHKERRQ(ierr);
+        ierr = VecCreate(PETSC_COMM_WORLD, &petsc_objects_->x);
+        if (ierr != 0) throw std::runtime_error("Failed to create solution vector");
+        ierr = VecSetSizes(petsc_objects_->x, PETSC_DECIDE, n_dofs);
+        if (ierr != 0) throw std::runtime_error("Failed to set vector sizes");
+        ierr = VecSetType(petsc_objects_->x, VECMPI);
+        if (ierr != 0) throw std::runtime_error("Failed to set vector type");
+        ierr = VecDuplicate(petsc_objects_->x, &petsc_objects_->b);
+        if (ierr != 0) throw std::runtime_error("Failed to duplicate vector");
 
     std::vector<std::vector<double>> quad_points = {
         {1.0/3.0, 1.0/3.0}, {0.6, 0.2}, {0.2, 0.6}, {0.2, 0.2},
@@ -297,44 +305,41 @@ std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) 
             int global_i = base_idx + i;
             if (!is_boundary[i1 + i % 3]) {
                 for (int j = 0; j < 10; ++j) {
-                    MatSetValue(A, global_i, base_idx + j, K[i][j], ADD_VALUES);
+                    MatSetValue(petsc_objects_->A, global_i, base_idx + j, K[i][j], ADD_VALUES);
                 }
-                VecSetValue(b, global_i, -f[i], ADD_VALUES);
+                VecSetValue(petsc_objects_->b, global_i, -f[i], ADD_VALUES);
             }
         }
     }
 
     for (int i = 0; i < n_nodes; ++i) {
         if (is_boundary[i]) {
-            MatSetValue(A, i, i, 1.0, INSERT_VALUES);
-            VecSetValue(b, i, V_[i], INSERT_VALUES);
+            MatSetValue(petsc_objects_->A, i, i, 1.0, INSERT_VALUES);
+            VecSetValue(petsc_objects_->b, i, V_[i], INSERT_VALUES);
         }
     }
 
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-    VecAssemblyBegin(b);
-    VecAssemblyEnd(b);
+    MatAssemblyBegin(petsc_objects_->A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(petsc_objects_->A, MAT_FINAL_ASSEMBLY);
+    VecAssemblyBegin(petsc_objects_->b);
+    VecAssemblyEnd(petsc_objects_->b);
 
-    KSPCreate(PETSC_COMM_WORLD, &ksp);
-    KSPSetOperators(ksp, A, A);
-    KSPSetType(ksp, KSPCG);
-    KSPSetTolerances(ksp, 1e-10, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-    KSPSetFromOptions(ksp);
-    KSPSolve(ksp, b, x);
+    KSPCreate(PETSC_COMM_WORLD, &petsc_objects_->ksp);
+    KSPSetOperators(petsc_objects_->ksp, petsc_objects_->A, petsc_objects_->A);
+    KSPSetType(petsc_objects_->ksp, KSPCG);
+    KSPSetTolerances(petsc_objects_->ksp, 1e-10, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetFromOptions(petsc_objects_->ksp);
+    KSPSolve(petsc_objects_->ksp, petsc_objects_->b, petsc_objects_->x);
 
     PetscScalar* array;
-    VecGetArray(x, &array);
+    VecGetArray(petsc_objects_->x, &array);
     for (int i = 0; i < n_dofs; ++i) {
         V_[i] = array[i];
     }
-    VecRestoreArray(x, &array);
+    VecRestoreArray(petsc_objects_->x, &array);
 
-    MatDestroy(&A);
-    VecDestroy(&x);
-    VecDestroy(&b);
-    KSPDestroy(&ksp);
-    PetscFinalize();
+    // Note: Don't call PetscFinalize here as it should be called once at program end
+    // The cleanup will be handled by the PETScObjects destructor
 
     std::vector<double> V_nodes(n_nodes, 0.0);
     for (int e = 0; e < n_elements; ++e) {
@@ -345,6 +350,11 @@ std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) 
     }
     V_ = V_nodes;
     return V_;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error in structured Poisson solver: " << e.what() << std::endl;
+        return V_;
+    }
 }
 
 // [MODIFICATION]: Self-consistent Poisson solver
@@ -473,22 +483,25 @@ void Poisson::compute_p3_basis_functions(double xi, double eta, double zeta,
 
 // [MODIFICATION]: Cython bindings
 extern "C" {
-    Poisson* create_poisson(Device* device, int method, int mesh_type) {
-        return new Poisson(*device, static_cast<Method>(method), static_cast<MeshType>(mesh_type));
+    simulator::Poisson* create_poisson(simulator::Device* device, int method, int mesh_type) {
+        return new simulator::Poisson(*device, static_cast<simulator::Method>(method), static_cast<simulator::MeshType>(mesh_type));
     }
-    void poisson_set_charge_density(Poisson* poisson, double* rho, int size) {
+    void destroy_poisson(simulator::Poisson* poisson) {
+        delete poisson;
+    }
+    void poisson_set_charge_density(simulator::Poisson* poisson, double* rho, int size) {
         std::vector<double> rho_vec(rho, rho + size);
         poisson->set_charge_density(rho_vec);
     }
-    void poisson_solve_2d(Poisson* poisson, double* bc, int bc_size, double* V, int V_size) {
+    void poisson_solve_2d(simulator::Poisson* poisson, double* bc, int bc_size, double* V, int V_size) {
         std::vector<double> bc_vec(bc, bc + bc_size);
         auto result = poisson->solve_2d(bc_vec);
         for (int i = 0; i < std::min(V_size, (int)result.size()); ++i) {
             V[i] = result[i];
         }
     }
-    void poisson_solve_2d_self_consistent(Poisson* poisson, double* bc, int bc_size, 
-                                          double* n, double* p, double* Nd, double* Na, int size, 
+    void poisson_solve_2d_self_consistent(simulator::Poisson* poisson, double* bc, int bc_size,
+                                          double* n, double* p, double* Nd, double* Na, int size,
                                           int max_iter, double tol, double* V, int V_size) {
         std::vector<double> bc_vec(bc, bc + bc_size);
         std::vector<double> n_vec(n, n + size), p_vec(p, p + size);

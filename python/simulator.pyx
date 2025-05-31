@@ -1,8 +1,4 @@
 # distutils: language = c++
-# distutils: sources = ../src/device.cpp ../src/mesh.cpp ../src/structured/poisson_struct_2d.cpp ../src/structured/driftdiffusion_struct_2d.cpp ../src/unstructured/poisson_unstruct_2d.cpp
-# distutils: include_dirs = ../include
-# distutils: libraries = petsc gmsh boost_numeric_ublas
-# distutils: library_dirs = /usr/lib/x86_64-linux-gnu/petsc /usr/lib/x86_64-linux-gnu
 
 cimport cython
 from libcpp.vector cimport vector
@@ -20,95 +16,125 @@ logger = logging.getLogger(__name__)
 
 cdef extern from "device.hpp" namespace "simulator":
     cppclass Device:
-        Device(double, double, vector[map[string, double]] &)
+        Device(double, double) except +
+        Device(double, double, vector[map[string, double]]) except +
+        double get_epsilon_at(double x, double y)
+        vector[double] get_extents()
+        bool is_valid()
 
-cdef extern from "mesh.hpp" namespace "simulator":
-    enum MeshType:
-        Structured,
-        Unstructured
-    cppclass Mesh:
-        Mesh(Device &, MeshType)
-        void generate_gmsh_mesh(string &)
-        vector[double] get_grid_points_x()
-        vector[double] get_grid_points_y()
-        vector[vector[int]] get_elements()
-        void refine(vector[bool] &)
+# Use C interface to avoid enum class issues
+cdef extern from "driftdiffusion.hpp":
+    ctypedef struct simulator_Device "simulator::Device"
+    ctypedef struct simulator_DriftDiffusion "simulator::DriftDiffusion"
+    ctypedef struct simulator_Poisson "simulator::Poisson"
 
-cdef extern from "poisson.hpp" namespace "simulator":
-    enum Method:
-        FDM, FEM, FVM, SEM, MC, DG
-    Poisson* create_poisson(Device* device, int method, int mesh_type)
-    void poisson_set_charge_density(Poisson* poisson, double* rho, int size)
-    void poisson_solve_2d(Poisson* poisson, double* bc, int bc_size, double* V, int V_size)
-    void poisson_solve_2d_self_consistent(Poisson* poisson, double* bc, int bc_size, 
-                                          double* n, double* p, double* Nd, double* Na, int size, 
-                                          int max_iter, double tol, double* V, int V_size)
+    # C interface functions
+    simulator_DriftDiffusion* create_drift_diffusion(simulator_Device* device, int method, int mesh_type, int order)
+    void destroy_drift_diffusion(simulator_DriftDiffusion* dd)
+    int drift_diffusion_set_doping(simulator_DriftDiffusion* dd, double* Nd, double* Na, int size)
+    int drift_diffusion_set_trap_level(simulator_DriftDiffusion* dd, double* Et, int size)
+    int drift_diffusion_solve(simulator_DriftDiffusion* dd, double* bc, int bc_size, double Vg,
+                             int max_steps, int use_amr, int poisson_max_iter, double poisson_tol,
+                             double* V, double* n, double* p, double* Jn, double* Jp, int size)
 
-cdef extern from "driftdiffusion.hpp" namespace "simulator":
-    DriftDiffusion* create_drift_diffusion(Device* device, int method, int mesh_type, int order)
-    void drift_diffusion_set_doping(DriftDiffusion* dd, double* Nd, double* Na, int size)
-    void drift_diffusion_set_trap_level(DriftDiffusion* dd, double* Et, int size)
-    void drift_diffusion_solve(DriftDiffusion* dd, double* bc, int bc_size, double Vg, 
-                               int max_steps, bool use_amr, int poisson_max_iter, double poisson_tol, 
-                               double* results, int result_cols, int result_rows)
+cdef extern from "poisson.hpp":
+    simulator_Poisson* create_poisson(simulator_Device* device, int method, int mesh_type)
+    void destroy_poisson(simulator_Poisson* poisson)
+    int poisson_solve_2d(simulator_Poisson* poisson, double* bc, int bc_size, double* V, int V_size)
+    int poisson_set_charge_density(simulator_Poisson* poisson, double* rho, int size)
+
+cdef extern from "device.hpp" namespace "simulator":
+    cppclass Device:
+        Device(double, double) except +
+        Device(double, double, vector[map[string, double]]) except +
+        double get_epsilon_at(double x, double y)
+        vector[double] get_extents()
+        bool is_valid()
 
 cdef class Simulator:
     cdef Device* device
-    cdef Mesh* mesh
-    cdef DriftDiffusion* dd
+    cdef simulator_Poisson* poisson
+    cdef simulator_DriftDiffusion* dd
     cdef int num_points_x, num_points_y
-    cdef str mesh_type, method, order
+    cdef str mesh_type, method
 
     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,
-                  method="DG", mesh_type="Structured", regions=None, order="P3"):
+                  method="DG", mesh_type="Structured", regions=None):
         self.num_points_x = num_points_x
         self.num_points_y = num_points_y
         self.method = method
         self.mesh_type = mesh_type
-        self.order = order
 
         regions = regions or []
         cdef vector[map[string, double]] c_regions
         for r in regions:
             c_regions.push_back(r)
 
-        self.device = new Device(extents[0], extents[1], c_regions)
-        self.mesh = new Mesh(self.device[0], Structured if mesh_type == "Structured" else Unstructured)
-        self.dd = create_drift_diffusion(self.device, 
-                                         {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method],
-                                         {"Structured": 0, "Unstructured": 1}[mesh_type],
-                                         {"P2": 2, "P3": 3}[order])
+        # Create C++ objects
+        if len(regions) > 0:
+            self.device = new Device(extents[0], extents[1], c_regions)
+        else:
+            self.device = new Device(extents[0], extents[1])
+
+        # Use integer constants for enums
+        cdef int mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured
+        cdef int method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+
+        # Create using C interface
+        self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
+        self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
 
     def __dealloc__(self):
-        del self.dd
-        del self.mesh
+        if self.dd:
+            destroy_drift_diffusion(self.dd)
+        if self.poisson:
+            destroy_poisson(self.poisson)
         del self.device
 
-    def generate_mesh(self, filename):
-        cdef string c_filename = filename.encode('utf-8')
-        self.mesh.generate_gmsh_mesh(c_filename)
-
-    def get_grid_points(self):
-        cdef vector[double] grid_x = self.mesh.get_grid_points_x()
-        cdef vector[double] grid_y = self.mesh.get_grid_points_y()
-        return {"x": np.array(grid_x), "y": np.array(grid_y)}
-
     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
-        drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
+        if Nd.size != Na.size:
+            raise ValueError("Nd and Na arrays must have the same size")
+        cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
+        if result != 0:
+            raise RuntimeError("Failed to set doping")
 
     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
-        drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
+        cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
+        if result != 0:
+            raise RuntimeError("Failed to set trap level")
 
-    def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False, 
+    def solve_poisson(self, bc):
+        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
+        cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+        if result != 0:
+            raise RuntimeError("Poisson solve failed")
+        return V
+
+    def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,
                               poisson_max_iter=50, poisson_tol=1e-6):
         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
-        cdef np.ndarray[double, ndim=2] results = np.zeros((5, self.num_points_x * self.num_points_y), dtype=np.float64)
-        drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg, max_steps, use_amr, 
-                              poisson_max_iter, poisson_tol, &results[0,0], 5, self.num_points_x * self.num_points_y)
+        cdef int size = self.num_points_x * self.num_points_y
+
+        # Prepare output arrays
+        cdef np.ndarray[double, ndim=1] V = np.zeros(size, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)
+
+        cdef int use_amr_int = 1 if use_amr else 0
+        cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,
+                                               max_steps, use_amr_int, poisson_max_iter, poisson_tol,
+                                               &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
+
+        if result != 0:
+            raise RuntimeError("Drift-diffusion solve failed")
+
         return {
-            "potential": results[0],
-            "n": results[1],
-            "p": results[2],
-            "Jn": results[3],
-            "Jp": results[4]
+            "potential": V,
+            "n": n,
+            "p": p,
+            "Jn": Jn,
+            "Jp": Jp
         }

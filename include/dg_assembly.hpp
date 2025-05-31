@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dg_basis_functions.hpp"
 #include <vector>
 #include <array>
 #include <functional>
@@ -122,7 +123,7 @@ private:
     std::vector<struct QuadraturePoint> quad_points_;
     
     /// Quadrature points for line integration (faces)
-    std::vector<struct face_integration::LineQuadraturePoint> line_quad_points_;
+    std::vector<face_integration::LineQuadraturePoint> line_quad_points_;
 };
 
 /**

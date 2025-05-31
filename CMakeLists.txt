@@ -14,10 +14,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
 endif()
 
 find_package(PkgConfig REQUIRED)
+find_package(MPI REQUIRED)
 pkg_check_modules(PETSC REQUIRED petsc)
-find_package(Boost REQUIRED COMPONENTS numeric_ublas)
+find_package(Boost REQUIRED)
 find_library(GMSH_LIBRARY gmsh)
-find_package(Vulkan REQUIRED)
+find_package(Vulkan QUIET)
 find_package(OpenMP REQUIRED)
 
 # Optional GPU support
@@ -36,7 +37,12 @@ if(ENABLE_OPENCL)
     add_definitions(-DENABLE_OPENCL)
 endif()
 
-include_directories(${PETSC_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} include ${Vulkan_INCLUDE_DIRS})
+include_directories(${PETSC_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_DIRS} include)
+
+# Add Vulkan includes if available
+if(Vulkan_FOUND)
+    include_directories(${Vulkan_INCLUDE_DIRS})
+endif()
 link_directories(${PETSC_LIBRARY_DIRS})
 
 # Collect source files
@@ -66,9 +72,15 @@ target_link_libraries(simulator
     ${PETSC_LIBRARIES}
     ${Boost_LIBRARIES}
     ${GMSH_LIBRARY}
-    ${Vulkan_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
     OpenMP::OpenMP_CXX
 )
+
+# Add Vulkan if available
+if(Vulkan_FOUND)
+    target_link_libraries(simulator ${Vulkan_LIBRARIES})
+    target_compile_definitions(simulator PRIVATE VULKAN_AVAILABLE)
+endif()
 
 # Add GPU libraries if enabled
 if(ENABLE_CUDA)

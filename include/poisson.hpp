@@ -34,6 +34,14 @@ public:
                                                 int max_iter = 100,
                                                 double tol = 1e-6);
 
+    std::vector<double> solve_2d_self_consistent_unstructured(const std::vector<double>& bc,
+                                                std::vector<double>& n,
+                                                std::vector<double>& p,
+                                                const std::vector<double>& Nd,
+                                                const std::vector<double>& Na,
+                                                int max_iter = 100,
+                                                double tol = 1e-6);
+
     // Utility methods
     bool is_valid() const;
     void validate() const;
@@ -56,6 +64,18 @@ private:
     // Helper methods
     void initialize_petsc();
     void validate_inputs(const std::vector<double>& bc) const;
+
+    // DG-specific helper methods
+    double interpolate_charge_density(double x, double y) const;
+    void add_dg_penalty_terms(int element_index,
+                             const std::vector<int>& element_nodes,
+                             const std::vector<double>& grid_x,
+                             const std::vector<double>& grid_y,
+                             std::vector<std::vector<double>>& K_elem,
+                             std::vector<double>& f_elem) const;
+    void compute_p3_basis_functions(double xi, double eta, double zeta,
+                                   std::vector<double>& N,
+                                   std::vector<std::array<double, 2>>& grad_N) const;
     void validate_self_consistent_inputs(const std::vector<double>& bc,
                                        const std::vector<double>& n,
                                        const std::vector<double>& p,

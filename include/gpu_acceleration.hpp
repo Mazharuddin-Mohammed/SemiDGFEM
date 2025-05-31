@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <map>
 
 // Forward declarations for CUDA/OpenCL
 #ifdef ENABLE_CUDA

@@ -4,26 +4,44 @@
 #include <algorithm>
 #include <cmath>
 
+#ifdef __GNUC__
+#include <cpuid.h>
+#endif
+
 namespace simulator {
 namespace performance {
 namespace simd {
 
 bool VectorOps::has_avx2() {
-    int cpuInfo[4];
-    __cpuid(cpuInfo, 7);
-    return (cpuInfo[1] & (1 << 5)) != 0;  // Check AVX2 bit
+#ifdef __GNUC__
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, nullptr) >= 7) {
+        __cpuid_count(7, 0, eax, ebx, ecx, edx);
+        return (ebx & (1 << 5)) != 0;  // Check AVX2 bit
+    }
+#endif
+    return false;
 }
 
 bool VectorOps::has_fma() {
-    int cpuInfo[4];
-    __cpuid(cpuInfo, 1);
-    return (cpuInfo[2] & (1 << 12)) != 0;  // Check FMA bit
+#ifdef __GNUC__
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
+        return (ecx & (1 << 12)) != 0;  // Check FMA bit
+    }
+#endif
+    return false;
 }
 
 bool VectorOps::has_avx512() {
-    int cpuInfo[4];
-    __cpuid(cpuInfo, 7);
-    return (cpuInfo[1] & (1 << 16)) != 0;  // Check AVX512F bit
+#ifdef __GNUC__
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, nullptr) >= 7) {
+        __cpuid_count(7, 0, eax, ebx, ecx, edx);
+        return (ebx & (1 << 16)) != 0;  // Check AVX512F bit
+    }
+#endif
+    return false;
 }
 
 double VectorOps::dot_product_avx2(const double* a, const double* b, size_t n) {

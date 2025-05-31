@@ -76,7 +76,7 @@ DriftDiffusion::DriftDiffusion(const DriftDiffusion& other)
 DriftDiffusion& DriftDiffusion::operator=(const DriftDiffusion& other) {
     if (this != &other) {
         cleanup_petsc_objects();
-        device_ = other.device_;
+        // Note: device_ is a const reference and cannot be reassigned
         method_ = other.method_;
         mesh_type_ = other.mesh_type_;
         order_ = other.order_;
@@ -102,7 +102,7 @@ DriftDiffusion::DriftDiffusion(DriftDiffusion&& other) noexcept
 DriftDiffusion& DriftDiffusion::operator=(DriftDiffusion&& other) noexcept {
     if (this != &other) {
         cleanup_petsc_objects();
-        device_ = other.device_;
+        // Note: device_ is a const reference and cannot be reassigned
         method_ = other.method_;
         mesh_type_ = other.mesh_type_;
         order_ = other.order_;
@@ -465,7 +465,7 @@ std::map<std::string, std::vector<double>> DriftDiffusion::solve_structured_drif
     }
 }
 
-std::map<std::string, std::vector<double>> DriftDiffusion::solve_unstructured_drift_diffusion(
+std::map<std::string, std::vector<double>> DriftDiffusion::solve_structured_drift_diffusion_unstructured_fallback(
     const std::vector<double>& bc, double Vg, int max_steps, bool use_amr,
     int poisson_max_iter, double poisson_tol) {
 
@@ -600,6 +600,72 @@ bool DriftDiffusion::check_convergence(const std::vector<double>& V_old,
 
     return max_change < tolerance;
 }
+
+// Missing function implementations
+double DriftDiffusion::compute_residual_norm(const std::vector<double>& V_old, const std::vector<double>& V_new) const {
+    if (V_old.size() != V_new.size()) {
+        throw std::invalid_argument("Vector sizes must match");
+    }
+
+    double norm = 0.0;
+    for (size_t i = 0; i < V_old.size(); ++i) {
+        double diff = V_new[i] - V_old[i];
+        norm += diff * diff;
+    }
+    return std::sqrt(norm);
+}
+
+bool DriftDiffusion::check_unstructured_convergence(const std::vector<double>& V_old, const std::vector<double>& V_new, double tolerance) const {
+    double residual = compute_residual_norm(V_old, V_new);
+    return residual < tolerance;
+}
+
+void DriftDiffusion::solve_unstructured_continuity_equations(
+    const std::vector<double>& V,
+    std::vector<double>& n,
+    std::vector<double>& p,
+    std::vector<double>& Jn,
+    std::vector<double>& Jp,
+    const std::vector<std::vector<int>>& elements,
+    int dofs_per_element) {
+
+    // Placeholder implementation - delegate to structured solver for now
+    compute_current_densities(V, n, p, Jn, Jp);
+}
+
+void DriftDiffusion::perform_unstructured_amr(
+    const Mesh& mesh,
+    const std::vector<double>& V,
+    std::vector<std::vector<int>>& elements,
+    int dofs_per_element) {
+
+    // Placeholder implementation - AMR not implemented yet
+    // This would typically refine elements based on error estimates
+}
+
+std::map<std::string, std::vector<double>> DriftDiffusion::convert_dg_to_nodal(
+    const std::vector<double>& V,
+    const std::vector<double>& n,
+    const std::vector<double>& p,
+    const std::vector<double>& Jn,
+    const std::vector<double>& Jp,
+    const std::vector<std::vector<int>>& elements,
+    const std::vector<double>& grid_x,
+    const std::vector<double>& grid_y,
+    int dofs_per_element) const {
+
+    // Placeholder implementation - return input data as-is for now
+    std::map<std::string, std::vector<double>> result;
+    result["potential"] = V;
+    result["n"] = n;
+    result["p"] = p;
+    result["Jn"] = Jn;
+    result["Jp"] = Jp;
+    return result;
+}
+
+// Note: solve_unstructured_poisson and compute_unstructured_carrier_densities
+// are implemented in the unstructured file to avoid multiple definitions
 
 } // namespace simulator
 
