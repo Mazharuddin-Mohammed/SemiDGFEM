@@ -1,0 +1,12 @@
+# Documentation requirements for SemiDGFEM ReadTheDocs
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.2.0
+myst-parser>=0.18.0
+sphinx-autodoc-typehints>=1.19.0
+sphinx-copybutton>=0.5.0
+sphinxcontrib-bibtex>=2.5.0
+nbsphinx>=0.8.0
+ipython>=8.0.0
+matplotlib>=3.5.0
+numpy>=1.21.0
+scipy>=1.8.0
