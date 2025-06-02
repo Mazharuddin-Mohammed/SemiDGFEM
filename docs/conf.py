@@ -4,19 +4,9 @@
 
 import os
 import sys
-from unittest.mock import MagicMock
 
-# Mock imports for ReadTheDocs
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-MOCK_MODULES = [
-    'simulator', 'numpy', 'matplotlib', 'scipy', 'petsc4py', 'mpi4py',
-    'gmsh', 'vtk', 'h5py', 'pyside6', 'cuda', 'opencl'
-]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# Simple approach - just add the path if needed
+# sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -43,11 +33,8 @@ html_context = {
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
 
@@ -64,6 +51,22 @@ source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
+
+# Autodoc configuration
+autodoc_mock_imports = [
+    'simulator', 'numpy', 'matplotlib', 'scipy', 'petsc4py', 'mpi4py',
+    'gmsh', 'vtk', 'h5py', 'pyside6', 'cuda', 'opencl'
+]
+
+# Prevent autodoc from trying to import modules
+autodoc_default_options = {
+    'members': False,
+    'undoc-members': False,
+    'show-inheritance': False,
+}
+
+# Disable viewcode for mock modules
+viewcode_follow_imported_members = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
