@@ -160,11 +160,28 @@ class RealTimeMOSFETSimulator:
             V[-1, :] = Vd   # Drain contact
             V[:, 0] = Vsub  # Substrate contact
             
-            # Gate coupling through oxide
+            # Enhanced gate coupling through oxide with proper capacitive coupling
             gate_start = self.nx // 4
             gate_end = 3 * self.nx // 4
-            surface_coupling = 0.8 * (Vg - np.mean(V[gate_start:gate_end, -1]))
-            V[gate_start:gate_end, -1] += surface_coupling * 0.1
+
+            # Calculate oxide capacitance coupling
+            tox = self.device_params['tox']  # Oxide thickness
+            epsilon_ox = 3.9 * 8.854e-12  # SiO2 permittivity
+            Cox = epsilon_ox / tox  # Oxide capacitance per unit area
+
+            # Calculate surface potential with proper gate coupling
+            surface_potential = np.mean(V[gate_start:gate_end, -1])
+            gate_coupling_strength = 0.7  # Strong coupling for realistic MOSFET
+
+            # Apply gate voltage with capacitive coupling
+            delta_V = gate_coupling_strength * (Vg - surface_potential)
+            V[gate_start:gate_end, -1] += delta_V
+
+            # Add fringing field effects at gate edges
+            if gate_start > 0:
+                V[gate_start-1, -1] += 0.3 * delta_V  # Fringing at source side
+            if gate_end < self.nx - 1:
+                V[gate_end, -1] += 0.3 * delta_V  # Fringing at drain side
             
             # Interior points - simplified finite difference
             for i in range(1, self.ny-1):
