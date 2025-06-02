@@ -1,0 +1,135 @@
+/* Custom CSS for SemiDGFEM Documentation */
+
+/* Improve mathematical equation display */
+.math {
+    font-size: 1.1em;
+    margin: 0.5em 0;
+}
+
+/* Better code block styling */
+.highlight {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Improve table styling */
+table.docutils {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+}
+
+table.docutils th,
+table.docutils td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+table.docutils th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Better admonition styling */
+.admonition {
+    margin: 1em 0;
+    padding: 1em;
+    border-left: 4px solid #007acc;
+    background-color: #f8f9fa;
+}
+
+.admonition.note {
+    border-left-color: #007acc;
+}
+
+.admonition.warning {
+    border-left-color: #ff9800;
+}
+
+.admonition.important {
+    border-left-color: #f44336;
+}
+
+/* Improve navigation */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Better figure captions */
+.figure .caption {
+    font-style: italic;
+    text-align: center;
+    margin-top: 0.5em;
+}
+
+/* Improve section headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+/* Better list styling */
+ul, ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin: 0.25em 0;
+}
+
+/* Improve inline code */
+code {
+    background-color: #f1f2f3;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* Better blockquote styling */
+blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 4px solid #ddd;
+    background-color: #f9f9f9;
+    font-style: italic;
+}
+
+/* Improve definition lists */
+dl dt {
+    font-weight: bold;
+    margin-top: 1em;
+}
+
+dl dd {
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+}
+
+/* Better footnote styling */
+.footnote {
+    font-size: 0.9em;
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #ddd;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .wy-nav-content {
+        margin-left: 0;
+    }
+    
+    table.docutils {
+        font-size: 0.9em;
+    }
+    
+    .math {
+        font-size: 1em;
+    }
+}

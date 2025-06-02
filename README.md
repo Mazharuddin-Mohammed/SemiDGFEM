@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/your-repo/SemiDGFEM/workflows/CI/badge.svg)](https://github.com/your-repo/SemiDGFEM/actions)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://semidgfem.readthedocs.io)
+[![Documentation Status](https://readthedocs.org/projects/semidgfem/badge/?version=latest)](https://semidgfem.readthedocs.io/en/latest/?badge=latest)
 [![GPU Support](https://img.shields.io/badge/GPU-CUDA%2FOpenCL-green.svg)](docs/gpu_acceleration.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 

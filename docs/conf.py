@@ -4,6 +4,19 @@
 
 import os
 import sys
+from unittest.mock import MagicMock
+
+# Mock imports for ReadTheDocs
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = [
+    'simulator', 'numpy', 'matplotlib', 'scipy', 'petsc4py', 'mpi4py',
+    'gmsh', 'vtk', 'h5py', 'pyside6', 'cuda', 'opencl'
+]
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -11,8 +24,17 @@ import sys
 project = 'SemiDGFEM'
 copyright = '2024, Dr. Mazharuddin Mohammed'
 author = 'Dr. Mazharuddin Mohammed'
-release = '2.0.0'
+release = '2.0.1'
 version = '2.0'
+
+# Project URLs
+html_context = {
+    "display_github": True,
+    "github_user": "mazharuddin-mohammed",
+    "github_repo": "SemiDGFEM",
+    "github_version": "master",
+    "conf_py_path": "/docs/",
+}
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -153,10 +175,10 @@ html_css_files = [
 ]
 
 # Logo
-html_logo = '_static/logo.png'
+html_logo = '_static/logo.svg'
 
-# Favicon
-html_favicon = '_static/favicon.ico'
+# Favicon (optional)
+# html_favicon = '_static/favicon.ico'
 
 # Additional options
 html_show_sourcelink = True
