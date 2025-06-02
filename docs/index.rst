@@ -137,6 +137,15 @@ Documentation Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Theory & Mathematics
+
+   theory
+   mathematical_formulation
+   numerical_methods
+   validation
+
+.. toctree::
+   :maxdepth: 2
    :caption: Advanced Topics
 
    gpu_acceleration
