@@ -45,17 +45,11 @@ html_context = {
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
     'myst_parser',
-    'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,6 +65,12 @@ source_suffix = {
     '.rst': None,
     '.md': 'myst_parser',
 }
+
+# MyST parser configuration
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+]
 
 # The master toctree document.
 master_doc = 'index'
@@ -155,19 +155,7 @@ napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
 # -- Options for MyST parser ------------------------------------------------
-myst_enable_extensions = [
-    "amsmath",
-    "colon_fence",
-    "deflist",
-    "dollarmath",
-    "html_admonition",
-    "html_image",
-    "linkify",
-    "replacements",
-    "smartquotes",
-    "substitution",
-    "tasklist",
-]
+# MyST extensions are configured above
 
 # Custom CSS
 html_css_files = [
