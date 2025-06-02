@@ -49,7 +49,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    'myst_parser',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -58,19 +57,10 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '*.md']
 
 # The suffix(es) of source filenames.
-source_suffix = {
-    '.rst': None,
-    '.md': 'myst_parser',
-}
-
-# MyST parser configuration
-myst_enable_extensions = [
-    "amsmath",
-    "dollarmath",
-]
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'

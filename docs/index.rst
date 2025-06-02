@@ -122,18 +122,13 @@ Documentation Contents
    :maxdepth: 2
    :caption: User Guide
 
-   installation
-   user_guide
    tutorials
-   examples
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
-   api_reference
    python_api
-   cpp_api
 
 .. toctree::
    :maxdepth: 2
