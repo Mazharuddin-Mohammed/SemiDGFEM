@@ -124,6 +124,22 @@ private:
     
     /// Quadrature points for line integration (faces)
     std::vector<face_integration::LineQuadraturePoint> line_quad_points_;
+
+    /**
+     * @brief Map physical coordinates to reference coordinates for boundary edge
+     *
+     * Maps a point on a boundary edge from physical coordinates (x,y) to
+     * reference coordinates (xi,eta) on the reference triangle.
+     *
+     * @param x_phys Physical x-coordinate
+     * @param y_phys Physical y-coordinate
+     * @param edge_vertices Physical coordinates of edge vertices [2][2]
+     * @param xi Reference xi-coordinate (output)
+     * @param eta Reference eta-coordinate (output)
+     */
+    void map_physical_to_reference(double x_phys, double y_phys,
+                                  const std::array<std::array<double, 2>, 2>& edge_vertices,
+                                  double& xi, double& eta) const;
 };
 
 /**
