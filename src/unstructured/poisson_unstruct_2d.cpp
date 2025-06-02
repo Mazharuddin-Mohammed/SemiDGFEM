@@ -38,12 +38,28 @@ std::vector<double> Poisson::solve_unstructured_2d(const std::vector<double>& bc
 
     std::vector<bool> is_boundary(n_nodes, false);
     double Lx = device_.get_extents()[0], Ly = device_.get_extents()[1];
+
+    // Improved boundary tolerance based on device dimensions
+    const double boundary_tol = std::max(1e-8, std::min(Lx, Ly) * 1e-6);
+
     for (int i = 0; i < n_nodes; ++i) {
         double x = grid_x[i], y = grid_y[i];
-        if (x <= 1e-10) { V_[i] = bc[0]; is_boundary[i] = true; }
-        else if (x >= Lx - 1e-10) { V_[i] = bc[1]; is_boundary[i] = true; }
-        else if (y <= 1e-10) { V_[i] = bc[2]; is_boundary[i] = true; }
-        else if (y >= Ly - 1e-10) { V_[i] = bc[3]; is_boundary[i] = true; }
+
+        // Improved boundary detection with relative tolerance
+        bool on_left = (x <= boundary_tol);
+        bool on_right = (x >= Lx - boundary_tol);
+        bool on_bottom = (y <= boundary_tol);
+        bool on_top = (y >= Ly - boundary_tol);
+
+        if (on_left) {
+            V_[i] = bc[0]; is_boundary[i] = true;
+        } else if (on_right) {
+            V_[i] = bc[1]; is_boundary[i] = true;
+        } else if (on_bottom) {
+            V_[i] = bc[2]; is_boundary[i] = true;
+        } else if (on_top) {
+            V_[i] = bc[3]; is_boundary[i] = true;
+        }
     }
 
     PetscInitialize(nullptr, nullptr, nullptr, nullptr);

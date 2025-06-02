@@ -182,7 +182,9 @@ std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) 
         std::vector<bool> is_boundary(n_nodes, false);
         auto extents = device_.get_extents();
         double Lx = extents[0], Ly = extents[1];
-        const double boundary_tol = 1e-10;
+
+        // Improved boundary tolerance based on device dimensions
+        const double boundary_tol = std::max(1e-8, std::min(Lx, Ly) * 1e-6);
 
         for (int i = 0; i < n_nodes; ++i) {
             if (i >= static_cast<int>(grid_x.size()) || i >= static_cast<int>(grid_y.size())) {
@@ -190,13 +192,20 @@ std::vector<double> Poisson::solve_structured_2d(const std::vector<double>& bc) 
             }
 
             double x = grid_x[i], y = grid_y[i];
-            if (x <= boundary_tol) {
+
+            // Improved boundary detection with relative tolerance
+            bool on_left = (x <= boundary_tol);
+            bool on_right = (x >= Lx - boundary_tol);
+            bool on_bottom = (y <= boundary_tol);
+            bool on_top = (y >= Ly - boundary_tol);
+
+            if (on_left) {
                 V_[i] = bc[0]; is_boundary[i] = true;
-            } else if (x >= Lx - boundary_tol) {
+            } else if (on_right) {
                 V_[i] = bc[1]; is_boundary[i] = true;
-            } else if (y <= boundary_tol) {
+            } else if (on_bottom) {
                 V_[i] = bc[2]; is_boundary[i] = true;
-            } else if (y >= Ly - boundary_tol) {
+            } else if (on_top) {
                 V_[i] = bc[3]; is_boundary[i] = true;
             }
         }
