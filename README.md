@@ -296,7 +296,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [https://semidgfem.readthedocs.io](https://semidgfem.readthedocs.io)
 - **Issues**: [GitHub Issues](https://github.com/your-repo/SemiDGFEM/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-repo/SemiDGFEM/discussions)
-- **Email**: support@semidgfem.org
+- **Email**: mazharuddin.mohammed.official@gmail.com
 
 ## 📊 **Simulation Results and Achievements**
 
