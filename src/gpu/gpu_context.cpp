@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 
 #ifdef ENABLE_CUDA
 #include <cuda_runtime.h>
@@ -454,3 +455,97 @@ template class GPUMemory<int>;
 
 } // namespace gpu
 } // namespace simulator
+
+// C interface for GPU functions
+extern "C" {
+    void* gpu_context_create() {
+        try {
+            auto context = std::make_unique<simulator::gpu::GPUContext>();
+            if (context->initialize()) {
+                return context.release();
+            }
+            return nullptr;
+        } catch (...) {
+            return nullptr;
+        }
+    }
+
+    void gpu_context_destroy(void* context) {
+        if (context) {
+            delete static_cast<simulator::gpu::GPUContext*>(context);
+        }
+    }
+
+    int gpu_get_device_count() {
+        try {
+            auto devices = simulator::gpu::GPUContext::detect_devices();
+            return static_cast<int>(devices.size());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    int gpu_get_device_properties(int device_id, char* name, int name_size) {
+        try {
+            auto devices = simulator::gpu::GPUContext::detect_devices();
+            if (device_id >= 0 && device_id < static_cast<int>(devices.size())) {
+                if (name && name_size > 0) {
+                    strncpy(name, devices[device_id].name.c_str(), name_size - 1);
+                    name[name_size - 1] = '\0';
+                }
+                return 0;
+            }
+            return -1;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    void* gpu_malloc(size_t size) {
+        try {
+#ifdef ENABLE_CUDA
+            void* ptr = nullptr;
+            cudaError_t error = cudaMalloc(&ptr, size);
+            return (error == cudaSuccess) ? ptr : nullptr;
+#else
+            return nullptr;
+#endif
+        } catch (...) {
+            return nullptr;
+        }
+    }
+
+    void gpu_free(void* ptr) {
+        if (ptr) {
+#ifdef ENABLE_CUDA
+            cudaFree(ptr);
+#endif
+        }
+    }
+
+    int gpu_memcpy_host_to_device(void* dst, void* src, size_t size) {
+        try {
+#ifdef ENABLE_CUDA
+            cudaError_t error = cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice);
+            return (error == cudaSuccess) ? 0 : -1;
+#else
+            return -1;
+#endif
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int gpu_memcpy_device_to_host(void* dst, void* src, size_t size) {
+        try {
+#ifdef ENABLE_CUDA
+            cudaError_t error = cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost);
+            return (error == cudaSuccess) ? 0 : -1;
+#else
+            return -1;
+#endif
+        } catch (...) {
+            return -1;
+        }
+    }
+}

@@ -4,6 +4,8 @@
 #include <cusparse.h>
 #include <device_launch_parameters.h>
 #include <cmath>
+#include <stdexcept>
+#include <iostream>
 
 namespace simulator {
 namespace gpu {

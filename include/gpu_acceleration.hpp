@@ -100,10 +100,15 @@ public:
     void start_timer(const std::string& name);
     void end_timer(const std::string& name);
     double get_elapsed_time(const std::string& name) const;
-    
-private:
+
+    // Static methods for C interface
+    static std::vector<GPUDeviceInfo> detect_devices();
+
+    // Public constructor/destructor for C interface
     GPUContext() = default;
     ~GPUContext() = default;
+
+private:
     
     bool initialized_ = false;
     GPUBackend backend_ = GPUBackend::NONE;
@@ -123,7 +128,6 @@ private:
     cl_device_id cl_device_ = nullptr;
 #endif
     
-    std::vector<GPUDeviceInfo> detect_devices();
     bool initialize_cuda();
     bool initialize_opencl();
 };
