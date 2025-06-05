@@ -11,6 +11,7 @@
             "/home/madmax/Documents/dev/projects/SemiDGFEM/.venv/lib/python3.12/site-packages/numpy/_core/include/numpy/ufuncobject.h",
             "/home/madmax/Documents/dev/projects/SemiDGFEM/include/device.hpp",
             "/home/madmax/Documents/dev/projects/SemiDGFEM/include/driftdiffusion.hpp",
+            "/home/madmax/Documents/dev/projects/SemiDGFEM/include/mesh.hpp",
             "/home/madmax/Documents/dev/projects/SemiDGFEM/include/poisson.hpp"
         ],
         "extra_compile_args": [
@@ -1193,6 +1194,7 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include "device.hpp"
 #include "driftdiffusion.hpp"
 #include "poisson.hpp"
+#include "mesh.hpp"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -1814,20 +1816,81 @@ static CYTHON_INLINE __pyx_t_long_double_complex __pyx_t_long_double_complex_fro
 /* #### Code section: type_declarations ### */
 
 /*--- Type declarations ---*/
+struct __pyx_obj_9simulator_Device;
+struct __pyx_obj_9simulator_Mesh;
+struct __pyx_obj_9simulator_PoissonSolver;
+struct __pyx_obj_9simulator_DriftDiffusionSolver;
 struct __pyx_obj_9simulator_Simulator;
 
-/* "simulator.pyx":46
- *     int poisson_set_charge_density(simulator_Poisson* poisson, double* rho, int size)
+/* "simulator.pyx":72
  * 
+ * # Device wrapper class
+ * cdef class Device:             # <<<<<<<<<<<<<<
+ *     cdef simulator_Device* _device
+ *     cdef double _Lx, _Ly
+*/
+struct __pyx_obj_9simulator_Device {
+  PyObject_HEAD
+  simulator::Device *_device;
+  double _Lx;
+  double _Ly;
+};
+
+
+/* "simulator.pyx":106
+ * 
+ * # Mesh wrapper class
+ * cdef class Mesh:             # <<<<<<<<<<<<<<
+ *     cdef simulator_Mesh* _mesh
+ *     cdef Device _device
+*/
+struct __pyx_obj_9simulator_Mesh {
+  PyObject_HEAD
+  simulator::Mesh *_mesh;
+  struct __pyx_obj_9simulator_Device *_device;
+};
+
+
+/* "simulator.pyx":145
+ * 
+ * # Poisson solver wrapper class
+ * cdef class PoissonSolver:             # <<<<<<<<<<<<<<
+ *     cdef simulator_Poisson* _poisson
+ *     cdef Device _device
+*/
+struct __pyx_obj_9simulator_PoissonSolver {
+  PyObject_HEAD
+  simulator::Poisson *_poisson;
+  struct __pyx_obj_9simulator_Device *_device;
+};
+
+
+/* "simulator.pyx":207
+ * 
+ * # DriftDiffusion solver wrapper class
+ * cdef class DriftDiffusionSolver:             # <<<<<<<<<<<<<<
+ *     cdef simulator_DriftDiffusion* _dd
+ *     cdef Device _device
+*/
+struct __pyx_obj_9simulator_DriftDiffusionSolver {
+  PyObject_HEAD
+  simulator::DriftDiffusion *_dd;
+  struct __pyx_obj_9simulator_Device *_device;
+};
+
+
+/* "simulator.pyx":285
+ * 
+ * # Legacy Simulator class for backward compatibility
  * cdef class Simulator:             # <<<<<<<<<<<<<<
- *     cdef Device* device
- *     cdef simulator_Poisson* poisson
+ *     cdef Device _device
+ *     cdef PoissonSolver _poisson
 */
 struct __pyx_obj_9simulator_Simulator {
   PyObject_HEAD
-  simulator::Device *device;
-  simulator::Poisson *poisson;
-  simulator::DriftDiffusion *dd;
+  struct __pyx_obj_9simulator_Device *_device;
+  struct __pyx_obj_9simulator_PoissonSolver *_poisson;
+  struct __pyx_obj_9simulator_DriftDiffusionSolver *_dd;
   int num_points_x;
   int num_points_y;
   PyObject *mesh_type;
@@ -1978,8 +2041,29 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStrNoError(PyObject* obj, P
 /* GetBuiltinName.proto */
 static PyObject *__Pyx_GetBuiltinName(PyObject *name);
 
-/* IterFinish.proto */
-static CYTHON_INLINE int __Pyx_IterFinish(void);
+/* GetTopmostException.proto */
+#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
+static _PyErr_StackItem * __Pyx_PyErr_GetTopmostException(PyThreadState *tstate);
+#endif
+
+/* SaveResetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_ExceptionSave(type, value, tb)  __Pyx__ExceptionSave(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#define __Pyx_ExceptionReset(type, value, tb)  __Pyx__ExceptionReset(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
+#else
+#define __Pyx_ExceptionSave(type, value, tb)   PyErr_GetExcInfo(type, value, tb)
+#define __Pyx_ExceptionReset(type, value, tb)  PyErr_SetExcInfo(type, value, tb)
+#endif
+
+/* GetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_GetException(type, value, tb)  __Pyx__GetException(__pyx_tstate, type, value, tb)
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
+#endif
 
 /* PyFunctionFastCall.proto */
 #if CYTHON_FAST_PYCALL
@@ -2025,71 +2109,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 /* PyObjectFastCall.proto */
 #define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
 static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject * const*args, size_t nargs, PyObject *kwargs);
-
-/* PyObjectCallNoArg.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
-
-/* PyObjectCallOneArg.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
-
-/* PyObjectGetMethod.proto */
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
-
-/* PyObjectCallMethod0.proto */
-static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name);
-
-/* RaiseNeedMoreValuesToUnpack.proto */
-static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index);
-
-/* RaiseTooManyValuesToUnpack.proto */
-static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
-
-/* UnpackItemEndCheck.proto */
-static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
-
-/* RaiseNoneIterError.proto */
-static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void);
-
-/* UnpackTupleError.proto */
-static void __Pyx_UnpackTupleError(PyObject *, Py_ssize_t index);
-
-/* UnpackTuple2.proto */
-static CYTHON_INLINE int __Pyx_unpack_tuple2(
-    PyObject* tuple, PyObject** value1, PyObject** value2, int is_tuple, int has_known_size, int decref_tuple);
-static CYTHON_INLINE int __Pyx_unpack_tuple2_exact(
-    PyObject* tuple, PyObject** value1, PyObject** value2, int decref_tuple);
-static int __Pyx_unpack_tuple2_generic(
-    PyObject* tuple, PyObject** value1, PyObject** value2, int has_known_size, int decref_tuple);
-
-/* dict_iter.proto */
-static CYTHON_INLINE PyObject* __Pyx_dict_iterator(PyObject* dict, int is_dict, PyObject* method_name,
-                                                   Py_ssize_t* p_orig_length, int* p_is_dict);
-static CYTHON_INLINE int __Pyx_dict_iter_next(PyObject* dict_or_iter, Py_ssize_t orig_length, Py_ssize_t* ppos,
-                                              PyObject** pkey, PyObject** pvalue, PyObject** pitem, int is_dict);
-
-/* GetTopmostException.proto */
-#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
-static _PyErr_StackItem * __Pyx_PyErr_GetTopmostException(PyThreadState *tstate);
-#endif
-
-/* SaveResetException.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_ExceptionSave(type, value, tb)  __Pyx__ExceptionSave(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#define __Pyx_ExceptionReset(type, value, tb)  __Pyx__ExceptionReset(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
-#else
-#define __Pyx_ExceptionSave(type, value, tb)   PyErr_GetExcInfo(type, value, tb)
-#define __Pyx_ExceptionReset(type, value, tb)  PyErr_SetExcInfo(type, value, tb)
-#endif
-
-/* GetException.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_GetException(type, value, tb)  __Pyx__GetException(__pyx_tstate, type, value, tb)
-static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#else
-static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
-#endif
 
 /* RaiseException.proto */
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
@@ -2215,49 +2234,8 @@ static CYTHON_INLINE PyObject *__Pyx_CallUnboundCMethod2(__Pyx_CachedCFunction *
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
-/* RaiseUnexpectedTypeError.proto */
-static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
-
-/* GetItemInt.proto */
-#define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck) :\
-    (is_list ? (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL) :\
-               __Pyx_GetItemInt_Generic(o, to_py_func(i))))
-#define __Pyx_GetItemInt_List(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_List_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
-    (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck);
-#define __Pyx_GetItemInt_Tuple(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_Tuple_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
-    (PyErr_SetString(PyExc_IndexError, "tuple index out of range"), (PyObject*)NULL))
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck);
-static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
-                                                     int is_list, int wraparound, int boundscheck);
-
-/* DictGetItem.proto */
-#if !CYTHON_COMPILING_IN_PYPY
-static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
-#define __Pyx_PyObject_Dict_GetItem(obj, name)\
-    (likely(PyDict_CheckExact(obj)) ?\
-     __Pyx_PyDict_GetItem(obj, name) : PyObject_GetItem(obj, name))
-#else
-#define __Pyx_PyDict_GetItem(d, key) PyObject_GetItem(d, key)
-#define __Pyx_PyObject_Dict_GetItem(obj, name)  PyObject_GetItem(obj, name)
-#endif
-
-/* SwapException.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_ExceptionSwap(type, value, tb)  __Pyx__ExceptionSwap(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#else
-static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb);
-#endif
+/* RejectKeywords.proto */
+static void __Pyx_RejectKeywords(const char* function_name, PyObject *kwds);
 
 /* ArgTypeTest.proto */
 #define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
@@ -2265,31 +2243,13 @@ static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value,
         __Pyx__ArgTypeTest(obj, type, name, exact))
 static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
 
-/* IsLittleEndian.proto */
-static CYTHON_INLINE int __Pyx_Is_Little_Endian(void);
+/* PyObjectFastCallMethod.proto */
+#if CYTHON_VECTORCALL && PY_VERSION_HEX >= 0x03090000
+#define __Pyx_PyObject_FastCallMethod(name, args, nargsf) PyObject_VectorcallMethod(name, args, nargsf, NULL)
+#else
+static PyObject *__Pyx_PyObject_FastCallMethod(PyObject *name, PyObject *const *args, size_t nargsf);
+#endif
 
-/* BufferFormatCheck.proto */
-static const char* __Pyx_BufFmt_CheckString(__Pyx_BufFmt_Context* ctx, const char* ts);
-static void __Pyx_BufFmt_Init(__Pyx_BufFmt_Context* ctx,
-                              __Pyx_BufFmt_StackElem* stack,
-                              const __Pyx_TypeInfo* type);
-
-/* BufferGetAndValidate.proto */
-#define __Pyx_GetBufferAndValidate(buf, obj, dtype, flags, nd, cast, stack)\
-    ((obj == Py_None || obj == NULL) ?\
-    (__Pyx_ZeroBuffer(buf), 0) :\
-    __Pyx__GetBufferAndValidate(buf, obj, dtype, flags, nd, cast, stack))
-static int  __Pyx__GetBufferAndValidate(Py_buffer* buf, PyObject* obj,
-  const __Pyx_TypeInfo* dtype, int flags, int nd, int cast, __Pyx_BufFmt_StackElem* stack);
-static void __Pyx_ZeroBuffer(Py_buffer* buf);
-static CYTHON_INLINE void __Pyx_SafeReleaseBuffer(Py_buffer* info);
-static Py_ssize_t __Pyx_minusones[] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-static Py_ssize_t __Pyx_zeros[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-/* BufferIndexError.proto */
-static void __Pyx_RaiseBufferIndexError(int axis);
-
-#define __Pyx_BufPtrStrided1d(type, buf, i0, s0) (type)((char*)buf + i0 * s0)
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 #define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
@@ -2358,11 +2318,113 @@ static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, P
 /* ExtTypeTest.proto */
 static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
 
-/* RejectKeywords.proto */
-static void __Pyx_RejectKeywords(const char* function_name, PyObject *kwds);
+/* IsLittleEndian.proto */
+static CYTHON_INLINE int __Pyx_Is_Little_Endian(void);
+
+/* BufferFormatCheck.proto */
+static const char* __Pyx_BufFmt_CheckString(__Pyx_BufFmt_Context* ctx, const char* ts);
+static void __Pyx_BufFmt_Init(__Pyx_BufFmt_Context* ctx,
+                              __Pyx_BufFmt_StackElem* stack,
+                              const __Pyx_TypeInfo* type);
+
+/* BufferGetAndValidate.proto */
+#define __Pyx_GetBufferAndValidate(buf, obj, dtype, flags, nd, cast, stack)\
+    ((obj == Py_None || obj == NULL) ?\
+    (__Pyx_ZeroBuffer(buf), 0) :\
+    __Pyx__GetBufferAndValidate(buf, obj, dtype, flags, nd, cast, stack))
+static int  __Pyx__GetBufferAndValidate(Py_buffer* buf, PyObject* obj,
+  const __Pyx_TypeInfo* dtype, int flags, int nd, int cast, __Pyx_BufFmt_StackElem* stack);
+static void __Pyx_ZeroBuffer(Py_buffer* buf);
+static CYTHON_INLINE void __Pyx_SafeReleaseBuffer(Py_buffer* info);
+static Py_ssize_t __Pyx_minusones[] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+static Py_ssize_t __Pyx_zeros[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+/* BufferIndexError.proto */
+static void __Pyx_RaiseBufferIndexError(int axis);
+
+#define __Pyx_BufPtrStrided1d(type, buf, i0, s0) (type)((char*)buf + i0 * s0)
+/* DictGetItem.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
+#define __Pyx_PyObject_Dict_GetItem(obj, name)\
+    (likely(PyDict_CheckExact(obj)) ?\
+     __Pyx_PyDict_GetItem(obj, name) : PyObject_GetItem(obj, name))
+#else
+#define __Pyx_PyDict_GetItem(d, key) PyObject_GetItem(d, key)
+#define __Pyx_PyObject_Dict_GetItem(obj, name)  PyObject_GetItem(obj, name)
+#endif
+
+/* RaiseUnexpectedTypeError.proto */
+static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
+
+/* GetItemInt.proto */
+#define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck) :\
+    (is_list ? (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL) :\
+               __Pyx_GetItemInt_Generic(o, to_py_func(i))))
+#define __Pyx_GetItemInt_List(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_List_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
+    (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck);
+#define __Pyx_GetItemInt_Tuple(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Tuple_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
+    (PyErr_SetString(PyExc_IndexError, "tuple index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck);
+static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
+                                                     int is_list, int wraparound, int boundscheck);
+
+/* PyObjectFormatSimple.proto */
+#if CYTHON_COMPILING_IN_PYPY
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#elif CYTHON_USE_TYPE_SLOTS
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        likely(PyLong_CheckExact(s)) ? PyLong_Type.tp_repr(s) :\
+        likely(PyFloat_CheckExact(s)) ? PyFloat_Type.tp_repr(s) :\
+        PyObject_Format(s, f))
+#else
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#endif
+
+/* SwapException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_ExceptionSwap(type, value, tb)  __Pyx__ExceptionSwap(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#else
+static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb);
+#endif
+
+/* CallTypeTraverse.proto */
+#if !CYTHON_USE_TYPE_SPECS || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x03090000)
+#define __Pyx_call_type_traverse(o, always_call, visit, arg) 0
+#else
+static int __Pyx_call_type_traverse(PyObject *o, int always_call, visitproc visit, void *arg);
+#endif
 
 /* FixUpExtensionType.proto */
 static CYTHON_INLINE int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject *type);
+
+/* PyObjectCallNoArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
+
+/* PyObjectCallOneArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
+
+/* PyObjectGetMethod.proto */
+static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+
+/* PyObjectCallMethod0.proto */
+static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name);
 
 /* ValidateBasesTuple.proto */
 #if CYTHON_COMPILING_IN_CPYTHON || CYTHON_COMPILING_IN_LIMITED_API || CYTHON_USE_TYPE_SPECS
@@ -2414,9 +2476,6 @@ static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
 static PyObject *__Pyx_ImportDottedModule(PyObject *name, PyObject *parts_tuple);
 static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *name, PyObject *parts_tuple);
 
-/* ListPack.proto */
-static PyObject *__Pyx_PyList_Pack(Py_ssize_t n, ...);
-
 /* FetchSharedCythonModule.proto */
 static PyObject *__Pyx_FetchSharedCythonABIModule(void);
 
@@ -2425,13 +2484,6 @@ static CYTHON_INLINE PyObject *__Pyx_PyDict_SetDefault(PyObject *d, PyObject *ke
 
 /* FetchCommonType.proto */
 static PyTypeObject* __Pyx_FetchCommonTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases);
-
-/* CallTypeTraverse.proto */
-#if !CYTHON_USE_TYPE_SPECS || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x03090000)
-#define __Pyx_call_type_traverse(o, always_call, visit, arg) 0
-#else
-static int __Pyx_call_type_traverse(PyObject *o, int always_call, visitproc visit, void *arg);
-#endif
 
 /* PyMethodNew.proto */
 static PyObject *__Pyx_PyMethod_New(PyObject *func, PyObject *self, PyObject *typ);
@@ -2537,6 +2589,9 @@ static PyObject *__Pyx_CyFunction_New(PyMethodDef *ml,
                                       PyObject *module, PyObject *globals,
                                       PyObject* code);
 
+/* ListPack.proto */
+static PyObject *__Pyx_PyList_Pack(Py_ssize_t n, ...);
+
 /* CLineInTraceback.proto */
 #if CYTHON_CLINE_IN_TRACEBACK && CYTHON_CLINE_IN_TRACEBACK_RUNTIME
 static int __Pyx_CLineForTraceback(PyThreadState *tstate, int c_line);
@@ -2587,48 +2642,6 @@ typedef struct {
 /* GCCDiagnostics.proto */
 #if !defined(__INTEL_COMPILER) && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define __Pyx_HAS_GCC_DIAGNOSTIC
-#endif
-
-/* CppExceptionConversion.proto */
-#ifndef __Pyx_CppExn2PyErr
-#include <new>
-#include <typeinfo>
-#include <stdexcept>
-#include <ios>
-static void __Pyx_CppExn2PyErr() {
-  try {
-    if (PyErr_Occurred())
-      ; // let the latest Python exn pass through and ignore the current one
-    else
-      throw;
-  } catch (const std::bad_alloc& exn) {
-    PyErr_SetString(PyExc_MemoryError, exn.what());
-  } catch (const std::bad_cast& exn) {
-    PyErr_SetString(PyExc_TypeError, exn.what());
-  } catch (const std::bad_typeid& exn) {
-    PyErr_SetString(PyExc_TypeError, exn.what());
-  } catch (const std::domain_error& exn) {
-    PyErr_SetString(PyExc_ValueError, exn.what());
-  } catch (const std::invalid_argument& exn) {
-    PyErr_SetString(PyExc_ValueError, exn.what());
-  } catch (const std::ios_base::failure& exn) {
-    PyErr_SetString(PyExc_IOError, exn.what());
-  } catch (const std::out_of_range& exn) {
-    PyErr_SetString(PyExc_IndexError, exn.what());
-  } catch (const std::overflow_error& exn) {
-    PyErr_SetString(PyExc_OverflowError, exn.what());
-  } catch (const std::range_error& exn) {
-    PyErr_SetString(PyExc_ArithmeticError, exn.what());
-  } catch (const std::underflow_error& exn) {
-    PyErr_SetString(PyExc_ArithmeticError, exn.what());
-  } catch (const std::exception& exn) {
-    PyErr_SetString(PyExc_RuntimeError, exn.what());
-  }
-  catch (...)
-  {
-    PyErr_SetString(PyExc_RuntimeError, "Unknown exception");
-  }
-}
 #endif
 
 /* RealImag.proto */
@@ -2771,10 +2784,10 @@ static void __Pyx_CppExn2PyErr() {
 static CYTHON_INLINE int __Pyx_PyLong_As_int(PyObject *);
 
 /* CIntToPy.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value);
+static CYTHON_INLINE PyObject* __Pyx_PyLong_From_int(int value);
 
 /* CIntToPy.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyLong_From_int(int value);
+static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value);
 
 /* FormatTypeName.proto */
 #if CYTHON_COMPILING_IN_LIMITED_API
@@ -2928,8 +2941,6 @@ static CYTHON_INLINE char *__pyx_f_5numpy_7ndarray_4data_data(PyArrayObject *__p
 /* Module declarations from "numpy" */
 
 /* Module declarations from "simulator" */
-static std::string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(PyObject *); /*proto*/
-static std::map<std::string,double>  __pyx_convert_map_from_py_std_3a__3a_string__and_double(PyObject *); /*proto*/
 /* #### Code section: typeinfo ### */
 static const __Pyx_TypeInfo __Pyx_TypeInfo_double = { "double", NULL, sizeof(double), { 0 }, 0, 'R', 0, 0 };
 /* #### Code section: before_global_var ### */
@@ -2940,18 +2951,22 @@ int __pyx_module_is_main_simulator = 0;
 /* Implementation of "simulator" */
 /* #### Code section: global_var ### */
 static PyObject *__pyx_builtin_RuntimeError;
-static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_TypeError;
+static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_ImportError;
 /* #### Code section: string_decls ### */
 static const char __pyx_k_Q[] = "\200\001\330\004\n\210+\220Q";
 static const char __pyx_k_V[] = "V";
 static const char __pyx_k_n[] = "n";
 static const char __pyx_k_p[] = "p";
+static const char __pyx_k_x[] = "x";
+static const char __pyx_k_y[] = "y";
 static const char __pyx_k_DG[] = "DG";
 static const char __pyx_k_Et[] = "Et";
 static const char __pyx_k_Jn[] = "Jn";
 static const char __pyx_k_Jp[] = "Jp";
+static const char __pyx_k_Lx[] = "Lx";
+static const char __pyx_k_Ly[] = "Ly";
 static const char __pyx_k_MC[] = "MC";
 static const char __pyx_k_Na[] = "Na";
 static const char __pyx_k_Nd[] = "Nd";
@@ -2960,103 +2975,223 @@ static const char __pyx_k__2[] = "?";
 static const char __pyx_k_bc[] = "bc";
 static const char __pyx_k_gc[] = "gc";
 static const char __pyx_k_np[] = "np";
+static const char __pyx_k_A_Q[] = "\200A\340\010\017\320\017(\250\001\250\024\250Q";
+static const char __pyx_k_A_a[] = "\200A\340\010\017\320\017!\240\021\240$\240a";
 static const char __pyx_k_FDM[] = "FDM";
 static const char __pyx_k_FEM[] = "FEM";
 static const char __pyx_k_FVM[] = "FVM";
 static const char __pyx_k_SEM[] = "SEM";
 static const char __pyx_k_pop[] = "pop";
+static const char __pyx_k_rho[] = "rho";
+static const char __pyx_k_tol[] = "tol";
+static const char __pyx_k_A_AT[] = "\200A\340\010\017\320\017$\240A\240T\250\021";
+static const char __pyx_k_A_t1[] = "\200A\340\010\017\210t\2201";
+static const char __pyx_k_Mesh[] = "Mesh";
 static const char __pyx_k_TwoD[] = "TwoD";
 static const char __pyx_k_func[] = "__func__";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_self[] = "self";
-static const char __pyx_k_size[] = "size";
 static const char __pyx_k_spec[] = "__spec__";
 static const char __pyx_k_test[] = "__test__";
+static const char __pyx_k_A_D_q[] = "\200A\340\010\014\210D\220\017\230q\240\001";
 static const char __pyx_k_array[] = "array";
 static const char __pyx_k_dtype[] = "dtype";
-static const char __pyx_k_items[] = "items";
 static const char __pyx_k_numpy[] = "numpy";
+static const char __pyx_k_order[] = "order";
+static const char __pyx_k_solve[] = "solve";
 static const char __pyx_k_zeros[] = "zeros";
+static const char __pyx_k_A_7q_A[] = "\200A\340\010\017\320\0177\260q\270\004\270A";
+static const char __pyx_k_A_AT_2[] = "\200A\340\010\017\320\017,\250A\250T\260\021";
+static const char __pyx_k_A_D_1D[] = "\200A\340\010\014\210D\220\013\2301\230D\240\001";
+static const char __pyx_k_A_q_Ks[] = "\200A\340\010\017\320\017\037\230q\240\004\240K\250s\260!";
+static const char __pyx_k_Device[] = "Device";
+static const char __pyx_k_device[] = "device";
 static const char __pyx_k_enable[] = "enable";
 static const char __pyx_k_logger[] = "logger";
 static const char __pyx_k_method[] = "method";
 static const char __pyx_k_module[] = "__module__";
 static const char __pyx_k_reduce[] = "__reduce__";
 static const char __pyx_k_result[] = "result";
+static const char __pyx_k_A_AT_3a[] = "\200A\340\010\017\320\017$\240A\240T\250\032\2603\260a";
+static const char __pyx_k_A_q_F_Q[] = "\200A\340\010\017\320\017'\240q\250\004\250F\260#\260Q";
+static const char __pyx_k_A_t9F_1[] = "\200A\340\010\017\210t\2209\230F\240!\2401";
 static const char __pyx_k_disable[] = "disable";
 static const char __pyx_k_extents[] = "extents";
 static const char __pyx_k_float64[] = "float64";
 static const char __pyx_k_logging[] = "logging";
 static const char __pyx_k_regions[] = "regions";
 static const char __pyx_k_use_amr[] = "use_amr";
+static const char __pyx_k_A_4xxwaq[] = "\200A\340\010\032\230!\2304\230x\240x\250w\260a\260q";
 static const char __pyx_k_add_note[] = "add_note";
 static const char __pyx_k_bc_array[] = "bc_array";
+static const char __pyx_k_filename[] = "filename";
 static const char __pyx_k_getstate[] = "__getstate__";
+static const char __pyx_k_is_valid[] = "is_valid";
+static const char __pyx_k_max_iter[] = "max_iter";
 static const char __pyx_k_qualname[] = "__qualname__";
 static const char __pyx_k_set_name[] = "__set_name__";
 static const char __pyx_k_setstate[] = "__setstate__";
+static const char __pyx_k_x_points[] = "x_points";
+static const char __pyx_k_y_points[] = "y_points";
+static const char __pyx_k_A_4_3at3a[] = "\200A\340\010\"\240!\2404\240{\260!\2603\260a\260t\2703\270a";
 static const char __pyx_k_Simulator[] = "Simulator";
 static const char __pyx_k_TypeError[] = "TypeError";
 static const char __pyx_k_dimension[] = "dimension";
+static const char __pyx_k_dof_count[] = "dof_count";
 static const char __pyx_k_getLogger[] = "getLogger";
+static const char __pyx_k_get_order[] = "get_order";
 static const char __pyx_k_isenabled[] = "isenabled";
 static const char __pyx_k_max_steps[] = "max_steps";
 static const char __pyx_k_mesh_type[] = "mesh_type";
+static const char __pyx_k_num_nodes[] = "num_nodes";
 static const char __pyx_k_potential[] = "potential";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_simulator[] = "simulator";
 static const char __pyx_k_Structured[] = "Structured";
 static const char __pyx_k_ValueError[] = "ValueError";
+static const char __pyx_k_get_device[] = "get_device";
 static const char __pyx_k_set_doping[] = "set_doping";
 static const char __pyx_k_ImportError[] = "ImportError";
+static const char __pyx_k_get_extents[] = "get_extents";
 static const char __pyx_k_poisson_tol[] = "poisson_tol";
 static const char __pyx_k_use_amr_int[] = "use_amr_int";
+static const char __pyx_k_A_4z_q_q_G1A[] = "\200A\360\006\000\t\033\230!\2304\230z\250\021\330\010\017\210q\220\007\220q\230\004\230G\2401\240A";
 static const char __pyx_k_RuntimeError[] = "RuntimeError";
 static const char __pyx_k_initializing[] = "_initializing";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
 static const char __pyx_k_num_points_x[] = "num_points_x";
 static const char __pyx_k_num_points_y[] = "num_points_y";
 static const char __pyx_k_stringsource[] = "<stringsource>";
+static const char __pyx_k_PoissonSolver[] = "PoissonSolver";
+static const char __pyx_k_generate_gmsh[] = "generate_gmsh";
+static const char __pyx_k_get_dof_count[] = "get_dof_count";
+static const char __pyx_k_get_num_nodes[] = "get_num_nodes";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
 static const char __pyx_k_simulator_pyx[] = "simulator.pyx";
 static const char __pyx_k_solve_poisson[] = "solve_poisson";
+static const char __pyx_k_get_epsilon_at[] = "get_epsilon_at";
+static const char __pyx_k_q_q_t4vQd_k_LA[] = "\320\004+\250?\270-\300q\330/?\270q\340\010\017\210t\2204\220v\230Q\230d\240$\240k\260\031\320:L\310A";
 static const char __pyx_k_set_trap_level[] = "set_trap_level";
+static const char __pyx_k_get_grid_points[] = "get_grid_points";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
+static const char __pyx_k_get_num_elements[] = "get_num_elements";
 static const char __pyx_k_poisson_max_iter[] = "poisson_max_iter";
-static const char __pyx_k_A_8_U_2Qd_A_7_Q_aq[] = "\200A\330\010\032\320\0328\270\001\270\024\270U\300!\3002\300Q\300d\310\"\310A\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q";
+static const char __pyx_k_get_residual_norm[] = "get_residual_norm";
+static const char __pyx_k_A_8_V1Bat2Q_7_Q_aq[] = "\200A\340\010\032\320\0328\270\001\270\024\270V\3001\300B\300a\300t\3102\310Q\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q";
+static const char __pyx_k_Device_get_extents[] = "Device.get_extents";
+static const char __pyx_k_Mesh_generate_gmsh[] = "Mesh.generate_gmsh";
+static const char __pyx_k_Mesh_get_num_nodes[] = "Mesh.get_num_nodes";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_get_poisson_solver[] = "get_poisson_solver";
+static const char __pyx_k_set_charge_density[] = "set_charge_density";
+static const char __pyx_k_PoissonSolver_solve[] = "PoissonSolver.solve";
+static const char __pyx_k_DriftDiffusionSolver[] = "DriftDiffusionSolver";
 static const char __pyx_k_Failed_to_set_doping[] = "Failed to set doping";
+static const char __pyx_k_Mesh___reduce_cython[] = "Mesh.__reduce_cython__";
+static const char __pyx_k_Mesh_get_grid_points[] = "Mesh.get_grid_points";
 static const char __pyx_k_Poisson_solve_failed[] = "Poisson solve failed";
+static const char __pyx_k_Simulator_get_device[] = "Simulator.get_device";
 static const char __pyx_k_Simulator_set_doping[] = "Simulator.set_doping";
+static const char __pyx_k_Device_get_epsilon_at[] = "Device.get_epsilon_at";
+static const char __pyx_k_Failed_to_create_Mesh[] = "Failed to create Mesh";
+static const char __pyx_k_Mesh_get_num_elements[] = "Mesh.get_num_elements";
 static const char __pyx_k_solve_drift_diffusion[] = "solve_drift_diffusion";
+static const char __pyx_k_solve_self_consistent[] = "solve_self_consistent";
+static const char __pyx_k_Device___reduce_cython[] = "Device.__reduce_cython__";
+static const char __pyx_k_Mesh___setstate_cython[] = "Mesh.__setstate_cython__";
+static const char __pyx_k_PoissonSolver_is_valid[] = "PoissonSolver.is_valid";
 static const char __pyx_k_Failed_to_create_Device[] = "Failed to create Device";
 static const char __pyx_k_Simulator_solve_poisson[] = "Simulator.solve_poisson";
+static const char __pyx_k_Device___setstate_cython[] = "Device.__setstate_cython__";
 static const char __pyx_k_Failed_to_set_trap_level[] = "Failed to set trap level";
 static const char __pyx_k_Simulator_set_trap_level[] = "Simulator.set_trap_level";
+static const char __pyx_k_get_convergence_residual[] = "get_convergence_residual";
 static const char __pyx_k_Simulator___reduce_cython[] = "Simulator.__reduce_cython__";
+static const char __pyx_k_DriftDiffusionSolver_solve[] = "DriftDiffusionSolver.solve";
+static const char __pyx_k_Failed_to_create_Simulator[] = "Failed to create Simulator: ";
+static const char __pyx_k_get_drift_diffusion_solver[] = "get_drift_diffusion_solver";
+static const char __pyx_k_PoissonSolver_get_dof_count[] = "PoissonSolver.get_dof_count";
 static const char __pyx_k_Simulator___setstate_cython[] = "Simulator.__setstate_cython__";
 static const char __pyx_k_Drift_diffusion_solve_failed[] = "Drift-diffusion solve failed";
-static const char __pyx_k_A_2V3b_AQ_4AT_ar_ar_bPQ_7_Q_aq[] = "\200A\330\010\013\2102\210V\2203\220b\230\001\330\014\022\220*\230A\230Q\330\010\032\320\0324\260A\260T\270\025\270a\270r\300\021\300$\300a\300r\310\021\310$\310b\320PQ\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q";
+static const char __pyx_k_Simulator_get_poisson_solver[] = "Simulator.get_poisson_solver";
+static const char __pyx_k_DriftDiffusionSolver_is_valid[] = "DriftDiffusionSolver.is_valid";
+static const char __pyx_k_PoissonSolver___reduce_cython[] = "PoissonSolver.__reduce_cython__";
+static const char __pyx_k_55Gq_32V1D_b_U_q_A_BfA_b_BfA_b[] = "\320\004\"\320\"5\3205G\300q\330#:\270!\340\0103\2602\260V\2701\270D\300\006\300b\310\001\330\010\035\230U\320\"?\270q\300\004\300A\360\006\000\t-\250B\250f\260A\260[\300\006\300b\310\001\330\010,\250B\250f\260A\260[\300\006\300b\310\001\330\010,\250B\250f\260A\260[\300\006\300b\310\001\330\010-\250R\250v\260Q\260k\300\026\300r\310\021\330\010-\250R\250v\260Q\260k\300\026\300r\310\021\340\010\037\230u\240M\260\021\330\010\032\320\032/\250q\330\014\020\220\006\220a\220x\230q\240\004\240H\250G\2601\330\014\027\220}\320$6\260a\330\014\r\210Q\210a\210t\2201\220A\220Q\220d\230!\2301\230A\230T\240\021\240\"\240A\240T\250\021\250\"\250A\250T\260\021\340\010\013\2107\220#\220Q\330\014\022\220,\230a\230q\340\010\t\330\014\031\230\021\330\014\021\220\021\330\014\021\220\021\330\014\022\220!\330\014\022\220!";
+static const char __pyx_k_A_2V3b_AQ_4AT_q_4q_4rQR_7_Q_aq[] = "\200A\340\010\013\2102\210V\2203\220b\230\001\330\014\022\220*\230A\230Q\330\010\032\320\0324\260A\260T\270\026\270q\300\002\300!\3004\300q\310\002\310!\3104\310r\320QR\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q";
+static const char __pyx_k_DriftDiffusionSolver_get_order[] = "DriftDiffusionSolver.get_order";
+static const char __pyx_k_A_D_a_32V1KvRq_32V1KvRq_at81HAT[] = "\200A\340\010\024\220D\230\016\240a\330\0103\2602\260V\2701\270K\300v\310R\310q\330\0103\2602\260V\2701\270K\300v\310R\310q\340\010\036\230a\230t\2408\2501\250H\260A\260T\270\021\330\010\036\230a\230t\2408\2501\250H\260A\260T\270\021\340\010\017\210z\230\021";
+static const char __pyx_k_DriftDiffusionSolver___setstate[] = "DriftDiffusionSolver.__setstate_cython__";
+static const char __pyx_k_DriftDiffusionSolver_set_doping[] = "DriftDiffusionSolver.set_doping";
 static const char __pyx_k_Failed_to_create_DriftDiffusion[] = "Failed to create DriftDiffusion solver";
 static const char __pyx_k_Failed_to_create_Poisson_solver[] = "Failed to create Poisson solver";
+static const char __pyx_k_PoissonSolver___setstate_cython[] = "PoissonSolver.__setstate_cython__";
+static const char __pyx_k_PoissonSolver_get_residual_norm[] = "PoissonSolver.get_residual_norm";
 static const char __pyx_k_Simulator_solve_drift_diffusion[] = "Simulator.solve_drift_diffusion";
-static const char __pyx_k_q_q_32V1D_b_N_D_BfAV6_1_BfAV6_1[] = "\320\004+\250?\270-\300q\330/?\270q\330\0103\2602\260V\2701\270D\300\006\300b\310\001\330\010\030\230\004\230N\250\"\250D\260\001\360\006\000\t-\250B\250f\260A\260V\2706\300\022\3001\330\010,\250B\250f\260A\260V\2706\300\022\3001\330\010,\250B\250f\260A\260V\2706\300\022\3001\330\010-\250R\250v\260Q\260f\270F\300\"\300A\330\010-\250R\250v\260Q\260f\270F\300\"\300A\340\010\037\230u\240M\260\021\330\010\032\320\032/\250q\260\004\260E\270\021\270(\300!\3004\300x\310w\320VW\330/:\270-\320GY\320YZ\330/0\260\001\260\021\260$\260a\260q\270\001\270\024\270Q\270a\270q\300\004\300A\300R\300q\310\004\310A\310R\310q\320PT\320TU\340\010\013\2107\220#\220Q\330\014\022\220,\230a\230q\340\010\t\330\014\031\230\021\330\014\021\220\021\330\014\021\220\021\330\014\022\220!\330\014\022\220!";
-static const char __pyx_k_A_32V1D_b_BfAT_r___bbdde_4z_4xwV[] = "\200A\330\0103\2602\260V\2701\270D\300\006\300b\310\001\330\010,\250B\250f\260A\260T\270\036\300r\310\024\310_\320\\b\320bd\320de\330\010\032\320\032*\250!\2504\250z\270\021\270(\300!\3004\300x\310w\320VW\320WX\320XY\320Y]\320]^\320^_\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q\330\010\017\210q";
+static const char __pyx_k_A_32V1D_b_U_7q_A_BfA_b_1HAT_Qat1[] = "\200A\340*:\270!\340\0103\2602\260V\2701\270D\300\006\300b\310\001\330\010\035\230U\320\"7\260q\270\004\270A\330\010,\250B\250f\260A\260[\300\006\300b\310\001\340\010\032\320\032:\270!\330\014\020\220\013\2301\230H\240A\240T\250\030\260\021\330\014\r\210Q\210a\210t\2201\220A\220Q\220d\230!\2302\230Q\230d\240!\2402\240Q\240d\250!\2501\330\014\026\220e\2301\230A\230Q\230d\240!\2401\340\010\013\2107\220#\220Q\330\014\022\220,\230a\230q\330\010\017\210q";
+static const char __pyx_k_A_32V1D_b_U_7q_A_BfA_b_4_81D_PWW[] = "\200A\340\0103\2602\260V\2701\270D\300\006\300b\310\001\330\010\035\230U\320\"7\260q\270\004\270A\330\010,\250B\250f\260A\260[\300\006\300b\310\001\340\010\032\320\032*\250!\2504\250{\270!\2708\3001\300D\310\010\320PW\320WX\320XY\320YZ\320Z^\320^_\320_`\330\010\013\2107\220#\220Q\330\014\022\220,\230a\230q\330\010\017\210q";
+static const char __pyx_k_DriftDiffusionSolver___reduce_cy[] = "DriftDiffusionSolver.__reduce_cython__";
+static const char __pyx_k_DriftDiffusionSolver_get_converg[] = "DriftDiffusionSolver.get_convergence_residual";
+static const char __pyx_k_DriftDiffusionSolver_get_dof_cou[] = "DriftDiffusionSolver.get_dof_count";
+static const char __pyx_k_DriftDiffusionSolver_set_trap_le[] = "DriftDiffusionSolver.set_trap_level";
 static const char __pyx_k_Nd_and_Na_arrays_must_have_the_s[] = "Nd and Na arrays must have the same size";
 static const char __pyx_k_Note_that_Cython_is_deliberately[] = "Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.";
+static const char __pyx_k_PoissonSolver_set_charge_density[] = "PoissonSolver.set_charge_density";
+static const char __pyx_k_PoissonSolver_solve_self_consist[] = "PoissonSolver.solve_self_consistent";
+static const char __pyx_k_Self_consistent_Poisson_solve_fa[] = "Self-consistent Poisson solve failed";
+static const char __pyx_k_Simulator_get_drift_diffusion_so[] = "Simulator.get_drift_diffusion_solver";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
 static const char __pyx_k_numpy__core_multiarray_failed_to[] = "numpy._core.multiarray failed to import";
 static const char __pyx_k_numpy__core_umath_failed_to_impo[] = "numpy._core.umath failed to import";
 /* #### Code section: decls ### */
-static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_dimension, PyObject *__pyx_v_extents, PyObject *__pyx_v_num_points_x, PyObject *__pyx_v_num_points_y, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, PyObject *__pyx_v_regions); /* proto */
-static void __pyx_pf_9simulator_9Simulator_2__dealloc__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
+static int __pyx_pf_9simulator_6Device___cinit__(struct __pyx_obj_9simulator_Device *__pyx_v_self, double __pyx_v_Lx, double __pyx_v_Ly); /* proto */
+static void __pyx_pf_9simulator_6Device_2__dealloc__(struct __pyx_obj_9simulator_Device *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_4get_epsilon_at(struct __pyx_obj_9simulator_Device *__pyx_v_self, double __pyx_v_x, double __pyx_v_y); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_6get_extents(struct __pyx_obj_9simulator_Device *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_6length___get__(struct __pyx_obj_9simulator_Device *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_5width___get__(struct __pyx_obj_9simulator_Device *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_8__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Device *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_6Device_10__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Device *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static int __pyx_pf_9simulator_4Mesh___cinit__(struct __pyx_obj_9simulator_Mesh *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_mesh_type); /* proto */
+static void __pyx_pf_9simulator_4Mesh_2__dealloc__(struct __pyx_obj_9simulator_Mesh *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_4generate_gmsh(struct __pyx_obj_9simulator_Mesh *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_6get_num_nodes(struct __pyx_obj_9simulator_Mesh *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_8get_num_elements(struct __pyx_obj_9simulator_Mesh *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_10get_grid_points(struct __pyx_obj_9simulator_Mesh *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_12__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Mesh *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_4Mesh_14__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Mesh *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static int __pyx_pf_9simulator_13PoissonSolver___cinit__(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type); /* proto */
+static void __pyx_pf_9simulator_13PoissonSolver_2__dealloc__(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_4is_valid(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_6set_charge_density(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyArrayObject *__pyx_v_rho); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_8solve(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyObject *__pyx_v_bc); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_10solve_self_consistent(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyObject *__pyx_v_bc, PyArrayObject *__pyx_v_n, PyArrayObject *__pyx_v_p, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na, int __pyx_v_max_iter, double __pyx_v_tol); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_12get_dof_count(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_14get_residual_norm(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_16__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_18__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static int __pyx_pf_9simulator_20DriftDiffusionSolver___cinit__(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, int __pyx_v_order); /* proto */
+static void __pyx_pf_9simulator_20DriftDiffusionSolver_2__dealloc__(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_4is_valid(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_6set_doping(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_8set_trap_level(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyArrayObject *__pyx_v_Et); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_10solve(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyObject *__pyx_v_bc, double __pyx_v_Vg, int __pyx_v_max_steps, bool __pyx_v_use_amr, int __pyx_v_poisson_max_iter, double __pyx_v_poisson_tol); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_12get_dof_count(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_14get_convergence_residual(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_16get_order(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_18__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_20__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_dimension, PyObject *__pyx_v_extents, PyObject *__pyx_v_num_points_x, PyObject *__pyx_v_num_points_y, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, CYTHON_UNUSED PyObject *__pyx_v_regions); /* proto */
+static void __pyx_pf_9simulator_9Simulator_2__dealloc__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_4set_doping(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_6set_trap_level(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyArrayObject *__pyx_v_Et); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_8solve_poisson(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_bc); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_10solve_drift_diffusion(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_bc, PyObject *__pyx_v_Vg, PyObject *__pyx_v_max_steps, PyObject *__pyx_v_use_amr, PyObject *__pyx_v_poisson_max_iter, PyObject *__pyx_v_poisson_tol); /* proto */
+static PyObject *__pyx_pf_9simulator_9Simulator_12get_device(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_9Simulator_14get_poisson_solver(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_9Simulator_16get_drift_diffusion_solver(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_6method___get__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_9mesh_type___get__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_x___get__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
@@ -3071,8 +3206,12 @@ static PyObject *__pyx_pf_9simulator_9Simulator_13_num_points_x___get__(struct _
 static int __pyx_pf_9simulator_9Simulator_13_num_points_x_2__set__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static PyObject *__pyx_pf_9simulator_9Simulator_13_num_points_y___get__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
 static int __pyx_pf_9simulator_9Simulator_13_num_points_y_2__set__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static PyObject *__pyx_pf_9simulator_9Simulator_12__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_9simulator_9Simulator_14__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_pf_9simulator_9Simulator_18__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_9simulator_9Simulator_20__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_tp_new_9simulator_Device(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_9simulator_Mesh(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_9simulator_PoissonSolver(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_9simulator_DriftDiffusionSolver(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_9simulator_Simulator(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
@@ -3128,13 +3267,21 @@ typedef struct {
   PyTypeObject *__pyx_ptype_5numpy_flexible;
   PyTypeObject *__pyx_ptype_5numpy_character;
   PyTypeObject *__pyx_ptype_5numpy_ufunc;
+  PyObject *__pyx_type_9simulator_Device;
+  PyObject *__pyx_type_9simulator_Mesh;
+  PyObject *__pyx_type_9simulator_PoissonSolver;
+  PyObject *__pyx_type_9simulator_DriftDiffusionSolver;
   PyObject *__pyx_type_9simulator_Simulator;
+  PyTypeObject *__pyx_ptype_9simulator_Device;
+  PyTypeObject *__pyx_ptype_9simulator_Mesh;
+  PyTypeObject *__pyx_ptype_9simulator_PoissonSolver;
+  PyTypeObject *__pyx_ptype_9simulator_DriftDiffusionSolver;
   PyTypeObject *__pyx_ptype_9simulator_Simulator;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_pop;
   PyObject *__pyx_k_;
-  PyObject *__pyx_tuple[1];
-  PyObject *__pyx_codeobj_tab[6];
-  PyObject *__pyx_string_tab[101];
+  PyObject *__pyx_tuple[2];
+  PyObject *__pyx_codeobj_tab[36];
+  PyObject *__pyx_string_tab[167];
   PyObject *__pyx_float_0_0;
   PyObject *__pyx_float_1eneg_6;
   PyObject *__pyx_float_0_5eneg_6;
@@ -3182,106 +3329,172 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #endif
 /* #### Code section: constant_name_defines ### */
 #define __pyx_n_u_DG __pyx_string_tab[0]
-#define __pyx_kp_u_Drift_diffusion_solve_failed __pyx_string_tab[1]
-#define __pyx_n_u_Et __pyx_string_tab[2]
-#define __pyx_n_u_FDM __pyx_string_tab[3]
-#define __pyx_n_u_FEM __pyx_string_tab[4]
-#define __pyx_n_u_FVM __pyx_string_tab[5]
-#define __pyx_kp_u_Failed_to_create_Device __pyx_string_tab[6]
-#define __pyx_kp_u_Failed_to_create_DriftDiffusion __pyx_string_tab[7]
-#define __pyx_kp_u_Failed_to_create_Poisson_solver __pyx_string_tab[8]
-#define __pyx_kp_u_Failed_to_set_doping __pyx_string_tab[9]
-#define __pyx_kp_u_Failed_to_set_trap_level __pyx_string_tab[10]
-#define __pyx_n_u_ImportError __pyx_string_tab[11]
-#define __pyx_n_u_Jn __pyx_string_tab[12]
-#define __pyx_n_u_Jp __pyx_string_tab[13]
-#define __pyx_n_u_MC __pyx_string_tab[14]
-#define __pyx_n_u_Na __pyx_string_tab[15]
-#define __pyx_n_u_Nd __pyx_string_tab[16]
-#define __pyx_kp_u_Nd_and_Na_arrays_must_have_the_s __pyx_string_tab[17]
-#define __pyx_kp_u_Note_that_Cython_is_deliberately __pyx_string_tab[18]
-#define __pyx_kp_u_Poisson_solve_failed __pyx_string_tab[19]
-#define __pyx_n_u_RuntimeError __pyx_string_tab[20]
-#define __pyx_n_u_SEM __pyx_string_tab[21]
-#define __pyx_n_u_Simulator __pyx_string_tab[22]
-#define __pyx_n_u_Simulator___reduce_cython __pyx_string_tab[23]
-#define __pyx_n_u_Simulator___setstate_cython __pyx_string_tab[24]
-#define __pyx_n_u_Simulator_set_doping __pyx_string_tab[25]
-#define __pyx_n_u_Simulator_set_trap_level __pyx_string_tab[26]
-#define __pyx_n_u_Simulator_solve_drift_diffusion __pyx_string_tab[27]
-#define __pyx_n_u_Simulator_solve_poisson __pyx_string_tab[28]
-#define __pyx_n_u_Structured __pyx_string_tab[29]
-#define __pyx_n_u_TwoD __pyx_string_tab[30]
-#define __pyx_n_u_TypeError __pyx_string_tab[31]
-#define __pyx_n_u_V __pyx_string_tab[32]
-#define __pyx_n_u_ValueError __pyx_string_tab[33]
-#define __pyx_n_u_Vg __pyx_string_tab[34]
-#define __pyx_kp_u__2 __pyx_string_tab[35]
-#define __pyx_kp_u_add_note __pyx_string_tab[36]
-#define __pyx_n_u_array __pyx_string_tab[37]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[38]
-#define __pyx_n_u_bc __pyx_string_tab[39]
-#define __pyx_n_u_bc_array __pyx_string_tab[40]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[41]
-#define __pyx_n_u_dimension __pyx_string_tab[42]
-#define __pyx_kp_u_disable __pyx_string_tab[43]
-#define __pyx_n_u_dtype __pyx_string_tab[44]
-#define __pyx_kp_u_enable __pyx_string_tab[45]
-#define __pyx_n_u_extents __pyx_string_tab[46]
-#define __pyx_n_u_float64 __pyx_string_tab[47]
-#define __pyx_n_u_func __pyx_string_tab[48]
-#define __pyx_kp_u_gc __pyx_string_tab[49]
-#define __pyx_n_u_getLogger __pyx_string_tab[50]
-#define __pyx_n_u_getstate __pyx_string_tab[51]
-#define __pyx_n_u_initializing __pyx_string_tab[52]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[53]
-#define __pyx_kp_u_isenabled __pyx_string_tab[54]
-#define __pyx_n_u_items __pyx_string_tab[55]
-#define __pyx_n_u_logger __pyx_string_tab[56]
-#define __pyx_n_u_logging __pyx_string_tab[57]
-#define __pyx_n_u_main __pyx_string_tab[58]
-#define __pyx_n_u_max_steps __pyx_string_tab[59]
-#define __pyx_n_u_mesh_type __pyx_string_tab[60]
-#define __pyx_n_u_method __pyx_string_tab[61]
-#define __pyx_n_u_module __pyx_string_tab[62]
-#define __pyx_n_u_n __pyx_string_tab[63]
-#define __pyx_n_u_name __pyx_string_tab[64]
-#define __pyx_kp_u_no_default___reduce___due_to_non __pyx_string_tab[65]
-#define __pyx_n_u_np __pyx_string_tab[66]
-#define __pyx_n_u_num_points_x __pyx_string_tab[67]
-#define __pyx_n_u_num_points_y __pyx_string_tab[68]
-#define __pyx_n_u_numpy __pyx_string_tab[69]
-#define __pyx_kp_u_numpy__core_multiarray_failed_to __pyx_string_tab[70]
-#define __pyx_kp_u_numpy__core_umath_failed_to_impo __pyx_string_tab[71]
-#define __pyx_n_u_p __pyx_string_tab[72]
-#define __pyx_n_u_poisson_max_iter __pyx_string_tab[73]
-#define __pyx_n_u_poisson_tol __pyx_string_tab[74]
-#define __pyx_n_u_pop __pyx_string_tab[75]
-#define __pyx_n_u_potential __pyx_string_tab[76]
-#define __pyx_n_u_pyx_state __pyx_string_tab[77]
-#define __pyx_n_u_qualname __pyx_string_tab[78]
-#define __pyx_n_u_reduce __pyx_string_tab[79]
-#define __pyx_n_u_reduce_cython __pyx_string_tab[80]
-#define __pyx_n_u_reduce_ex __pyx_string_tab[81]
-#define __pyx_n_u_regions __pyx_string_tab[82]
-#define __pyx_n_u_result __pyx_string_tab[83]
-#define __pyx_n_u_self __pyx_string_tab[84]
-#define __pyx_n_u_set_doping __pyx_string_tab[85]
-#define __pyx_n_u_set_name __pyx_string_tab[86]
-#define __pyx_n_u_set_trap_level __pyx_string_tab[87]
-#define __pyx_n_u_setstate __pyx_string_tab[88]
-#define __pyx_n_u_setstate_cython __pyx_string_tab[89]
-#define __pyx_n_u_simulator __pyx_string_tab[90]
-#define __pyx_kp_u_simulator_pyx __pyx_string_tab[91]
-#define __pyx_n_u_size __pyx_string_tab[92]
-#define __pyx_n_u_solve_drift_diffusion __pyx_string_tab[93]
-#define __pyx_n_u_solve_poisson __pyx_string_tab[94]
-#define __pyx_n_u_spec __pyx_string_tab[95]
-#define __pyx_kp_u_stringsource __pyx_string_tab[96]
-#define __pyx_n_u_test __pyx_string_tab[97]
-#define __pyx_n_u_use_amr __pyx_string_tab[98]
-#define __pyx_n_u_use_amr_int __pyx_string_tab[99]
-#define __pyx_n_u_zeros __pyx_string_tab[100]
+#define __pyx_n_u_Device __pyx_string_tab[1]
+#define __pyx_n_u_Device___reduce_cython __pyx_string_tab[2]
+#define __pyx_n_u_Device___setstate_cython __pyx_string_tab[3]
+#define __pyx_n_u_Device_get_epsilon_at __pyx_string_tab[4]
+#define __pyx_n_u_Device_get_extents __pyx_string_tab[5]
+#define __pyx_n_u_DriftDiffusionSolver __pyx_string_tab[6]
+#define __pyx_n_u_DriftDiffusionSolver___reduce_cy __pyx_string_tab[7]
+#define __pyx_n_u_DriftDiffusionSolver___setstate __pyx_string_tab[8]
+#define __pyx_n_u_DriftDiffusionSolver_get_converg __pyx_string_tab[9]
+#define __pyx_n_u_DriftDiffusionSolver_get_dof_cou __pyx_string_tab[10]
+#define __pyx_n_u_DriftDiffusionSolver_get_order __pyx_string_tab[11]
+#define __pyx_n_u_DriftDiffusionSolver_is_valid __pyx_string_tab[12]
+#define __pyx_n_u_DriftDiffusionSolver_set_doping __pyx_string_tab[13]
+#define __pyx_n_u_DriftDiffusionSolver_set_trap_le __pyx_string_tab[14]
+#define __pyx_n_u_DriftDiffusionSolver_solve __pyx_string_tab[15]
+#define __pyx_kp_u_Drift_diffusion_solve_failed __pyx_string_tab[16]
+#define __pyx_n_u_Et __pyx_string_tab[17]
+#define __pyx_n_u_FDM __pyx_string_tab[18]
+#define __pyx_n_u_FEM __pyx_string_tab[19]
+#define __pyx_n_u_FVM __pyx_string_tab[20]
+#define __pyx_kp_u_Failed_to_create_Device __pyx_string_tab[21]
+#define __pyx_kp_u_Failed_to_create_DriftDiffusion __pyx_string_tab[22]
+#define __pyx_kp_u_Failed_to_create_Mesh __pyx_string_tab[23]
+#define __pyx_kp_u_Failed_to_create_Poisson_solver __pyx_string_tab[24]
+#define __pyx_kp_u_Failed_to_create_Simulator __pyx_string_tab[25]
+#define __pyx_kp_u_Failed_to_set_doping __pyx_string_tab[26]
+#define __pyx_kp_u_Failed_to_set_trap_level __pyx_string_tab[27]
+#define __pyx_n_u_ImportError __pyx_string_tab[28]
+#define __pyx_n_u_Jn __pyx_string_tab[29]
+#define __pyx_n_u_Jp __pyx_string_tab[30]
+#define __pyx_n_u_Lx __pyx_string_tab[31]
+#define __pyx_n_u_Ly __pyx_string_tab[32]
+#define __pyx_n_u_MC __pyx_string_tab[33]
+#define __pyx_n_u_Mesh __pyx_string_tab[34]
+#define __pyx_n_u_Mesh___reduce_cython __pyx_string_tab[35]
+#define __pyx_n_u_Mesh___setstate_cython __pyx_string_tab[36]
+#define __pyx_n_u_Mesh_generate_gmsh __pyx_string_tab[37]
+#define __pyx_n_u_Mesh_get_grid_points __pyx_string_tab[38]
+#define __pyx_n_u_Mesh_get_num_elements __pyx_string_tab[39]
+#define __pyx_n_u_Mesh_get_num_nodes __pyx_string_tab[40]
+#define __pyx_n_u_Na __pyx_string_tab[41]
+#define __pyx_n_u_Nd __pyx_string_tab[42]
+#define __pyx_kp_u_Nd_and_Na_arrays_must_have_the_s __pyx_string_tab[43]
+#define __pyx_kp_u_Note_that_Cython_is_deliberately __pyx_string_tab[44]
+#define __pyx_n_u_PoissonSolver __pyx_string_tab[45]
+#define __pyx_n_u_PoissonSolver___reduce_cython __pyx_string_tab[46]
+#define __pyx_n_u_PoissonSolver___setstate_cython __pyx_string_tab[47]
+#define __pyx_n_u_PoissonSolver_get_dof_count __pyx_string_tab[48]
+#define __pyx_n_u_PoissonSolver_get_residual_norm __pyx_string_tab[49]
+#define __pyx_n_u_PoissonSolver_is_valid __pyx_string_tab[50]
+#define __pyx_n_u_PoissonSolver_set_charge_density __pyx_string_tab[51]
+#define __pyx_n_u_PoissonSolver_solve __pyx_string_tab[52]
+#define __pyx_n_u_PoissonSolver_solve_self_consist __pyx_string_tab[53]
+#define __pyx_kp_u_Poisson_solve_failed __pyx_string_tab[54]
+#define __pyx_n_u_RuntimeError __pyx_string_tab[55]
+#define __pyx_n_u_SEM __pyx_string_tab[56]
+#define __pyx_kp_u_Self_consistent_Poisson_solve_fa __pyx_string_tab[57]
+#define __pyx_n_u_Simulator __pyx_string_tab[58]
+#define __pyx_n_u_Simulator___reduce_cython __pyx_string_tab[59]
+#define __pyx_n_u_Simulator___setstate_cython __pyx_string_tab[60]
+#define __pyx_n_u_Simulator_get_device __pyx_string_tab[61]
+#define __pyx_n_u_Simulator_get_drift_diffusion_so __pyx_string_tab[62]
+#define __pyx_n_u_Simulator_get_poisson_solver __pyx_string_tab[63]
+#define __pyx_n_u_Simulator_set_doping __pyx_string_tab[64]
+#define __pyx_n_u_Simulator_set_trap_level __pyx_string_tab[65]
+#define __pyx_n_u_Simulator_solve_drift_diffusion __pyx_string_tab[66]
+#define __pyx_n_u_Simulator_solve_poisson __pyx_string_tab[67]
+#define __pyx_n_u_Structured __pyx_string_tab[68]
+#define __pyx_n_u_TwoD __pyx_string_tab[69]
+#define __pyx_n_u_TypeError __pyx_string_tab[70]
+#define __pyx_n_u_V __pyx_string_tab[71]
+#define __pyx_n_u_ValueError __pyx_string_tab[72]
+#define __pyx_n_u_Vg __pyx_string_tab[73]
+#define __pyx_kp_u__2 __pyx_string_tab[74]
+#define __pyx_kp_u_add_note __pyx_string_tab[75]
+#define __pyx_n_u_array __pyx_string_tab[76]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[77]
+#define __pyx_n_u_bc __pyx_string_tab[78]
+#define __pyx_n_u_bc_array __pyx_string_tab[79]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[80]
+#define __pyx_n_u_device __pyx_string_tab[81]
+#define __pyx_n_u_dimension __pyx_string_tab[82]
+#define __pyx_kp_u_disable __pyx_string_tab[83]
+#define __pyx_n_u_dof_count __pyx_string_tab[84]
+#define __pyx_n_u_dtype __pyx_string_tab[85]
+#define __pyx_kp_u_enable __pyx_string_tab[86]
+#define __pyx_n_u_extents __pyx_string_tab[87]
+#define __pyx_n_u_filename __pyx_string_tab[88]
+#define __pyx_n_u_float64 __pyx_string_tab[89]
+#define __pyx_n_u_func __pyx_string_tab[90]
+#define __pyx_kp_u_gc __pyx_string_tab[91]
+#define __pyx_n_u_generate_gmsh __pyx_string_tab[92]
+#define __pyx_n_u_getLogger __pyx_string_tab[93]
+#define __pyx_n_u_get_convergence_residual __pyx_string_tab[94]
+#define __pyx_n_u_get_device __pyx_string_tab[95]
+#define __pyx_n_u_get_dof_count __pyx_string_tab[96]
+#define __pyx_n_u_get_drift_diffusion_solver __pyx_string_tab[97]
+#define __pyx_n_u_get_epsilon_at __pyx_string_tab[98]
+#define __pyx_n_u_get_extents __pyx_string_tab[99]
+#define __pyx_n_u_get_grid_points __pyx_string_tab[100]
+#define __pyx_n_u_get_num_elements __pyx_string_tab[101]
+#define __pyx_n_u_get_num_nodes __pyx_string_tab[102]
+#define __pyx_n_u_get_order __pyx_string_tab[103]
+#define __pyx_n_u_get_poisson_solver __pyx_string_tab[104]
+#define __pyx_n_u_get_residual_norm __pyx_string_tab[105]
+#define __pyx_n_u_getstate __pyx_string_tab[106]
+#define __pyx_n_u_initializing __pyx_string_tab[107]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[108]
+#define __pyx_n_u_is_valid __pyx_string_tab[109]
+#define __pyx_kp_u_isenabled __pyx_string_tab[110]
+#define __pyx_n_u_logger __pyx_string_tab[111]
+#define __pyx_n_u_logging __pyx_string_tab[112]
+#define __pyx_n_u_main __pyx_string_tab[113]
+#define __pyx_n_u_max_iter __pyx_string_tab[114]
+#define __pyx_n_u_max_steps __pyx_string_tab[115]
+#define __pyx_n_u_mesh_type __pyx_string_tab[116]
+#define __pyx_n_u_method __pyx_string_tab[117]
+#define __pyx_n_u_module __pyx_string_tab[118]
+#define __pyx_n_u_n __pyx_string_tab[119]
+#define __pyx_n_u_name __pyx_string_tab[120]
+#define __pyx_kp_u_no_default___reduce___due_to_non __pyx_string_tab[121]
+#define __pyx_n_u_np __pyx_string_tab[122]
+#define __pyx_n_u_num_nodes __pyx_string_tab[123]
+#define __pyx_n_u_num_points_x __pyx_string_tab[124]
+#define __pyx_n_u_num_points_y __pyx_string_tab[125]
+#define __pyx_n_u_numpy __pyx_string_tab[126]
+#define __pyx_kp_u_numpy__core_multiarray_failed_to __pyx_string_tab[127]
+#define __pyx_kp_u_numpy__core_umath_failed_to_impo __pyx_string_tab[128]
+#define __pyx_n_u_order __pyx_string_tab[129]
+#define __pyx_n_u_p __pyx_string_tab[130]
+#define __pyx_n_u_poisson_max_iter __pyx_string_tab[131]
+#define __pyx_n_u_poisson_tol __pyx_string_tab[132]
+#define __pyx_n_u_pop __pyx_string_tab[133]
+#define __pyx_n_u_potential __pyx_string_tab[134]
+#define __pyx_n_u_pyx_state __pyx_string_tab[135]
+#define __pyx_n_u_qualname __pyx_string_tab[136]
+#define __pyx_n_u_reduce __pyx_string_tab[137]
+#define __pyx_n_u_reduce_cython __pyx_string_tab[138]
+#define __pyx_n_u_reduce_ex __pyx_string_tab[139]
+#define __pyx_n_u_regions __pyx_string_tab[140]
+#define __pyx_n_u_result __pyx_string_tab[141]
+#define __pyx_n_u_rho __pyx_string_tab[142]
+#define __pyx_n_u_self __pyx_string_tab[143]
+#define __pyx_n_u_set_charge_density __pyx_string_tab[144]
+#define __pyx_n_u_set_doping __pyx_string_tab[145]
+#define __pyx_n_u_set_name __pyx_string_tab[146]
+#define __pyx_n_u_set_trap_level __pyx_string_tab[147]
+#define __pyx_n_u_setstate __pyx_string_tab[148]
+#define __pyx_n_u_setstate_cython __pyx_string_tab[149]
+#define __pyx_n_u_simulator __pyx_string_tab[150]
+#define __pyx_kp_u_simulator_pyx __pyx_string_tab[151]
+#define __pyx_n_u_solve __pyx_string_tab[152]
+#define __pyx_n_u_solve_drift_diffusion __pyx_string_tab[153]
+#define __pyx_n_u_solve_poisson __pyx_string_tab[154]
+#define __pyx_n_u_solve_self_consistent __pyx_string_tab[155]
+#define __pyx_n_u_spec __pyx_string_tab[156]
+#define __pyx_kp_u_stringsource __pyx_string_tab[157]
+#define __pyx_n_u_test __pyx_string_tab[158]
+#define __pyx_n_u_tol __pyx_string_tab[159]
+#define __pyx_n_u_use_amr __pyx_string_tab[160]
+#define __pyx_n_u_use_amr_int __pyx_string_tab[161]
+#define __pyx_n_u_x __pyx_string_tab[162]
+#define __pyx_n_u_x_points __pyx_string_tab[163]
+#define __pyx_n_u_y __pyx_string_tab[164]
+#define __pyx_n_u_y_points __pyx_string_tab[165]
+#define __pyx_n_u_zeros __pyx_string_tab[166]
 /* #### Code section: module_state_clear ### */
 #if CYTHON_USE_MODULE_STATE
 static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
@@ -3318,12 +3531,20 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_ptype_5numpy_flexible);
   Py_CLEAR(clear_module_state->__pyx_ptype_5numpy_character);
   Py_CLEAR(clear_module_state->__pyx_ptype_5numpy_ufunc);
+  Py_CLEAR(clear_module_state->__pyx_ptype_9simulator_Device);
+  Py_CLEAR(clear_module_state->__pyx_type_9simulator_Device);
+  Py_CLEAR(clear_module_state->__pyx_ptype_9simulator_Mesh);
+  Py_CLEAR(clear_module_state->__pyx_type_9simulator_Mesh);
+  Py_CLEAR(clear_module_state->__pyx_ptype_9simulator_PoissonSolver);
+  Py_CLEAR(clear_module_state->__pyx_type_9simulator_PoissonSolver);
+  Py_CLEAR(clear_module_state->__pyx_ptype_9simulator_DriftDiffusionSolver);
+  Py_CLEAR(clear_module_state->__pyx_type_9simulator_DriftDiffusionSolver);
   Py_CLEAR(clear_module_state->__pyx_ptype_9simulator_Simulator);
   Py_CLEAR(clear_module_state->__pyx_type_9simulator_Simulator);
   Py_CLEAR(clear_module_state->__pyx_k_);
-  for (int i=0; i<1; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<6; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<101; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<2; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
+  for (int i=0; i<36; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<167; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
   Py_CLEAR(clear_module_state->__pyx_float_0_0);
   Py_CLEAR(clear_module_state->__pyx_float_1eneg_6);
   Py_CLEAR(clear_module_state->__pyx_float_0_5eneg_6);
@@ -3372,12 +3593,20 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   Py_VISIT(traverse_module_state->__pyx_ptype_5numpy_flexible);
   Py_VISIT(traverse_module_state->__pyx_ptype_5numpy_character);
   Py_VISIT(traverse_module_state->__pyx_ptype_5numpy_ufunc);
+  Py_VISIT(traverse_module_state->__pyx_ptype_9simulator_Device);
+  Py_VISIT(traverse_module_state->__pyx_type_9simulator_Device);
+  Py_VISIT(traverse_module_state->__pyx_ptype_9simulator_Mesh);
+  Py_VISIT(traverse_module_state->__pyx_type_9simulator_Mesh);
+  Py_VISIT(traverse_module_state->__pyx_ptype_9simulator_PoissonSolver);
+  Py_VISIT(traverse_module_state->__pyx_type_9simulator_PoissonSolver);
+  Py_VISIT(traverse_module_state->__pyx_ptype_9simulator_DriftDiffusionSolver);
+  Py_VISIT(traverse_module_state->__pyx_type_9simulator_DriftDiffusionSolver);
   Py_VISIT(traverse_module_state->__pyx_ptype_9simulator_Simulator);
   Py_VISIT(traverse_module_state->__pyx_type_9simulator_Simulator);
   Py_VISIT(traverse_module_state->__pyx_k_);
-  for (int i=0; i<1; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<6; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<101; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<2; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
+  for (int i=0; i<36; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<167; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_float_0_0);
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_float_1eneg_6);
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_float_0_5eneg_6);
@@ -3394,188 +3623,6 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
 }
 #endif
 /* #### Code section: module_code ### */
-
-/* "string.from_py":12
- *     cdef const char* __Pyx_PyObject_AsStringAndSize(object, Py_ssize_t*) except NULL
- * 
- * @cname("__pyx_convert_string_from_py_6libcpp_6string_std__in_string")             # <<<<<<<<<<<<<<
- * cdef string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(object o) except *:
- *     cdef Py_ssize_t length = 0
-*/
-
-static std::string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(PyObject *__pyx_v_o) {
-  Py_ssize_t __pyx_v_length;
-  char const *__pyx_v_data;
-  std::string __pyx_r;
-  char const *__pyx_t_1;
-  std::string __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-
-  /* "string.from_py":14
- * @cname("__pyx_convert_string_from_py_6libcpp_6string_std__in_string")
- * cdef string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(object o) except *:
- *     cdef Py_ssize_t length = 0             # <<<<<<<<<<<<<<
- *     cdef const char* data = __Pyx_PyObject_AsStringAndSize(o, &length)
- *     return string(data, length)
-*/
-  __pyx_v_length = 0;
-
-  /* "string.from_py":15
- * cdef string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(object o) except *:
- *     cdef Py_ssize_t length = 0
- *     cdef const char* data = __Pyx_PyObject_AsStringAndSize(o, &length)             # <<<<<<<<<<<<<<
- *     return string(data, length)
- * 
-*/
-  __pyx_t_1 = __Pyx_PyObject_AsStringAndSize(__pyx_v_o, (&__pyx_v_length)); if (unlikely(__pyx_t_1 == ((char const *)0))) __PYX_ERR(1, 15, __pyx_L1_error)
-  __pyx_v_data = __pyx_t_1;
-
-  /* "string.from_py":16
- *     cdef Py_ssize_t length = 0
- *     cdef const char* data = __Pyx_PyObject_AsStringAndSize(o, &length)
- *     return string(data, length)             # <<<<<<<<<<<<<<
- * 
- * 
-*/
-  try {
-    __pyx_t_2 = std::string(__pyx_v_data, __pyx_v_length);
-  } catch(...) {
-    __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 16, __pyx_L1_error)
-  }
-  __pyx_r = __pyx_t_2;
-  goto __pyx_L0;
-
-  /* "string.from_py":12
- *     cdef const char* __Pyx_PyObject_AsStringAndSize(object, Py_ssize_t*) except NULL
- * 
- * @cname("__pyx_convert_string_from_py_6libcpp_6string_std__in_string")             # <<<<<<<<<<<<<<
- * cdef string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(object o) except *:
- *     cdef Py_ssize_t length = 0
-*/
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_AddTraceback("string.from_py.__pyx_convert_string_from_py_6libcpp_6string_std__in_string", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_pretend_to_initialize(&__pyx_r);
-  __pyx_L0:;
-  return __pyx_r;
-}
-
-/* "map.from_py":216
- * 
- * 
- * @cname("__pyx_convert_map_from_py_std_3a__3a_string__and_double")             # <<<<<<<<<<<<<<
- * cdef map[X,Y] __pyx_convert_map_from_py_std_3a__3a_string__and_double(object o) except *:
- *     cdef map[X,Y] m
-*/
-
-static std::map<std::string,double>  __pyx_convert_map_from_py_std_3a__3a_string__and_double(PyObject *__pyx_v_o) {
-  std::map<std::string,double>  __pyx_v_m;
-  PyObject *__pyx_v_key = NULL;
-  PyObject *__pyx_v_value = NULL;
-  std::map<std::string,double>  __pyx_r;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  Py_ssize_t __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  int __pyx_t_4;
-  PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  int __pyx_t_7;
-  std::string __pyx_t_8;
-  double __pyx_t_9;
-  std::pair<std::string,double>  __pyx_t_10;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("__pyx_convert_map_from_py_std_3a__3a_string__and_double", 0);
-
-  /* "map.from_py":219
- * cdef map[X,Y] __pyx_convert_map_from_py_std_3a__3a_string__and_double(object o) except *:
- *     cdef map[X,Y] m
- *     for key, value in o.items():             # <<<<<<<<<<<<<<
- *         m.insert(pair[X,Y](<X>key, <Y>value))
- *     return m
-*/
-  __pyx_t_2 = 0;
-  if (unlikely(__pyx_v_o == Py_None)) {
-    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "items");
-    __PYX_ERR(1, 219, __pyx_L1_error)
-  }
-  __pyx_t_5 = __Pyx_dict_iterator(__pyx_v_o, 0, __pyx_mstate_global->__pyx_n_u_items, (&__pyx_t_3), (&__pyx_t_4)); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 219, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_1);
-  __pyx_t_1 = __pyx_t_5;
-  __pyx_t_5 = 0;
-  while (1) {
-    __pyx_t_7 = __Pyx_dict_iter_next(__pyx_t_1, __pyx_t_3, &__pyx_t_2, &__pyx_t_5, &__pyx_t_6, NULL, __pyx_t_4);
-    if (unlikely(__pyx_t_7 == 0)) break;
-    if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(1, 219, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_5);
-    __pyx_t_5 = 0;
-    __Pyx_XDECREF_SET(__pyx_v_value, __pyx_t_6);
-    __pyx_t_6 = 0;
-
-    /* "map.from_py":220
- *     cdef map[X,Y] m
- *     for key, value in o.items():
- *         m.insert(pair[X,Y](<X>key, <Y>value))             # <<<<<<<<<<<<<<
- *     return m
- * 
-*/
-    __pyx_t_8 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_v_key); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 220, __pyx_L1_error)
-    __pyx_t_9 = __Pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(1, 220, __pyx_L1_error)
-    try {
-      __pyx_t_10 = std::pair<std::string,double> (((std::string)__pyx_t_8), ((double)__pyx_t_9));
-    } catch(...) {
-      __Pyx_CppExn2PyErr();
-      __PYX_ERR(1, 220, __pyx_L1_error)
-    }
-    try {
-      __pyx_v_m.insert(__pyx_t_10);
-    } catch(...) {
-      __Pyx_CppExn2PyErr();
-      __PYX_ERR(1, 220, __pyx_L1_error)
-    }
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "map.from_py":221
- *     for key, value in o.items():
- *         m.insert(pair[X,Y](<X>key, <Y>value))
- *     return m             # <<<<<<<<<<<<<<
- * 
- * 
-*/
-  __pyx_r = __pyx_v_m;
-  goto __pyx_L0;
-
-  /* "map.from_py":216
- * 
- * 
- * @cname("__pyx_convert_map_from_py_std_3a__3a_string__and_double")             # <<<<<<<<<<<<<<
- * cdef map[X,Y] __pyx_convert_map_from_py_std_3a__3a_string__and_double(object o) except *:
- *     cdef map[X,Y] m
-*/
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("map.from_py.__pyx_convert_map_from_py_std_3a__3a_string__and_double", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_pretend_to_initialize(&__pyx_r);
-  __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_key);
-  __Pyx_XDECREF(__pyx_v_value);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
 
 /* "../.venv/lib/python3.12/site-packages/numpy/__init__.cython-30.pxd":286
  *         cdef int type_num
@@ -5312,12 +5359,6174 @@ static CYTHON_INLINE NPY_DATETIMEUNIT __pyx_f_5numpy_get_datetime64_unit(PyObjec
   return __pyx_r;
 }
 
-/* "simulator.pyx":59
+/* "simulator.pyx":76
+ *     cdef double _Lx, _Ly
+ * 
+ *     def __cinit__(self, double Lx, double Ly):             # <<<<<<<<<<<<<<
+ *         self._device = create_device(Lx, Ly)
+ *         if self._device == NULL:
+*/
+
+/* Python wrapper */
+static int __pyx_pw_9simulator_6Device_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_9simulator_6Device_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  double __pyx_v_Lx;
+  double __pyx_v_Ly;
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[2] = {0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_Lx,&__pyx_mstate_global->__pyx_n_u_Ly,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 76, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 76, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 76, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 76, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 2, 2, i); __PYX_ERR(0, 76, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 2)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 76, __pyx_L3_error)
+      values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 76, __pyx_L3_error)
+    }
+    __pyx_v_Lx = __Pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_Lx == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
+    __pyx_v_Ly = __Pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_Ly == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 76, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Device.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_6Device___cinit__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self), __pyx_v_Lx, __pyx_v_Ly);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_9simulator_6Device___cinit__(struct __pyx_obj_9simulator_Device *__pyx_v_self, double __pyx_v_Lx, double __pyx_v_Ly) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  size_t __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__cinit__", 0);
+
+  /* "simulator.pyx":77
+ * 
+ *     def __cinit__(self, double Lx, double Ly):
+ *         self._device = create_device(Lx, Ly)             # <<<<<<<<<<<<<<
+ *         if self._device == NULL:
+ *             raise RuntimeError("Failed to create Device")
+*/
+  __pyx_v_self->_device = create_device(__pyx_v_Lx, __pyx_v_Ly);
+
+  /* "simulator.pyx":78
+ *     def __cinit__(self, double Lx, double Ly):
+ *         self._device = create_device(Lx, Ly)
+ *         if self._device == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Device")
+ *         self._Lx = Lx
+*/
+  __pyx_t_1 = (__pyx_v_self->_device == NULL);
+  if (unlikely(__pyx_t_1)) {
+
+    /* "simulator.pyx":79
+ *         self._device = create_device(Lx, Ly)
+ *         if self._device == NULL:
+ *             raise RuntimeError("Failed to create Device")             # <<<<<<<<<<<<<<
+ *         self._Lx = Lx
+ *         self._Ly = Ly
+*/
+    __pyx_t_3 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_4 = __pyx_builtin_RuntimeError; 
+    __pyx_t_5 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_Device};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 79, __pyx_L1_error)
+
+    /* "simulator.pyx":78
+ *     def __cinit__(self, double Lx, double Ly):
+ *         self._device = create_device(Lx, Ly)
+ *         if self._device == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Device")
+ *         self._Lx = Lx
+*/
+  }
+
+  /* "simulator.pyx":80
+ *         if self._device == NULL:
+ *             raise RuntimeError("Failed to create Device")
+ *         self._Lx = Lx             # <<<<<<<<<<<<<<
+ *         self._Ly = Ly
+ * 
+*/
+  __pyx_v_self->_Lx = __pyx_v_Lx;
+
+  /* "simulator.pyx":81
+ *             raise RuntimeError("Failed to create Device")
+ *         self._Lx = Lx
+ *         self._Ly = Ly             # <<<<<<<<<<<<<<
+ * 
+ *     def __dealloc__(self):
+*/
+  __pyx_v_self->_Ly = __pyx_v_Ly;
+
+  /* "simulator.pyx":76
+ *     cdef double _Lx, _Ly
+ * 
+ *     def __cinit__(self, double Lx, double Ly):             # <<<<<<<<<<<<<<
+ *         self._device = create_device(Lx, Ly)
+ *         if self._device == NULL:
+*/
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("simulator.Device.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":83
+ *         self._Ly = Ly
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._device:
+ *             destroy_device(self._device)
+*/
+
+/* Python wrapper */
+static void __pyx_pw_9simulator_6Device_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_9simulator_6Device_3__dealloc__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_pf_9simulator_6Device_2__dealloc__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+}
+
+static void __pyx_pf_9simulator_6Device_2__dealloc__(struct __pyx_obj_9simulator_Device *__pyx_v_self) {
+  int __pyx_t_1;
+
+  /* "simulator.pyx":84
+ * 
+ *     def __dealloc__(self):
+ *         if self._device:             # <<<<<<<<<<<<<<
+ *             destroy_device(self._device)
+ * 
+*/
+  __pyx_t_1 = (__pyx_v_self->_device != 0);
+  if (__pyx_t_1) {
+
+    /* "simulator.pyx":85
+ *     def __dealloc__(self):
+ *         if self._device:
+ *             destroy_device(self._device)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_epsilon_at(self, double x, double y):
+*/
+    destroy_device(__pyx_v_self->_device);
+
+    /* "simulator.pyx":84
+ * 
+ *     def __dealloc__(self):
+ *         if self._device:             # <<<<<<<<<<<<<<
+ *             destroy_device(self._device)
+ * 
+*/
+  }
+
+  /* "simulator.pyx":83
+ *         self._Ly = Ly
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._device:
+ *             destroy_device(self._device)
+*/
+
+  /* function exit code */
+}
+
+/* "simulator.pyx":87
+ *             destroy_device(self._device)
+ * 
+ *     def get_epsilon_at(self, double x, double y):             # <<<<<<<<<<<<<<
+ *         """Get permittivity at given coordinates."""
+ *         return device_get_epsilon_at(self._device, x, y)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_5get_epsilon_at(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_6Device_4get_epsilon_at, "Get permittivity at given coordinates.");
+static PyMethodDef __pyx_mdef_9simulator_6Device_5get_epsilon_at = {"get_epsilon_at", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_5get_epsilon_at, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_6Device_4get_epsilon_at};
+static PyObject *__pyx_pw_9simulator_6Device_5get_epsilon_at(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  double __pyx_v_x;
+  double __pyx_v_y;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[2] = {0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_epsilon_at (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_x,&__pyx_mstate_global->__pyx_n_u_y,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 87, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 87, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 87, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "get_epsilon_at", 0) < 0) __PYX_ERR(0, 87, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("get_epsilon_at", 1, 2, 2, i); __PYX_ERR(0, 87, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 2)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 87, __pyx_L3_error)
+      values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 87, __pyx_L3_error)
+    }
+    __pyx_v_x = __Pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_x == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L3_error)
+    __pyx_v_y = __Pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_y == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L3_error)
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("get_epsilon_at", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 87, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Device.get_epsilon_at", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_6Device_4get_epsilon_at(((struct __pyx_obj_9simulator_Device *)__pyx_v_self), __pyx_v_x, __pyx_v_y);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_4get_epsilon_at(struct __pyx_obj_9simulator_Device *__pyx_v_self, double __pyx_v_x, double __pyx_v_y) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_epsilon_at", 0);
+
+  /* "simulator.pyx":89
+ *     def get_epsilon_at(self, double x, double y):
+ *         """Get permittivity at given coordinates."""
+ *         return device_get_epsilon_at(self._device, x, y)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_extents(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(device_get_epsilon_at(__pyx_v_self->_device, __pyx_v_x, __pyx_v_y)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":87
+ *             destroy_device(self._device)
+ * 
+ *     def get_epsilon_at(self, double x, double y):             # <<<<<<<<<<<<<<
+ *         """Get permittivity at given coordinates."""
+ *         return device_get_epsilon_at(self._device, x, y)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Device.get_epsilon_at", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":91
+ *         return device_get_epsilon_at(self._device, x, y)
+ * 
+ *     def get_extents(self):             # <<<<<<<<<<<<<<
+ *         """Get device extents [Lx, Ly]."""
+ *         cdef double extents[2]
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_7get_extents(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_6Device_6get_extents, "Get device extents [Lx, Ly].");
+static PyMethodDef __pyx_mdef_9simulator_6Device_7get_extents = {"get_extents", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_7get_extents, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_6Device_6get_extents};
+static PyObject *__pyx_pw_9simulator_6Device_7get_extents(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_extents (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_extents", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_extents", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_6Device_6get_extents(((struct __pyx_obj_9simulator_Device *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_6get_extents(struct __pyx_obj_9simulator_Device *__pyx_v_self) {
+  double __pyx_v_extents[2];
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_extents", 0);
+
+  /* "simulator.pyx":94
+ *         """Get device extents [Lx, Ly]."""
+ *         cdef double extents[2]
+ *         device_get_extents(self._device, extents)             # <<<<<<<<<<<<<<
+ *         return [extents[0], extents[1]]
+ * 
+*/
+  device_get_extents(__pyx_v_self->_device, __pyx_v_extents);
+
+  /* "simulator.pyx":95
+ *         cdef double extents[2]
+ *         device_get_extents(self._device, extents)
+ *         return [extents[0], extents[1]]             # <<<<<<<<<<<<<<
+ * 
+ *     @property
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble((__pyx_v_extents[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyFloat_FromDouble((__pyx_v_extents[1])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 95, __pyx_L1_error);
+  __Pyx_GIVEREF(__pyx_t_2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_t_2) != (0)) __PYX_ERR(0, 95, __pyx_L1_error);
+  __pyx_t_1 = 0;
+  __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":91
+ *         return device_get_epsilon_at(self._device, x, y)
+ * 
+ *     def get_extents(self):             # <<<<<<<<<<<<<<
+ *         """Get device extents [Lx, Ly]."""
+ *         cdef double extents[2]
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("simulator.Device.get_extents", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":97
+ *         return [extents[0], extents[1]]
+ * 
+ *     @property             # <<<<<<<<<<<<<<
+ *     def length(self):
+ *         return self._Lx
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_6length_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_9simulator_6Device_6length_1__get__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_9simulator_6Device_6length___get__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_6length___get__(struct __pyx_obj_9simulator_Device *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+
+  /* "simulator.pyx":99
+ *     @property
+ *     def length(self):
+ *         return self._Lx             # <<<<<<<<<<<<<<
+ * 
+ *     @property
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->_Lx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":97
+ *         return [extents[0], extents[1]]
+ * 
+ *     @property             # <<<<<<<<<<<<<<
+ *     def length(self):
+ *         return self._Lx
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Device.length.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":101
+ *         return self._Lx
+ * 
+ *     @property             # <<<<<<<<<<<<<<
+ *     def width(self):
+ *         return self._Ly
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_5width_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_9simulator_6Device_5width_1__get__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_r = __pyx_pf_9simulator_6Device_5width___get__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_5width___get__(struct __pyx_obj_9simulator_Device *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__get__", 0);
+
+  /* "simulator.pyx":103
+ *     @property
+ *     def width(self):
+ *         return self._Ly             # <<<<<<<<<<<<<<
+ * 
+ * # Mesh wrapper class
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->_Ly); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":101
+ *         return self._Lx
+ * 
+ *     @property             # <<<<<<<<<<<<<<
+ *     def width(self):
+ *         return self._Ly
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Device.width.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_9__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_6Device_9__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_9__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_6Device_9__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("__reduce_cython__", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_6Device_8__reduce_cython__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_8__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Device *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce_cython__", 0);
+
+  /* "(tree fragment)":2
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 2, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.Device.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_6Device_11__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_6Device_11__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_11__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_6Device_11__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  CYTHON_UNUSED PyObject *__pyx_v___pyx_state = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_pyx_state,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__setstate_cython__", 0) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, i); __PYX_ERR(1, 3, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+    }
+    __pyx_v___pyx_state = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 3, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Device.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_6Device_10__setstate_cython__(((struct __pyx_obj_9simulator_Device *)__pyx_v_self), __pyx_v___pyx_state);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_6Device_10__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Device *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setstate_cython__", 0);
+
+  /* "(tree fragment)":4
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 4, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.Device.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":110
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str mesh_type="Structured"):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+*/
+
+/* Python wrapper */
+static int __pyx_pw_9simulator_4Mesh_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_9simulator_4Mesh_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  struct __pyx_obj_9simulator_Device *__pyx_v_device = 0;
+  PyObject *__pyx_v_mesh_type = 0;
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[2] = {0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_device,&__pyx_mstate_global->__pyx_n_u_mesh_type,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 110, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 110, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 110, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 110, __pyx_L3_error)
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 2, i); __PYX_ERR(0, 110, __pyx_L3_error) }
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 110, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 110, __pyx_L3_error)
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+    }
+    __pyx_v_device = ((struct __pyx_obj_9simulator_Device *)values[0]);
+    __pyx_v_mesh_type = ((PyObject*)values[1]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 110, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Mesh.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_device), __pyx_mstate_global->__pyx_ptype_9simulator_Device, 1, "device", 0))) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mesh_type), (&PyUnicode_Type), 1, "mesh_type", 1))) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_4Mesh___cinit__(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self), __pyx_v_device, __pyx_v_mesh_type);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_9simulator_4Mesh___cinit__(struct __pyx_obj_9simulator_Mesh *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_mesh_type) {
+  long __pyx_v_mesh_enum;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  long __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  size_t __pyx_t_6;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__cinit__", 0);
+
+  /* "simulator.pyx":111
+ * 
+ *     def __cinit__(self, Device device, str mesh_type="Structured"):
+ *         self._device = device             # <<<<<<<<<<<<<<
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ *         self._mesh = create_mesh(device._device, mesh_enum)
+*/
+  __Pyx_INCREF((PyObject *)__pyx_v_device);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_device);
+  __Pyx_GOTREF((PyObject *)__pyx_v_self->_device);
+  __Pyx_DECREF((PyObject *)__pyx_v_self->_device);
+  __pyx_v_self->_device = __pyx_v_device;
+
+  /* "simulator.pyx":112
+ *     def __cinit__(self, Device device, str mesh_type="Structured"):
+ *         self._device = device
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1             # <<<<<<<<<<<<<<
+ *         self._mesh = create_mesh(device._device, mesh_enum)
+ *         if self._mesh == NULL:
+*/
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_mesh_type, __pyx_mstate_global->__pyx_n_u_Structured, Py_EQ)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 112, __pyx_L1_error)
+  if (__pyx_t_2) {
+    __pyx_t_1 = 0;
+  } else {
+    __pyx_t_1 = 1;
+  }
+  __pyx_v_mesh_enum = __pyx_t_1;
+
+  /* "simulator.pyx":113
+ *         self._device = device
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ *         self._mesh = create_mesh(device._device, mesh_enum)             # <<<<<<<<<<<<<<
+ *         if self._mesh == NULL:
+ *             raise RuntimeError("Failed to create Mesh")
+*/
+  __pyx_v_self->_mesh = create_mesh(__pyx_v_device->_device, __pyx_v_mesh_enum);
+
+  /* "simulator.pyx":114
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ *         self._mesh = create_mesh(device._device, mesh_enum)
+ *         if self._mesh == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Mesh")
+ * 
+*/
+  __pyx_t_2 = (__pyx_v_self->_mesh == NULL);
+  if (unlikely(__pyx_t_2)) {
+
+    /* "simulator.pyx":115
+ *         self._mesh = create_mesh(device._device, mesh_enum)
+ *         if self._mesh == NULL:
+ *             raise RuntimeError("Failed to create Mesh")             # <<<<<<<<<<<<<<
+ * 
+ *     def __dealloc__(self):
+*/
+    __pyx_t_4 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_5 = __pyx_builtin_RuntimeError; 
+    __pyx_t_6 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_Mesh};
+      __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+    }
+    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __PYX_ERR(0, 115, __pyx_L1_error)
+
+    /* "simulator.pyx":114
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ *         self._mesh = create_mesh(device._device, mesh_enum)
+ *         if self._mesh == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Mesh")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":110
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str mesh_type="Structured"):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+*/
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("simulator.Mesh.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":117
+ *             raise RuntimeError("Failed to create Mesh")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._mesh:
+ *             destroy_mesh(self._mesh)
+*/
+
+/* Python wrapper */
+static void __pyx_pw_9simulator_4Mesh_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_9simulator_4Mesh_3__dealloc__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_pf_9simulator_4Mesh_2__dealloc__(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+}
+
+static void __pyx_pf_9simulator_4Mesh_2__dealloc__(struct __pyx_obj_9simulator_Mesh *__pyx_v_self) {
+  int __pyx_t_1;
+
+  /* "simulator.pyx":118
+ * 
+ *     def __dealloc__(self):
+ *         if self._mesh:             # <<<<<<<<<<<<<<
+ *             destroy_mesh(self._mesh)
+ * 
+*/
+  __pyx_t_1 = (__pyx_v_self->_mesh != 0);
+  if (__pyx_t_1) {
+
+    /* "simulator.pyx":119
+ *     def __dealloc__(self):
+ *         if self._mesh:
+ *             destroy_mesh(self._mesh)             # <<<<<<<<<<<<<<
+ * 
+ *     def generate_gmsh(self, str filename):
+*/
+    destroy_mesh(__pyx_v_self->_mesh);
+
+    /* "simulator.pyx":118
+ * 
+ *     def __dealloc__(self):
+ *         if self._mesh:             # <<<<<<<<<<<<<<
+ *             destroy_mesh(self._mesh)
+ * 
+*/
+  }
+
+  /* "simulator.pyx":117
+ *             raise RuntimeError("Failed to create Mesh")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._mesh:
+ *             destroy_mesh(self._mesh)
+*/
+
+  /* function exit code */
+}
+
+/* "simulator.pyx":121
+ *             destroy_mesh(self._mesh)
+ * 
+ *     def generate_gmsh(self, str filename):             # <<<<<<<<<<<<<<
+ *         """Generate GMSH mesh file."""
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_5generate_gmsh(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_4Mesh_4generate_gmsh, "Generate GMSH mesh file.");
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_5generate_gmsh = {"generate_gmsh", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_5generate_gmsh, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_4generate_gmsh};
+static PyObject *__pyx_pw_9simulator_4Mesh_5generate_gmsh(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_filename = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("generate_gmsh (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_filename,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 121, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 121, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "generate_gmsh", 0) < 0) __PYX_ERR(0, 121, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("generate_gmsh", 1, 1, 1, i); __PYX_ERR(0, 121, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 121, __pyx_L3_error)
+    }
+    __pyx_v_filename = ((PyObject*)values[0]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("generate_gmsh", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 121, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Mesh.generate_gmsh", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_4Mesh_4generate_gmsh(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self), __pyx_v_filename);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_4generate_gmsh(struct __pyx_obj_9simulator_Mesh *__pyx_v_self, PyObject *__pyx_v_filename) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  char const *__pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("generate_gmsh", 0);
+
+  /* "simulator.pyx":123
+ *     def generate_gmsh(self, str filename):
+ *         """Generate GMSH mesh file."""
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))             # <<<<<<<<<<<<<<
+ * 
+ *     def get_num_nodes(self):
+*/
+  if (unlikely(__pyx_v_filename == Py_None)) {
+    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
+    __PYX_ERR(0, 123, __pyx_L1_error)
+  }
+  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_filename); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyBytes_AsString(__pyx_t_1); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 123, __pyx_L1_error)
+  mesh_generate_gmsh(__pyx_v_self->_mesh, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "simulator.pyx":121
+ *             destroy_mesh(self._mesh)
+ * 
+ *     def generate_gmsh(self, str filename):             # <<<<<<<<<<<<<<
+ *         """Generate GMSH mesh file."""
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+*/
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Mesh.generate_gmsh", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":125
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+ * 
+ *     def get_num_nodes(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh nodes."""
+ *         return mesh_get_num_nodes(self._mesh)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_7get_num_nodes(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_4Mesh_6get_num_nodes, "Get number of mesh nodes.");
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_7get_num_nodes = {"get_num_nodes", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_7get_num_nodes, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_6get_num_nodes};
+static PyObject *__pyx_pw_9simulator_4Mesh_7get_num_nodes(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_num_nodes (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_num_nodes", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_num_nodes", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_4Mesh_6get_num_nodes(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_6get_num_nodes(struct __pyx_obj_9simulator_Mesh *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_num_nodes", 0);
+
+  /* "simulator.pyx":127
+ *     def get_num_nodes(self):
+ *         """Get number of mesh nodes."""
+ *         return mesh_get_num_nodes(self._mesh)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_num_elements(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyLong_From_int(mesh_get_num_nodes(__pyx_v_self->_mesh)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":125
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+ * 
+ *     def get_num_nodes(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh nodes."""
+ *         return mesh_get_num_nodes(self._mesh)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Mesh.get_num_nodes", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":129
+ *         return mesh_get_num_nodes(self._mesh)
+ * 
+ *     def get_num_elements(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh elements."""
+ *         return mesh_get_num_elements(self._mesh)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_9get_num_elements(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_4Mesh_8get_num_elements, "Get number of mesh elements.");
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_9get_num_elements = {"get_num_elements", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_9get_num_elements, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_8get_num_elements};
+static PyObject *__pyx_pw_9simulator_4Mesh_9get_num_elements(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_num_elements (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_num_elements", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_num_elements", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_4Mesh_8get_num_elements(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_8get_num_elements(struct __pyx_obj_9simulator_Mesh *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_num_elements", 0);
+
+  /* "simulator.pyx":131
+ *     def get_num_elements(self):
+ *         """Get number of mesh elements."""
+ *         return mesh_get_num_elements(self._mesh)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_grid_points(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyLong_From_int(mesh_get_num_elements(__pyx_v_self->_mesh)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":129
+ *         return mesh_get_num_nodes(self._mesh)
+ * 
+ *     def get_num_elements(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh elements."""
+ *         return mesh_get_num_elements(self._mesh)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.Mesh.get_num_elements", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":133
+ *         return mesh_get_num_elements(self._mesh)
+ * 
+ *     def get_grid_points(self):             # <<<<<<<<<<<<<<
+ *         """Get mesh grid points."""
+ *         num_nodes = self.get_num_nodes()
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_11get_grid_points(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_4Mesh_10get_grid_points, "Get mesh grid points.");
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_11get_grid_points = {"get_grid_points", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_11get_grid_points, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_10get_grid_points};
+static PyObject *__pyx_pw_9simulator_4Mesh_11get_grid_points(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_grid_points (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_grid_points", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_grid_points", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_4Mesh_10get_grid_points(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_10get_grid_points(struct __pyx_obj_9simulator_Mesh *__pyx_v_self) {
+  PyObject *__pyx_v_num_nodes = NULL;
+  PyArrayObject *__pyx_v_x_points = 0;
+  PyArrayObject *__pyx_v_y_points = 0;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_x_points;
+  __Pyx_Buffer __pyx_pybuffer_x_points;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_y_points;
+  __Pyx_Buffer __pyx_pybuffer_y_points;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  size_t __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  Py_ssize_t __pyx_t_7;
+  int __pyx_t_8;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_grid_points", 0);
+  __pyx_pybuffer_x_points.pybuffer.buf = NULL;
+  __pyx_pybuffer_x_points.refcount = 0;
+  __pyx_pybuffernd_x_points.data = NULL;
+  __pyx_pybuffernd_x_points.rcbuffer = &__pyx_pybuffer_x_points;
+  __pyx_pybuffer_y_points.pybuffer.buf = NULL;
+  __pyx_pybuffer_y_points.refcount = 0;
+  __pyx_pybuffernd_y_points.data = NULL;
+  __pyx_pybuffernd_y_points.rcbuffer = &__pyx_pybuffer_y_points;
+
+  /* "simulator.pyx":135
+ *     def get_grid_points(self):
+ *         """Get mesh grid points."""
+ *         num_nodes = self.get_num_nodes()             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] x_points = np.zeros(num_nodes, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] y_points = np.zeros(num_nodes, dtype=np.float64)
+*/
+  __pyx_t_2 = ((PyObject *)__pyx_v_self);
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_get_num_nodes, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_num_nodes = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":136
+ *         """Get mesh grid points."""
+ *         num_nodes = self.get_num_nodes()
+ *         cdef np.ndarray[double, ndim=1] x_points = np.zeros(num_nodes, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] y_points = np.zeros(num_nodes, dtype=np.float64)
+ * 
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_3 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_3 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_num_nodes};
+    __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_6, __pyx_t_4, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 136, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 136, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_x_points.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_x_points = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_x_points.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 136, __pyx_L1_error)
+    } else {__pyx_pybuffernd_x_points.diminfo[0].strides = __pyx_pybuffernd_x_points.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_x_points.diminfo[0].shape = __pyx_pybuffernd_x_points.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_x_points = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":137
+ *         num_nodes = self.get_num_nodes()
+ *         cdef np.ndarray[double, ndim=1] x_points = np.zeros(num_nodes, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] y_points = np.zeros(num_nodes, dtype=np.float64)             # <<<<<<<<<<<<<<
+ * 
+ *         mesh_get_grid_points_x(self._mesh, &x_points[0], num_nodes)
+*/
+  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_3 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_6))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_6);
+    assert(__pyx_t_5);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_6);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_6, __pyx__function);
+    __pyx_t_3 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_5, __pyx_v_num_nodes};
+    __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_2, __pyx_t_4, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_6, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 137, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_y_points.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_y_points = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_y_points.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 137, __pyx_L1_error)
+    } else {__pyx_pybuffernd_y_points.diminfo[0].strides = __pyx_pybuffernd_y_points.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_y_points.diminfo[0].shape = __pyx_pybuffernd_y_points.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_y_points = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":139
+ *         cdef np.ndarray[double, ndim=1] y_points = np.zeros(num_nodes, dtype=np.float64)
+ * 
+ *         mesh_get_grid_points_x(self._mesh, &x_points[0], num_nodes)             # <<<<<<<<<<<<<<
+ *         mesh_get_grid_points_y(self._mesh, &y_points[0], num_nodes)
+ * 
+*/
+  __pyx_t_7 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_7 < 0) {
+    __pyx_t_7 += __pyx_pybuffernd_x_points.diminfo[0].shape;
+    if (unlikely(__pyx_t_7 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_7 >= __pyx_pybuffernd_x_points.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 139, __pyx_L1_error)
+  }
+  __pyx_t_8 = __Pyx_PyLong_As_int(__pyx_v_num_nodes); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 139, __pyx_L1_error)
+  mesh_get_grid_points_x(__pyx_v_self->_mesh, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_x_points.rcbuffer->pybuffer.buf, __pyx_t_7, __pyx_pybuffernd_x_points.diminfo[0].strides))), __pyx_t_8);
+
+  /* "simulator.pyx":140
+ * 
+ *         mesh_get_grid_points_x(self._mesh, &x_points[0], num_nodes)
+ *         mesh_get_grid_points_y(self._mesh, &y_points[0], num_nodes)             # <<<<<<<<<<<<<<
+ * 
+ *         return x_points, y_points
+*/
+  __pyx_t_7 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_7 < 0) {
+    __pyx_t_7 += __pyx_pybuffernd_y_points.diminfo[0].shape;
+    if (unlikely(__pyx_t_7 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_7 >= __pyx_pybuffernd_y_points.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 140, __pyx_L1_error)
+  }
+  __pyx_t_8 = __Pyx_PyLong_As_int(__pyx_v_num_nodes); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 140, __pyx_L1_error)
+  mesh_get_grid_points_y(__pyx_v_self->_mesh, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_y_points.rcbuffer->pybuffer.buf, __pyx_t_7, __pyx_pybuffernd_y_points.diminfo[0].strides))), __pyx_t_8);
+
+  /* "simulator.pyx":142
+ *         mesh_get_grid_points_y(self._mesh, &y_points[0], num_nodes)
+ * 
+ *         return x_points, y_points             # <<<<<<<<<<<<<<
+ * 
+ * # Poisson solver wrapper class
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF((PyObject *)__pyx_v_x_points);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_x_points);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_x_points)) != (0)) __PYX_ERR(0, 142, __pyx_L1_error);
+  __Pyx_INCREF((PyObject *)__pyx_v_y_points);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_y_points);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, ((PyObject *)__pyx_v_y_points)) != (0)) __PYX_ERR(0, 142, __pyx_L1_error);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":133
+ *         return mesh_get_num_elements(self._mesh)
+ * 
+ *     def get_grid_points(self):             # <<<<<<<<<<<<<<
+ *         """Get mesh grid points."""
+ *         num_nodes = self.get_num_nodes()
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_x_points.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_y_points.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.Mesh.get_grid_points", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_x_points.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_y_points.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XDECREF(__pyx_v_num_nodes);
+  __Pyx_XDECREF((PyObject *)__pyx_v_x_points);
+  __Pyx_XDECREF((PyObject *)__pyx_v_y_points);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_13__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_13__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_13__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_4Mesh_13__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("__reduce_cython__", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_4Mesh_12__reduce_cython__(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_12__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Mesh *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce_cython__", 0);
+
+  /* "(tree fragment)":2
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 2, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.Mesh.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_4Mesh_15__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_4Mesh_15__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_15__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_4Mesh_15__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  CYTHON_UNUSED PyObject *__pyx_v___pyx_state = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_pyx_state,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__setstate_cython__", 0) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, i); __PYX_ERR(1, 3, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+    }
+    __pyx_v___pyx_state = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 3, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.Mesh.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_4Mesh_14__setstate_cython__(((struct __pyx_obj_9simulator_Mesh *)__pyx_v_self), __pyx_v___pyx_state);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_4Mesh_14__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Mesh *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setstate_cython__", 0);
+
+  /* "(tree fragment)":4
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 4, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.Mesh.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":149
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured"):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+*/
+
+/* Python wrapper */
+static int __pyx_pw_9simulator_13PoissonSolver_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_9simulator_13PoissonSolver_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  struct __pyx_obj_9simulator_Device *__pyx_v_device = 0;
+  PyObject *__pyx_v_method = 0;
+  PyObject *__pyx_v_mesh_type = 0;
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[3] = {0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_device,&__pyx_mstate_global->__pyx_n_u_method,&__pyx_mstate_global->__pyx_n_u_mesh_type,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 149, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  3:
+        values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 149, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 149, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 149, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 149, __pyx_L3_error)
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_DG));
+      if (!values[2]) values[2] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 3, i); __PYX_ERR(0, 149, __pyx_L3_error) }
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  3:
+        values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 149, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 149, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 149, __pyx_L3_error)
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_DG));
+      if (!values[2]) values[2] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+    }
+    __pyx_v_device = ((struct __pyx_obj_9simulator_Device *)values[0]);
+    __pyx_v_method = ((PyObject*)values[1]);
+    __pyx_v_mesh_type = ((PyObject*)values[2]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 3, __pyx_nargs); __PYX_ERR(0, 149, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.PoissonSolver.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_device), __pyx_mstate_global->__pyx_ptype_9simulator_Device, 1, "device", 0))) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_method), (&PyUnicode_Type), 1, "method", 1))) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mesh_type), (&PyUnicode_Type), 1, "mesh_type", 1))) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver___cinit__(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self), __pyx_v_device, __pyx_v_method, __pyx_v_mesh_type);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_9simulator_13PoissonSolver___cinit__(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type) {
+  PyObject *__pyx_v_method_enum = NULL;
+  long __pyx_v_mesh_enum;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  long __pyx_t_3;
+  int __pyx_t_4;
+  int __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  size_t __pyx_t_7;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__cinit__", 0);
+
+  /* "simulator.pyx":150
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured"):
+ *         self._device = device             # <<<<<<<<<<<<<<
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+*/
+  __Pyx_INCREF((PyObject *)__pyx_v_device);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_device);
+  __Pyx_GOTREF((PyObject *)__pyx_v_self->_device);
+  __Pyx_DECREF((PyObject *)__pyx_v_self->_device);
+  __pyx_v_self->_device = __pyx_v_device;
+
+  /* "simulator.pyx":151
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured"):
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]             # <<<<<<<<<<<<<<
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ * 
+*/
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FDM, __pyx_mstate_global->__pyx_int_0) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FEM, __pyx_mstate_global->__pyx_int_1) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FVM, __pyx_mstate_global->__pyx_int_2) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_SEM, __pyx_mstate_global->__pyx_int_3) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_MC, __pyx_mstate_global->__pyx_int_4) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_DG, __pyx_mstate_global->__pyx_int_5) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_t_1, __pyx_v_method); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_method_enum = __pyx_t_2;
+  __pyx_t_2 = 0;
+
+  /* "simulator.pyx":152
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1             # <<<<<<<<<<<<<<
+ * 
+ *         self._poisson = create_poisson(device._device, method_enum, mesh_enum)
+*/
+  __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_mesh_type, __pyx_mstate_global->__pyx_n_u_Structured, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 152, __pyx_L1_error)
+  if (__pyx_t_4) {
+    __pyx_t_3 = 0;
+  } else {
+    __pyx_t_3 = 1;
+  }
+  __pyx_v_mesh_enum = __pyx_t_3;
+
+  /* "simulator.pyx":154
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ * 
+ *         self._poisson = create_poisson(device._device, method_enum, mesh_enum)             # <<<<<<<<<<<<<<
+ *         if self._poisson == NULL:
+ *             raise RuntimeError("Failed to create Poisson solver")
+*/
+  __pyx_t_5 = __Pyx_PyLong_As_int(__pyx_v_method_enum); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_v_self->_poisson = create_poisson(__pyx_v_device->_device, __pyx_t_5, __pyx_v_mesh_enum);
+
+  /* "simulator.pyx":155
+ * 
+ *         self._poisson = create_poisson(device._device, method_enum, mesh_enum)
+ *         if self._poisson == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Poisson solver")
+ * 
+*/
+  __pyx_t_4 = (__pyx_v_self->_poisson == NULL);
+  if (unlikely(__pyx_t_4)) {
+
+    /* "simulator.pyx":156
+ *         self._poisson = create_poisson(device._device, method_enum, mesh_enum)
+ *         if self._poisson == NULL:
+ *             raise RuntimeError("Failed to create Poisson solver")             # <<<<<<<<<<<<<<
+ * 
+ *     def __dealloc__(self):
+*/
+    __pyx_t_1 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_6 = __pyx_builtin_RuntimeError; 
+    __pyx_t_7 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_Poisson_solver};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 156, __pyx_L1_error)
+
+    /* "simulator.pyx":155
+ * 
+ *         self._poisson = create_poisson(device._device, method_enum, mesh_enum)
+ *         if self._poisson == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create Poisson solver")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":149
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured"):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+*/
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("simulator.PoissonSolver.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_method_enum);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":158
+ *             raise RuntimeError("Failed to create Poisson solver")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._poisson:
+ *             destroy_poisson(self._poisson)
+*/
+
+/* Python wrapper */
+static void __pyx_pw_9simulator_13PoissonSolver_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_9simulator_13PoissonSolver_3__dealloc__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_pf_9simulator_13PoissonSolver_2__dealloc__(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+}
+
+static void __pyx_pf_9simulator_13PoissonSolver_2__dealloc__(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self) {
+  int __pyx_t_1;
+
+  /* "simulator.pyx":159
+ * 
+ *     def __dealloc__(self):
+ *         if self._poisson:             # <<<<<<<<<<<<<<
+ *             destroy_poisson(self._poisson)
+ * 
+*/
+  __pyx_t_1 = (__pyx_v_self->_poisson != 0);
+  if (__pyx_t_1) {
+
+    /* "simulator.pyx":160
+ *     def __dealloc__(self):
+ *         if self._poisson:
+ *             destroy_poisson(self._poisson)             # <<<<<<<<<<<<<<
+ * 
+ *     def is_valid(self):
+*/
+    destroy_poisson(__pyx_v_self->_poisson);
+
+    /* "simulator.pyx":159
+ * 
+ *     def __dealloc__(self):
+ *         if self._poisson:             # <<<<<<<<<<<<<<
+ *             destroy_poisson(self._poisson)
+ * 
+*/
+  }
+
+  /* "simulator.pyx":158
+ *             raise RuntimeError("Failed to create Poisson solver")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._poisson:
+ *             destroy_poisson(self._poisson)
+*/
+
+  /* function exit code */
+}
+
+/* "simulator.pyx":162
+ *             destroy_poisson(self._poisson)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return poisson_is_valid(self._poisson) != 0
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_5is_valid(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_4is_valid, "Check if solver is valid.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_5is_valid = {"is_valid", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_5is_valid, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_4is_valid};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_5is_valid(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("is_valid (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("is_valid", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("is_valid", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_4is_valid(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_4is_valid(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("is_valid", 0);
+
+  /* "simulator.pyx":164
+ *     def is_valid(self):
+ *         """Check if solver is valid."""
+ *         return poisson_is_valid(self._poisson) != 0             # <<<<<<<<<<<<<<
+ * 
+ *     def set_charge_density(self, np.ndarray[double, ndim=1] rho):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyBool_FromLong((poisson_is_valid(__pyx_v_self->_poisson) != 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":162
+ *             destroy_poisson(self._poisson)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return poisson_is_valid(self._poisson) != 0
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.PoissonSolver.is_valid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":166
+ *         return poisson_is_valid(self._poisson) != 0
+ * 
+ *     def set_charge_density(self, np.ndarray[double, ndim=1] rho):             # <<<<<<<<<<<<<<
+ *         """Set charge density."""
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_7set_charge_density(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_6set_charge_density, "Set charge density.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_7set_charge_density = {"set_charge_density", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_7set_charge_density, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_6set_charge_density};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_7set_charge_density(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyArrayObject *__pyx_v_rho = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("set_charge_density (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_rho,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 166, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 166, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_charge_density", 0) < 0) __PYX_ERR(0, 166, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_charge_density", 1, 1, 1, i); __PYX_ERR(0, 166, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 166, __pyx_L3_error)
+    }
+    __pyx_v_rho = ((PyArrayObject *)values[0]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("set_charge_density", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 166, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.PoissonSolver.set_charge_density", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_rho), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "rho", 0))) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_6set_charge_density(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self), __pyx_v_rho);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_6set_charge_density(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyArrayObject *__pyx_v_rho) {
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_rho;
+  __Pyx_Buffer __pyx_pybuffer_rho;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  Py_ssize_t __pyx_t_1;
+  int __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("set_charge_density", 0);
+  __pyx_pybuffer_rho.pybuffer.buf = NULL;
+  __pyx_pybuffer_rho.refcount = 0;
+  __pyx_pybuffernd_rho.data = NULL;
+  __pyx_pybuffernd_rho.rcbuffer = &__pyx_pybuffer_rho;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_rho.rcbuffer->pybuffer, (PyObject*)__pyx_v_rho, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 166, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_rho.diminfo[0].strides = __pyx_pybuffernd_rho.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_rho.diminfo[0].shape = __pyx_pybuffernd_rho.rcbuffer->pybuffer.shape[0];
+
+  /* "simulator.pyx":168
+ *     def set_charge_density(self, np.ndarray[double, ndim=1] rho):
+ *         """Set charge density."""
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)             # <<<<<<<<<<<<<<
+ * 
+ *     def solve(self, bc):
+*/
+  __pyx_t_1 = 0;
+  __pyx_t_2 = -1;
+  if (__pyx_t_1 < 0) {
+    __pyx_t_1 += __pyx_pybuffernd_rho.diminfo[0].shape;
+    if (unlikely(__pyx_t_1 < 0)) __pyx_t_2 = 0;
+  } else if (unlikely(__pyx_t_1 >= __pyx_pybuffernd_rho.diminfo[0].shape)) __pyx_t_2 = 0;
+  if (unlikely(__pyx_t_2 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_2);
+    __PYX_ERR(0, 168, __pyx_L1_error)
+  }
+  poisson_set_charge_density(__pyx_v_self->_poisson, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_rho.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_rho.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_rho)));
+
+  /* "simulator.pyx":166
+ *         return poisson_is_valid(self._poisson) != 0
+ * 
+ *     def set_charge_density(self, np.ndarray[double, ndim=1] rho):             # <<<<<<<<<<<<<<
+ *         """Set charge density."""
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+*/
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_rho.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.PoissonSolver.set_charge_density", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_rho.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":170
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+ * 
+ *     def solve(self, bc):             # <<<<<<<<<<<<<<
+ *         """Solve Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_9solve(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_8solve, "Solve Poisson equation.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_9solve = {"solve", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_9solve, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_8solve};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_9solve(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_bc = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("solve (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_bc,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 170, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 170, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve", 0) < 0) __PYX_ERR(0, 170, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve", 1, 1, 1, i); __PYX_ERR(0, 170, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 170, __pyx_L3_error)
+    }
+    __pyx_v_bc = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("solve", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 170, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.PoissonSolver.solve", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_8solve(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self), __pyx_v_bc);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_8solve(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyObject *__pyx_v_bc) {
+  PyArrayObject *__pyx_v_bc_array = 0;
+  int __pyx_v_dof_count;
+  PyArrayObject *__pyx_v_V = 0;
+  int __pyx_v_result;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_V;
+  __Pyx_Buffer __pyx_pybuffer_V;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_bc_array;
+  __Pyx_Buffer __pyx_pybuffer_bc_array;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  size_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  Py_ssize_t __pyx_t_8;
+  int __pyx_t_9;
+  Py_ssize_t __pyx_t_10;
+  int __pyx_t_11;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("solve", 0);
+  __pyx_pybuffer_bc_array.pybuffer.buf = NULL;
+  __pyx_pybuffer_bc_array.refcount = 0;
+  __pyx_pybuffernd_bc_array.data = NULL;
+  __pyx_pybuffernd_bc_array.rcbuffer = &__pyx_pybuffer_bc_array;
+  __pyx_pybuffer_V.pybuffer.buf = NULL;
+  __pyx_pybuffer_V.refcount = 0;
+  __pyx_pybuffernd_V.data = NULL;
+  __pyx_pybuffernd_V.rcbuffer = &__pyx_pybuffer_V;
+
+  /* "simulator.pyx":172
+ *     def solve(self, bc):
+ *         """Solve Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_bc};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 172, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 172, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_bc_array = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 172, __pyx_L1_error)
+    } else {__pyx_pybuffernd_bc_array.diminfo[0].strides = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_bc_array.diminfo[0].shape = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_bc_array = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":173
+ *         """Solve Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ * 
+*/
+  __pyx_v_dof_count = ((int)poisson_get_dof_count(__pyx_v_self->_poisson));
+
+  /* "simulator.pyx":174
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+*/
+  __pyx_t_4 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_4);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_3};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 174, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_V.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_V = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_V.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 174, __pyx_L1_error)
+    } else {__pyx_pybuffernd_V.diminfo[0].strides = __pyx_pybuffernd_V.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_V.diminfo[0].shape = __pyx_pybuffernd_V.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_V = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":176
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ * 
+ *         cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)             # <<<<<<<<<<<<<<
+ *         if result != 0:
+ *             raise RuntimeError("Poisson solve failed")
+*/
+  __pyx_t_8 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_8 < 0) {
+    __pyx_t_8 += __pyx_pybuffernd_bc_array.diminfo[0].shape;
+    if (unlikely(__pyx_t_8 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_bc_array.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 176, __pyx_L1_error)
+  }
+  __pyx_t_10 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_10 < 0) {
+    __pyx_t_10 += __pyx_pybuffernd_V.diminfo[0].shape;
+    if (unlikely(__pyx_t_10 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_V.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 176, __pyx_L1_error)
+  }
+  __pyx_v_result = poisson_solve_2d(__pyx_v_self->_poisson, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_bc_array.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_bc_array)), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_V.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_V.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_V)));
+
+  /* "simulator.pyx":177
+ * 
+ *         cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Poisson solve failed")
+ *         return V
+*/
+  __pyx_t_11 = (__pyx_v_result != 0);
+  if (unlikely(__pyx_t_11)) {
+
+    /* "simulator.pyx":178
+ *         cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+ *         if result != 0:
+ *             raise RuntimeError("Poisson solve failed")             # <<<<<<<<<<<<<<
+ *         return V
+ * 
+*/
+    __pyx_t_5 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_2 = __pyx_builtin_RuntimeError; 
+    __pyx_t_6 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Poisson_solve_failed};
+      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 178, __pyx_L1_error)
+
+    /* "simulator.pyx":177
+ * 
+ *         cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Poisson solve failed")
+ *         return V
+*/
+  }
+
+  /* "simulator.pyx":179
+ *         if result != 0:
+ *             raise RuntimeError("Poisson solve failed")
+ *         return V             # <<<<<<<<<<<<<<
+ * 
+ *     def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF((PyObject *)__pyx_v_V);
+  __pyx_r = ((PyObject *)__pyx_v_V);
+  goto __pyx_L0;
+
+  /* "simulator.pyx":170
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+ * 
+ *     def solve(self, bc):             # <<<<<<<<<<<<<<
+ *         """Solve Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_7);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.PoissonSolver.solve", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_bc_array);
+  __Pyx_XDECREF((PyObject *)__pyx_v_V);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":181
+ *         return V
+ * 
+ *     def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,             # <<<<<<<<<<<<<<
+ *                              np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na,
+ *                              int max_iter=100, double tol=1e-6):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_11solve_self_consistent(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_10solve_self_consistent, "Solve self-consistent Poisson equation.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_11solve_self_consistent = {"solve_self_consistent", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_11solve_self_consistent, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_10solve_self_consistent};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_11solve_self_consistent(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_bc = 0;
+  PyArrayObject *__pyx_v_n = 0;
+  PyArrayObject *__pyx_v_p = 0;
+  PyArrayObject *__pyx_v_Nd = 0;
+  PyArrayObject *__pyx_v_Na = 0;
+  int __pyx_v_max_iter;
+  double __pyx_v_tol;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[7] = {0,0,0,0,0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("solve_self_consistent (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_bc,&__pyx_mstate_global->__pyx_n_u_n,&__pyx_mstate_global->__pyx_n_u_p,&__pyx_mstate_global->__pyx_n_u_Nd,&__pyx_mstate_global->__pyx_n_u_Na,&__pyx_mstate_global->__pyx_n_u_max_iter,&__pyx_mstate_global->__pyx_n_u_tol,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 181, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  7:
+        values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  6:
+        values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  5:
+        values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  4:
+        values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  3:
+        values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve_self_consistent", 0) < 0) __PYX_ERR(0, 181, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 5; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve_self_consistent", 0, 5, 7, i); __PYX_ERR(0, 181, __pyx_L3_error) }
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  7:
+        values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  6:
+        values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 181, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  5:
+        values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 181, __pyx_L3_error)
+        values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 181, __pyx_L3_error)
+        values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 181, __pyx_L3_error)
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 181, __pyx_L3_error)
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 181, __pyx_L3_error)
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_bc = values[0];
+    __pyx_v_n = ((PyArrayObject *)values[1]);
+    __pyx_v_p = ((PyArrayObject *)values[2]);
+    __pyx_v_Nd = ((PyArrayObject *)values[3]);
+    __pyx_v_Na = ((PyArrayObject *)values[4]);
+    if (values[5]) {
+      __pyx_v_max_iter = __Pyx_PyLong_As_int(values[5]); if (unlikely((__pyx_v_max_iter == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 183, __pyx_L3_error)
+    } else {
+      __pyx_v_max_iter = ((int)0x64);
+    }
+    if (values[6]) {
+      __pyx_v_tol = __Pyx_PyFloat_AsDouble(values[6]); if (unlikely((__pyx_v_tol == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 183, __pyx_L3_error)
+    } else {
+      __pyx_v_tol = ((double)1e-6);
+    }
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("solve_self_consistent", 0, 5, 7, __pyx_nargs); __PYX_ERR(0, 181, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.PoissonSolver.solve_self_consistent", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_n), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "n", 0))) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_p), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "p", 0))) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Nd), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Nd", 0))) __PYX_ERR(0, 182, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Na), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Na", 0))) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_10solve_self_consistent(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self), __pyx_v_bc, __pyx_v_n, __pyx_v_p, __pyx_v_Nd, __pyx_v_Na, __pyx_v_max_iter, __pyx_v_tol);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_10solve_self_consistent(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, PyObject *__pyx_v_bc, PyArrayObject *__pyx_v_n, PyArrayObject *__pyx_v_p, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na, int __pyx_v_max_iter, double __pyx_v_tol) {
+  PyArrayObject *__pyx_v_bc_array = 0;
+  int __pyx_v_dof_count;
+  PyArrayObject *__pyx_v_V = 0;
+  int __pyx_v_result;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Na;
+  __Pyx_Buffer __pyx_pybuffer_Na;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Nd;
+  __Pyx_Buffer __pyx_pybuffer_Nd;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_V;
+  __Pyx_Buffer __pyx_pybuffer_V;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_bc_array;
+  __Pyx_Buffer __pyx_pybuffer_bc_array;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_n;
+  __Pyx_Buffer __pyx_pybuffer_n;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_p;
+  __Pyx_Buffer __pyx_pybuffer_p;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  size_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  Py_ssize_t __pyx_t_8;
+  int __pyx_t_9;
+  Py_ssize_t __pyx_t_10;
+  Py_ssize_t __pyx_t_11;
+  Py_ssize_t __pyx_t_12;
+  Py_ssize_t __pyx_t_13;
+  Py_ssize_t __pyx_t_14;
+  int __pyx_t_15;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("solve_self_consistent", 0);
+  __pyx_pybuffer_bc_array.pybuffer.buf = NULL;
+  __pyx_pybuffer_bc_array.refcount = 0;
+  __pyx_pybuffernd_bc_array.data = NULL;
+  __pyx_pybuffernd_bc_array.rcbuffer = &__pyx_pybuffer_bc_array;
+  __pyx_pybuffer_V.pybuffer.buf = NULL;
+  __pyx_pybuffer_V.refcount = 0;
+  __pyx_pybuffernd_V.data = NULL;
+  __pyx_pybuffernd_V.rcbuffer = &__pyx_pybuffer_V;
+  __pyx_pybuffer_n.pybuffer.buf = NULL;
+  __pyx_pybuffer_n.refcount = 0;
+  __pyx_pybuffernd_n.data = NULL;
+  __pyx_pybuffernd_n.rcbuffer = &__pyx_pybuffer_n;
+  __pyx_pybuffer_p.pybuffer.buf = NULL;
+  __pyx_pybuffer_p.refcount = 0;
+  __pyx_pybuffernd_p.data = NULL;
+  __pyx_pybuffernd_p.rcbuffer = &__pyx_pybuffer_p;
+  __pyx_pybuffer_Nd.pybuffer.buf = NULL;
+  __pyx_pybuffer_Nd.refcount = 0;
+  __pyx_pybuffernd_Nd.data = NULL;
+  __pyx_pybuffernd_Nd.rcbuffer = &__pyx_pybuffer_Nd;
+  __pyx_pybuffer_Na.pybuffer.buf = NULL;
+  __pyx_pybuffer_Na.refcount = 0;
+  __pyx_pybuffernd_Na.data = NULL;
+  __pyx_pybuffernd_Na.rcbuffer = &__pyx_pybuffer_Na;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_n.rcbuffer->pybuffer, (PyObject*)__pyx_v_n, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 181, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_n.diminfo[0].strides = __pyx_pybuffernd_n.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_n.diminfo[0].shape = __pyx_pybuffernd_n.rcbuffer->pybuffer.shape[0];
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_p.rcbuffer->pybuffer, (PyObject*)__pyx_v_p, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 181, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_p.diminfo[0].strides = __pyx_pybuffernd_p.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_p.diminfo[0].shape = __pyx_pybuffernd_p.rcbuffer->pybuffer.shape[0];
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer, (PyObject*)__pyx_v_Nd, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 181, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_Nd.diminfo[0].strides = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Nd.diminfo[0].shape = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.shape[0];
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Na.rcbuffer->pybuffer, (PyObject*)__pyx_v_Na, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 181, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_Na.diminfo[0].strides = __pyx_pybuffernd_Na.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Na.diminfo[0].shape = __pyx_pybuffernd_Na.rcbuffer->pybuffer.shape[0];
+
+  /* "simulator.pyx":185
+ *                              int max_iter=100, double tol=1e-6):
+ *         """Solve self-consistent Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_bc};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 185, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_bc_array = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 185, __pyx_L1_error)
+    } else {__pyx_pybuffernd_bc_array.diminfo[0].strides = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_bc_array.diminfo[0].shape = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_bc_array = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":186
+ *         """Solve self-consistent Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ * 
+*/
+  __pyx_v_dof_count = ((int)poisson_get_dof_count(__pyx_v_self->_poisson));
+
+  /* "simulator.pyx":187
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef int result = poisson_solve_2d_self_consistent(
+*/
+  __pyx_t_4 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_4);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_3};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 187, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_V.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_V = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_V.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 187, __pyx_L1_error)
+    } else {__pyx_pybuffernd_V.diminfo[0].strides = __pyx_pybuffernd_V.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_V.diminfo[0].shape = __pyx_pybuffernd_V.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_V = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":190
+ * 
+ *         cdef int result = poisson_solve_2d_self_consistent(
+ *             self._poisson, &bc_array[0], bc_array.size,             # <<<<<<<<<<<<<<
+ *             &n[0], &p[0], &Nd[0], &Na[0], n.size,
+ *             max_iter, tol, &V[0], V.size)
+*/
+  __pyx_t_8 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_8 < 0) {
+    __pyx_t_8 += __pyx_pybuffernd_bc_array.diminfo[0].shape;
+    if (unlikely(__pyx_t_8 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_bc_array.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 190, __pyx_L1_error)
+  }
+
+  /* "simulator.pyx":191
+ *         cdef int result = poisson_solve_2d_self_consistent(
+ *             self._poisson, &bc_array[0], bc_array.size,
+ *             &n[0], &p[0], &Nd[0], &Na[0], n.size,             # <<<<<<<<<<<<<<
+ *             max_iter, tol, &V[0], V.size)
+ * 
+*/
+  __pyx_t_10 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_10 < 0) {
+    __pyx_t_10 += __pyx_pybuffernd_n.diminfo[0].shape;
+    if (unlikely(__pyx_t_10 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_n.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 191, __pyx_L1_error)
+  }
+  __pyx_t_11 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_11 < 0) {
+    __pyx_t_11 += __pyx_pybuffernd_p.diminfo[0].shape;
+    if (unlikely(__pyx_t_11 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_11 >= __pyx_pybuffernd_p.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 191, __pyx_L1_error)
+  }
+  __pyx_t_12 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_12 < 0) {
+    __pyx_t_12 += __pyx_pybuffernd_Nd.diminfo[0].shape;
+    if (unlikely(__pyx_t_12 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_12 >= __pyx_pybuffernd_Nd.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 191, __pyx_L1_error)
+  }
+  __pyx_t_13 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_13 < 0) {
+    __pyx_t_13 += __pyx_pybuffernd_Na.diminfo[0].shape;
+    if (unlikely(__pyx_t_13 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_Na.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 191, __pyx_L1_error)
+  }
+
+  /* "simulator.pyx":192
+ *             self._poisson, &bc_array[0], bc_array.size,
+ *             &n[0], &p[0], &Nd[0], &Na[0], n.size,
+ *             max_iter, tol, &V[0], V.size)             # <<<<<<<<<<<<<<
+ * 
+ *         if result != 0:
+*/
+  __pyx_t_14 = 0;
+  __pyx_t_9 = -1;
+  if (__pyx_t_14 < 0) {
+    __pyx_t_14 += __pyx_pybuffernd_V.diminfo[0].shape;
+    if (unlikely(__pyx_t_14 < 0)) __pyx_t_9 = 0;
+  } else if (unlikely(__pyx_t_14 >= __pyx_pybuffernd_V.diminfo[0].shape)) __pyx_t_9 = 0;
+  if (unlikely(__pyx_t_9 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+    __PYX_ERR(0, 192, __pyx_L1_error)
+  }
+
+  /* "simulator.pyx":189
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ * 
+ *         cdef int result = poisson_solve_2d_self_consistent(             # <<<<<<<<<<<<<<
+ *             self._poisson, &bc_array[0], bc_array.size,
+ *             &n[0], &p[0], &Nd[0], &Na[0], n.size,
+*/
+  __pyx_v_result = poisson_solve_2d_self_consistent(__pyx_v_self->_poisson, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_bc_array.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_bc_array)), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_n.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_n.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_p.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_p.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Nd.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_Nd.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Na.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_Na.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_n)), __pyx_v_max_iter, __pyx_v_tol, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_V.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_V.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_V)));
+
+  /* "simulator.pyx":194
+ *             max_iter, tol, &V[0], V.size)
+ * 
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Self-consistent Poisson solve failed")
+ *         return V
+*/
+  __pyx_t_15 = (__pyx_v_result != 0);
+  if (unlikely(__pyx_t_15)) {
+
+    /* "simulator.pyx":195
+ * 
+ *         if result != 0:
+ *             raise RuntimeError("Self-consistent Poisson solve failed")             # <<<<<<<<<<<<<<
+ *         return V
+ * 
+*/
+    __pyx_t_5 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_2 = __pyx_builtin_RuntimeError; 
+    __pyx_t_6 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Self_consistent_Poisson_solve_fa};
+      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 195, __pyx_L1_error)
+
+    /* "simulator.pyx":194
+ *             max_iter, tol, &V[0], V.size)
+ * 
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Self-consistent Poisson solve failed")
+ *         return V
+*/
+  }
+
+  /* "simulator.pyx":196
+ *         if result != 0:
+ *             raise RuntimeError("Self-consistent Poisson solve failed")
+ *         return V             # <<<<<<<<<<<<<<
+ * 
+ *     def get_dof_count(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF((PyObject *)__pyx_v_V);
+  __pyx_r = ((PyObject *)__pyx_v_V);
+  goto __pyx_L0;
+
+  /* "simulator.pyx":181
+ *         return V
+ * 
+ *     def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,             # <<<<<<<<<<<<<<
+ *                              np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na,
+ *                              int max_iter=100, double tol=1e-6):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_7);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Na.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.PoissonSolver.solve_self_consistent", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Na.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_bc_array);
+  __Pyx_XDECREF((PyObject *)__pyx_v_V);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":198
+ *         return V
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return poisson_get_dof_count(self._poisson)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_13get_dof_count(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_12get_dof_count, "Get degrees of freedom count.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_13get_dof_count = {"get_dof_count", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_13get_dof_count, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_12get_dof_count};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_13get_dof_count(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_dof_count (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_dof_count", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_dof_count", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_12get_dof_count(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_12get_dof_count(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_dof_count", 0);
+
+  /* "simulator.pyx":200
+ *     def get_dof_count(self):
+ *         """Get degrees of freedom count."""
+ *         return poisson_get_dof_count(self._poisson)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_residual_norm(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyLong_FromSize_t(poisson_get_dof_count(__pyx_v_self->_poisson)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":198
+ *         return V
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return poisson_get_dof_count(self._poisson)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.PoissonSolver.get_dof_count", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":202
+ *         return poisson_get_dof_count(self._poisson)
+ * 
+ *     def get_residual_norm(self):             # <<<<<<<<<<<<<<
+ *         """Get residual norm."""
+ *         return poisson_get_residual_norm(self._poisson)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_15get_residual_norm(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_13PoissonSolver_14get_residual_norm, "Get residual norm.");
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_15get_residual_norm = {"get_residual_norm", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_15get_residual_norm, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_14get_residual_norm};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_15get_residual_norm(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_residual_norm (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_residual_norm", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_residual_norm", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_14get_residual_norm(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_14get_residual_norm(struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_residual_norm", 0);
+
+  /* "simulator.pyx":204
+ *     def get_residual_norm(self):
+ *         """Get residual norm."""
+ *         return poisson_get_residual_norm(self._poisson)             # <<<<<<<<<<<<<<
+ * 
+ * # DriftDiffusion solver wrapper class
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(poisson_get_residual_norm(__pyx_v_self->_poisson)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":202
+ *         return poisson_get_dof_count(self._poisson)
+ * 
+ *     def get_residual_norm(self):             # <<<<<<<<<<<<<<
+ *         """Get residual norm."""
+ *         return poisson_get_residual_norm(self._poisson)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.PoissonSolver.get_residual_norm", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_17__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_17__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_17__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_17__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("__reduce_cython__", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_16__reduce_cython__(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_16__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce_cython__", 0);
+
+  /* "(tree fragment)":2
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 2, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.PoissonSolver.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_19__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_13PoissonSolver_19__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_19__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_13PoissonSolver_19__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  CYTHON_UNUSED PyObject *__pyx_v___pyx_state = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_pyx_state,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__setstate_cython__", 0) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, i); __PYX_ERR(1, 3, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+    }
+    __pyx_v___pyx_state = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 3, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.PoissonSolver.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_13PoissonSolver_18__setstate_cython__(((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_v_self), __pyx_v___pyx_state);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_13PoissonSolver_18__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_PoissonSolver *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setstate_cython__", 0);
+
+  /* "(tree fragment)":4
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 4, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.PoissonSolver.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":211
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured", int order=3):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+*/
+
+/* Python wrapper */
+static int __pyx_pw_9simulator_20DriftDiffusionSolver_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_9simulator_20DriftDiffusionSolver_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  struct __pyx_obj_9simulator_Device *__pyx_v_device = 0;
+  PyObject *__pyx_v_method = 0;
+  PyObject *__pyx_v_mesh_type = 0;
+  int __pyx_v_order;
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[4] = {0,0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return -1;
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_device,&__pyx_mstate_global->__pyx_n_u_method,&__pyx_mstate_global->__pyx_n_u_mesh_type,&__pyx_mstate_global->__pyx_n_u_order,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 211, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  4:
+        values[3] = __Pyx_ArgRef_VARARGS(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  3:
+        values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 211, __pyx_L3_error)
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_DG));
+      if (!values[2]) values[2] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 4, i); __PYX_ERR(0, 211, __pyx_L3_error) }
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  4:
+        values[3] = __Pyx_ArgRef_VARARGS(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  3:
+        values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 211, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 211, __pyx_L3_error)
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_DG));
+      if (!values[2]) values[2] = __Pyx_NewRef(((PyObject*)__pyx_mstate_global->__pyx_n_u_Structured));
+    }
+    __pyx_v_device = ((struct __pyx_obj_9simulator_Device *)values[0]);
+    __pyx_v_method = ((PyObject*)values[1]);
+    __pyx_v_mesh_type = ((PyObject*)values[2]);
+    if (values[3]) {
+      __pyx_v_order = __Pyx_PyLong_As_int(values[3]); if (unlikely((__pyx_v_order == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 211, __pyx_L3_error)
+    } else {
+      __pyx_v_order = ((int)3);
+    }
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 1, 4, __pyx_nargs); __PYX_ERR(0, 211, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_device), __pyx_mstate_global->__pyx_ptype_9simulator_Device, 1, "device", 0))) __PYX_ERR(0, 211, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_method), (&PyUnicode_Type), 1, "method", 1))) __PYX_ERR(0, 211, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mesh_type), (&PyUnicode_Type), 1, "mesh_type", 1))) __PYX_ERR(0, 211, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver___cinit__(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self), __pyx_v_device, __pyx_v_method, __pyx_v_mesh_type, __pyx_v_order);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static int __pyx_pf_9simulator_20DriftDiffusionSolver___cinit__(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, struct __pyx_obj_9simulator_Device *__pyx_v_device, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, int __pyx_v_order) {
+  PyObject *__pyx_v_method_enum = NULL;
+  long __pyx_v_mesh_enum;
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  long __pyx_t_3;
+  int __pyx_t_4;
+  int __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  size_t __pyx_t_7;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__cinit__", 0);
+
+  /* "simulator.pyx":212
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured", int order=3):
+ *         self._device = device             # <<<<<<<<<<<<<<
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+*/
+  __Pyx_INCREF((PyObject *)__pyx_v_device);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_device);
+  __Pyx_GOTREF((PyObject *)__pyx_v_self->_device);
+  __Pyx_DECREF((PyObject *)__pyx_v_self->_device);
+  __pyx_v_self->_device = __pyx_v_device;
+
+  /* "simulator.pyx":213
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured", int order=3):
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]             # <<<<<<<<<<<<<<
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ * 
+*/
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FDM, __pyx_mstate_global->__pyx_int_0) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FEM, __pyx_mstate_global->__pyx_int_1) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_FVM, __pyx_mstate_global->__pyx_int_2) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_SEM, __pyx_mstate_global->__pyx_int_3) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_MC, __pyx_mstate_global->__pyx_int_4) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_DG, __pyx_mstate_global->__pyx_int_5) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_t_1, __pyx_v_method); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_method_enum = __pyx_t_2;
+  __pyx_t_2 = 0;
+
+  /* "simulator.pyx":214
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1             # <<<<<<<<<<<<<<
+ * 
+ *         self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)
+*/
+  __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_mesh_type, __pyx_mstate_global->__pyx_n_u_Structured, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 214, __pyx_L1_error)
+  if (__pyx_t_4) {
+    __pyx_t_3 = 0;
+  } else {
+    __pyx_t_3 = 1;
+  }
+  __pyx_v_mesh_enum = __pyx_t_3;
+
+  /* "simulator.pyx":216
+ *         mesh_enum = 0 if mesh_type == "Structured" else 1
+ * 
+ *         self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)             # <<<<<<<<<<<<<<
+ *         if self._dd == NULL:
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")
+*/
+  __pyx_t_5 = __Pyx_PyLong_As_int(__pyx_v_method_enum); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_v_self->_dd = create_drift_diffusion(__pyx_v_device->_device, __pyx_t_5, __pyx_v_mesh_enum, __pyx_v_order);
+
+  /* "simulator.pyx":217
+ * 
+ *         self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)
+ *         if self._dd == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")
+ * 
+*/
+  __pyx_t_4 = (__pyx_v_self->_dd == NULL);
+  if (unlikely(__pyx_t_4)) {
+
+    /* "simulator.pyx":218
+ *         self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)
+ *         if self._dd == NULL:
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")             # <<<<<<<<<<<<<<
+ * 
+ *     def __dealloc__(self):
+*/
+    __pyx_t_1 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_6 = __pyx_builtin_RuntimeError; 
+    __pyx_t_7 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_DriftDiffusion};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 218, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 218, __pyx_L1_error)
+
+    /* "simulator.pyx":217
+ * 
+ *         self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)
+ *         if self._dd == NULL:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":211
+ *     cdef Device _device
+ * 
+ *     def __cinit__(self, Device device, str method="DG", str mesh_type="Structured", int order=3):             # <<<<<<<<<<<<<<
+ *         self._device = device
+ *         method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+*/
+
+  /* function exit code */
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_method_enum);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":220
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._dd:
+ *             destroy_drift_diffusion(self._dd)
+*/
+
+/* Python wrapper */
+static void __pyx_pw_9simulator_20DriftDiffusionSolver_3__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pw_9simulator_20DriftDiffusionSolver_3__dealloc__(PyObject *__pyx_v_self) {
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__dealloc__ (wrapper)", 0);
+  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
+  __pyx_pf_9simulator_20DriftDiffusionSolver_2__dealloc__(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+}
+
+static void __pyx_pf_9simulator_20DriftDiffusionSolver_2__dealloc__(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  int __pyx_t_1;
+
+  /* "simulator.pyx":221
+ * 
+ *     def __dealloc__(self):
+ *         if self._dd:             # <<<<<<<<<<<<<<
+ *             destroy_drift_diffusion(self._dd)
+ * 
+*/
+  __pyx_t_1 = (__pyx_v_self->_dd != 0);
+  if (__pyx_t_1) {
+
+    /* "simulator.pyx":222
+ *     def __dealloc__(self):
+ *         if self._dd:
+ *             destroy_drift_diffusion(self._dd)             # <<<<<<<<<<<<<<
+ * 
+ *     def is_valid(self):
+*/
+    destroy_drift_diffusion(__pyx_v_self->_dd);
+
+    /* "simulator.pyx":221
+ * 
+ *     def __dealloc__(self):
+ *         if self._dd:             # <<<<<<<<<<<<<<
+ *             destroy_drift_diffusion(self._dd)
+ * 
+*/
+  }
+
+  /* "simulator.pyx":220
+ *             raise RuntimeError("Failed to create DriftDiffusion solver")
+ * 
+ *     def __dealloc__(self):             # <<<<<<<<<<<<<<
+ *         if self._dd:
+ *             destroy_drift_diffusion(self._dd)
+*/
+
+  /* function exit code */
+}
+
+/* "simulator.pyx":224
+ *             destroy_drift_diffusion(self._dd)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return drift_diffusion_is_valid(self._dd) != 0
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_5is_valid(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_4is_valid, "Check if solver is valid.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_5is_valid = {"is_valid", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_5is_valid, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_4is_valid};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_5is_valid(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("is_valid (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("is_valid", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("is_valid", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_4is_valid(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_4is_valid(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("is_valid", 0);
+
+  /* "simulator.pyx":226
+ *     def is_valid(self):
+ *         """Check if solver is valid."""
+ *         return drift_diffusion_is_valid(self._dd) != 0             # <<<<<<<<<<<<<<
+ * 
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyBool_FromLong((drift_diffusion_is_valid(__pyx_v_self->_dd) != 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 226, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":224
+ *             destroy_drift_diffusion(self._dd)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return drift_diffusion_is_valid(self._dd) != 0
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.is_valid", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":228
+ *         return drift_diffusion_is_valid(self._dd) != 0
+ * 
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_7set_doping(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_6set_doping, "Set doping concentrations.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_7set_doping = {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_7set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_6set_doping};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_7set_doping(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyArrayObject *__pyx_v_Nd = 0;
+  PyArrayObject *__pyx_v_Na = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[2] = {0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("set_doping (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_Nd,&__pyx_mstate_global->__pyx_n_u_Na,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 228, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 228, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 228, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_doping", 0) < 0) __PYX_ERR(0, 228, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, i); __PYX_ERR(0, 228, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 2)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 228, __pyx_L3_error)
+      values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 228, __pyx_L3_error)
+    }
+    __pyx_v_Nd = ((PyArrayObject *)values[0]);
+    __pyx_v_Na = ((PyArrayObject *)values[1]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 228, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.set_doping", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Nd), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Nd", 0))) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Na), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Na", 0))) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_6set_doping(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self), __pyx_v_Nd, __pyx_v_Na);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_6set_doping(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na) {
+  int __pyx_v_result;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Na;
+  __Pyx_Buffer __pyx_pybuffer_Na;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Nd;
+  __Pyx_Buffer __pyx_pybuffer_Nd;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  size_t __pyx_t_5;
+  Py_ssize_t __pyx_t_6;
+  int __pyx_t_7;
+  Py_ssize_t __pyx_t_8;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("set_doping", 0);
+  __pyx_pybuffer_Nd.pybuffer.buf = NULL;
+  __pyx_pybuffer_Nd.refcount = 0;
+  __pyx_pybuffernd_Nd.data = NULL;
+  __pyx_pybuffernd_Nd.rcbuffer = &__pyx_pybuffer_Nd;
+  __pyx_pybuffer_Na.pybuffer.buf = NULL;
+  __pyx_pybuffer_Na.refcount = 0;
+  __pyx_pybuffernd_Na.data = NULL;
+  __pyx_pybuffernd_Na.rcbuffer = &__pyx_pybuffer_Na;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer, (PyObject*)__pyx_v_Nd, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_Nd.diminfo[0].strides = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Nd.diminfo[0].shape = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.shape[0];
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Na.rcbuffer->pybuffer, (PyObject*)__pyx_v_Na, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_Na.diminfo[0].strides = __pyx_pybuffernd_Na.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Na.diminfo[0].shape = __pyx_pybuffernd_Na.rcbuffer->pybuffer.shape[0];
+
+  /* "simulator.pyx":230
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:             # <<<<<<<<<<<<<<
+ *             raise ValueError("Nd and Na arrays must have the same size")
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+*/
+  __pyx_t_1 = (__pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Nd)) != __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Na)));
+  if (unlikely(__pyx_t_1)) {
+
+    /* "simulator.pyx":231
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:
+ *             raise ValueError("Nd and Na arrays must have the same size")             # <<<<<<<<<<<<<<
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+ *         if result != 0:
+*/
+    __pyx_t_3 = NULL;
+    __Pyx_INCREF(__pyx_builtin_ValueError);
+    __pyx_t_4 = __pyx_builtin_ValueError; 
+    __pyx_t_5 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_kp_u_Nd_and_Na_arrays_must_have_the_s};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 231, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 231, __pyx_L1_error)
+
+    /* "simulator.pyx":230
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:             # <<<<<<<<<<<<<<
+ *             raise ValueError("Nd and Na arrays must have the same size")
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+*/
+  }
+
+  /* "simulator.pyx":232
+ *         if Nd.size != Na.size:
+ *             raise ValueError("Nd and Na arrays must have the same size")
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)             # <<<<<<<<<<<<<<
+ *         if result != 0:
+ *             raise RuntimeError("Failed to set doping")
+*/
+  __pyx_t_6 = 0;
+  __pyx_t_7 = -1;
+  if (__pyx_t_6 < 0) {
+    __pyx_t_6 += __pyx_pybuffernd_Nd.diminfo[0].shape;
+    if (unlikely(__pyx_t_6 < 0)) __pyx_t_7 = 0;
+  } else if (unlikely(__pyx_t_6 >= __pyx_pybuffernd_Nd.diminfo[0].shape)) __pyx_t_7 = 0;
+  if (unlikely(__pyx_t_7 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_7);
+    __PYX_ERR(0, 232, __pyx_L1_error)
+  }
+  __pyx_t_8 = 0;
+  __pyx_t_7 = -1;
+  if (__pyx_t_8 < 0) {
+    __pyx_t_8 += __pyx_pybuffernd_Na.diminfo[0].shape;
+    if (unlikely(__pyx_t_8 < 0)) __pyx_t_7 = 0;
+  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_Na.diminfo[0].shape)) __pyx_t_7 = 0;
+  if (unlikely(__pyx_t_7 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_7);
+    __PYX_ERR(0, 232, __pyx_L1_error)
+  }
+  __pyx_v_result = drift_diffusion_set_doping(__pyx_v_self->_dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Nd.rcbuffer->pybuffer.buf, __pyx_t_6, __pyx_pybuffernd_Nd.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Na.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_Na.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Nd)));
+
+  /* "simulator.pyx":233
+ *             raise ValueError("Nd and Na arrays must have the same size")
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to set doping")
+ * 
+*/
+  __pyx_t_1 = (__pyx_v_result != 0);
+  if (unlikely(__pyx_t_1)) {
+
+    /* "simulator.pyx":234
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+ *         if result != 0:
+ *             raise RuntimeError("Failed to set doping")             # <<<<<<<<<<<<<<
+ * 
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
+*/
+    __pyx_t_4 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_3 = __pyx_builtin_RuntimeError; 
+    __pyx_t_5 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_Failed_to_set_doping};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 234, __pyx_L1_error)
+
+    /* "simulator.pyx":233
+ *             raise ValueError("Nd and Na arrays must have the same size")
+ *         cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to set doping")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":228
+ *         return drift_diffusion_is_valid(self._dd) != 0
+ * 
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:
+*/
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Na.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.set_doping", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Na.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":236
+ *             raise RuntimeError("Failed to set doping")
+ * 
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_9set_trap_level(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_8set_trap_level, "Set trap energy levels.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_9set_trap_level = {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_9set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_8set_trap_level};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_9set_trap_level(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyArrayObject *__pyx_v_Et = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("set_trap_level (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_Et,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 236, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 236, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_trap_level", 0) < 0) __PYX_ERR(0, 236, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, i); __PYX_ERR(0, 236, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 236, __pyx_L3_error)
+    }
+    __pyx_v_Et = ((PyArrayObject *)values[0]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 236, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.set_trap_level", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Et), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Et", 0))) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_8set_trap_level(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self), __pyx_v_Et);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  goto __pyx_L7_cleaned_up;
+  __pyx_L0:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __pyx_L7_cleaned_up:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_8set_trap_level(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyArrayObject *__pyx_v_Et) {
+  int __pyx_v_result;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Et;
+  __Pyx_Buffer __pyx_pybuffer_Et;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  Py_ssize_t __pyx_t_1;
+  int __pyx_t_2;
+  int __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  size_t __pyx_t_7;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("set_trap_level", 0);
+  __pyx_pybuffer_Et.pybuffer.buf = NULL;
+  __pyx_pybuffer_Et.refcount = 0;
+  __pyx_pybuffernd_Et.data = NULL;
+  __pyx_pybuffernd_Et.rcbuffer = &__pyx_pybuffer_Et;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Et.rcbuffer->pybuffer, (PyObject*)__pyx_v_Et, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 236, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_Et.diminfo[0].strides = __pyx_pybuffernd_Et.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Et.diminfo[0].shape = __pyx_pybuffernd_Et.rcbuffer->pybuffer.shape[0];
+
+  /* "simulator.pyx":238
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)             # <<<<<<<<<<<<<<
+ *         if result != 0:
+ *             raise RuntimeError("Failed to set trap level")
+*/
+  __pyx_t_1 = 0;
+  __pyx_t_2 = -1;
+  if (__pyx_t_1 < 0) {
+    __pyx_t_1 += __pyx_pybuffernd_Et.diminfo[0].shape;
+    if (unlikely(__pyx_t_1 < 0)) __pyx_t_2 = 0;
+  } else if (unlikely(__pyx_t_1 >= __pyx_pybuffernd_Et.diminfo[0].shape)) __pyx_t_2 = 0;
+  if (unlikely(__pyx_t_2 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_2);
+    __PYX_ERR(0, 238, __pyx_L1_error)
+  }
+  __pyx_v_result = drift_diffusion_set_trap_level(__pyx_v_self->_dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Et.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_Et.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Et)));
+
+  /* "simulator.pyx":239
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+*/
+  __pyx_t_3 = (__pyx_v_result != 0);
+  if (unlikely(__pyx_t_3)) {
+
+    /* "simulator.pyx":240
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+ *         if result != 0:
+ *             raise RuntimeError("Failed to set trap level")             # <<<<<<<<<<<<<<
+ * 
+ *     def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,
+*/
+    __pyx_t_5 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_6 = __pyx_builtin_RuntimeError; 
+    __pyx_t_7 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Failed_to_set_trap_level};
+      __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 240, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+    }
+    __Pyx_Raise(__pyx_t_4, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __PYX_ERR(0, 240, __pyx_L1_error)
+
+    /* "simulator.pyx":239
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":236
+ *             raise RuntimeError("Failed to set doping")
+ * 
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+*/
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Et.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.set_trap_level", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Et.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":242
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+ *     def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,             # <<<<<<<<<<<<<<
+ *               int poisson_max_iter=50, double poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_11solve(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_10solve, "Solve drift-diffusion equations.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_11solve = {"solve", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_11solve, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_10solve};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_11solve(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_bc = 0;
+  double __pyx_v_Vg;
+  int __pyx_v_max_steps;
+  bool __pyx_v_use_amr;
+  int __pyx_v_poisson_max_iter;
+  double __pyx_v_poisson_tol;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[6] = {0,0,0,0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("solve (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_bc,&__pyx_mstate_global->__pyx_n_u_Vg,&__pyx_mstate_global->__pyx_n_u_max_steps,&__pyx_mstate_global->__pyx_n_u_use_amr,&__pyx_mstate_global->__pyx_n_u_poisson_max_iter,&__pyx_mstate_global->__pyx_n_u_poisson_tol,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 242, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  6:
+        values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  5:
+        values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  4:
+        values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  3:
+        values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve", 0) < 0) __PYX_ERR(0, 242, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve", 0, 1, 6, i); __PYX_ERR(0, 242, __pyx_L3_error) }
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  6:
+        values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  5:
+        values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  4:
+        values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  3:
+        values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 242, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 242, __pyx_L3_error)
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_bc = values[0];
+    if (values[1]) {
+      __pyx_v_Vg = __Pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_Vg == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 242, __pyx_L3_error)
+    } else {
+      __pyx_v_Vg = ((double)0.0);
+    }
+    if (values[2]) {
+      __pyx_v_max_steps = __Pyx_PyLong_As_int(values[2]); if (unlikely((__pyx_v_max_steps == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 242, __pyx_L3_error)
+    } else {
+      __pyx_v_max_steps = ((int)0x64);
+    }
+    if (values[3]) {
+      __pyx_v_use_amr = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_use_amr == ((bool)-1)) && PyErr_Occurred())) __PYX_ERR(0, 242, __pyx_L3_error)
+    } else {
+      __pyx_v_use_amr = ((bool)0);
+    }
+    if (values[4]) {
+      __pyx_v_poisson_max_iter = __Pyx_PyLong_As_int(values[4]); if (unlikely((__pyx_v_poisson_max_iter == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 243, __pyx_L3_error)
+    } else {
+      __pyx_v_poisson_max_iter = ((int)50);
+    }
+    if (values[5]) {
+      __pyx_v_poisson_tol = __Pyx_PyFloat_AsDouble(values[5]); if (unlikely((__pyx_v_poisson_tol == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 243, __pyx_L3_error)
+    } else {
+      __pyx_v_poisson_tol = ((double)1e-6);
+    }
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("solve", 0, 1, 6, __pyx_nargs); __PYX_ERR(0, 242, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.solve", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_10solve(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self), __pyx_v_bc, __pyx_v_Vg, __pyx_v_max_steps, __pyx_v_use_amr, __pyx_v_poisson_max_iter, __pyx_v_poisson_tol);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_10solve(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, PyObject *__pyx_v_bc, double __pyx_v_Vg, int __pyx_v_max_steps, bool __pyx_v_use_amr, int __pyx_v_poisson_max_iter, double __pyx_v_poisson_tol) {
+  PyArrayObject *__pyx_v_bc_array = 0;
+  int __pyx_v_dof_count;
+  PyArrayObject *__pyx_v_V = 0;
+  PyArrayObject *__pyx_v_n = 0;
+  PyArrayObject *__pyx_v_p = 0;
+  PyArrayObject *__pyx_v_Jn = 0;
+  PyArrayObject *__pyx_v_Jp = 0;
+  int __pyx_v_use_amr_int;
+  int __pyx_v_result;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Jn;
+  __Pyx_Buffer __pyx_pybuffer_Jn;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_Jp;
+  __Pyx_Buffer __pyx_pybuffer_Jp;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_V;
+  __Pyx_Buffer __pyx_pybuffer_V;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_bc_array;
+  __Pyx_Buffer __pyx_pybuffer_bc_array;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_n;
+  __Pyx_Buffer __pyx_pybuffer_n;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_p;
+  __Pyx_Buffer __pyx_pybuffer_p;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  size_t __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  int __pyx_t_8;
+  int __pyx_t_9;
+  Py_ssize_t __pyx_t_10;
+  Py_ssize_t __pyx_t_11;
+  Py_ssize_t __pyx_t_12;
+  Py_ssize_t __pyx_t_13;
+  Py_ssize_t __pyx_t_14;
+  Py_ssize_t __pyx_t_15;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("solve", 0);
+  __pyx_pybuffer_bc_array.pybuffer.buf = NULL;
+  __pyx_pybuffer_bc_array.refcount = 0;
+  __pyx_pybuffernd_bc_array.data = NULL;
+  __pyx_pybuffernd_bc_array.rcbuffer = &__pyx_pybuffer_bc_array;
+  __pyx_pybuffer_V.pybuffer.buf = NULL;
+  __pyx_pybuffer_V.refcount = 0;
+  __pyx_pybuffernd_V.data = NULL;
+  __pyx_pybuffernd_V.rcbuffer = &__pyx_pybuffer_V;
+  __pyx_pybuffer_n.pybuffer.buf = NULL;
+  __pyx_pybuffer_n.refcount = 0;
+  __pyx_pybuffernd_n.data = NULL;
+  __pyx_pybuffernd_n.rcbuffer = &__pyx_pybuffer_n;
+  __pyx_pybuffer_p.pybuffer.buf = NULL;
+  __pyx_pybuffer_p.refcount = 0;
+  __pyx_pybuffernd_p.data = NULL;
+  __pyx_pybuffernd_p.rcbuffer = &__pyx_pybuffer_p;
+  __pyx_pybuffer_Jn.pybuffer.buf = NULL;
+  __pyx_pybuffer_Jn.refcount = 0;
+  __pyx_pybuffernd_Jn.data = NULL;
+  __pyx_pybuffernd_Jn.rcbuffer = &__pyx_pybuffer_Jn;
+  __pyx_pybuffer_Jp.pybuffer.buf = NULL;
+  __pyx_pybuffer_Jp.refcount = 0;
+  __pyx_pybuffernd_Jp.data = NULL;
+  __pyx_pybuffernd_Jp.rcbuffer = &__pyx_pybuffer_Jp;
+
+  /* "simulator.pyx":245
+ *               int poisson_max_iter=50, double poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef int dof_count = <int>drift_diffusion_get_dof_count(self._dd)
+ * 
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_bc};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 245, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_bc_array = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 245, __pyx_L1_error)
+    } else {__pyx_pybuffernd_bc_array.diminfo[0].strides = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_bc_array.diminfo[0].shape = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_bc_array = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":246
+ *         """Solve drift-diffusion equations."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         cdef int dof_count = <int>drift_diffusion_get_dof_count(self._dd)             # <<<<<<<<<<<<<<
+ * 
+ *         # Prepare output arrays
+*/
+  __pyx_v_dof_count = ((int)drift_diffusion_get_dof_count(__pyx_v_self->_dd));
+
+  /* "simulator.pyx":249
+ * 
+ *         # Prepare output arrays
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] n = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)
+*/
+  __pyx_t_4 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_4);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_3};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 249, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_V.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_V = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_V.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 249, __pyx_L1_error)
+    } else {__pyx_pybuffernd_V.diminfo[0].strides = __pyx_pybuffernd_V.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_V.diminfo[0].shape = __pyx_pybuffernd_V.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_V = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":250
+ *         # Prepare output arrays
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] n = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(dof_count, dtype=np.float64)
+*/
+  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_7))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
+    assert(__pyx_t_5);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_5, __pyx_t_2};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_4, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 250, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_7, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 250, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_n.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_n = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_n.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 250, __pyx_L1_error)
+    } else {__pyx_pybuffernd_n.diminfo[0].strides = __pyx_pybuffernd_n.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_n.diminfo[0].shape = __pyx_pybuffernd_n.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_n = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":251
+ *         cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] n = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(dof_count, dtype=np.float64)
+*/
+  __pyx_t_7 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_4);
+    assert(__pyx_t_7);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_7);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_7, __pyx_t_3};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 251, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_p.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_p = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_p.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 251, __pyx_L1_error)
+    } else {__pyx_pybuffernd_p.diminfo[0].strides = __pyx_pybuffernd_p.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_p.diminfo[0].shape = __pyx_pybuffernd_p.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_p = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":252
+ *         cdef np.ndarray[double, ndim=1] n = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(dof_count, dtype=np.float64)
+ * 
+*/
+  __pyx_t_4 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_4);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_2};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 252, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_Jn = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_Jn.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 252, __pyx_L1_error)
+    } else {__pyx_pybuffernd_Jn.diminfo[0].strides = __pyx_pybuffernd_Jn.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Jn.diminfo[0].shape = __pyx_pybuffernd_Jn.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_Jn = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":253
+ *         cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(dof_count, dtype=np.float64)
+ *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(dof_count, dtype=np.float64)             # <<<<<<<<<<<<<<
+ * 
+ *         cdef int use_amr_int = 1 if use_amr else 0
+*/
+  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_dof_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_7))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
+    assert(__pyx_t_5);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
+    __pyx_t_6 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_5, __pyx_t_3};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_4, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 253, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_7, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 253, __pyx_L1_error)
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
+      __pyx_v_Jp = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_Jp.rcbuffer->pybuffer.buf = NULL;
+      __PYX_ERR(0, 253, __pyx_L1_error)
+    } else {__pyx_pybuffernd_Jp.diminfo[0].strides = __pyx_pybuffernd_Jp.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Jp.diminfo[0].shape = __pyx_pybuffernd_Jp.rcbuffer->pybuffer.shape[0];
+    }
+  }
+  __pyx_v_Jp = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "simulator.pyx":255
+ *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(dof_count, dtype=np.float64)
+ * 
+ *         cdef int use_amr_int = 1 if use_amr else 0             # <<<<<<<<<<<<<<
+ *         cdef int result = drift_diffusion_solve(
+ *             self._dd, &bc_array[0], bc_array.size, Vg,
+*/
+  __pyx_t_9 = (__pyx_v_use_amr != 0);
+  if (__pyx_t_9) {
+    __pyx_t_8 = 1;
+  } else {
+    __pyx_t_8 = 0;
+  }
+  __pyx_v_use_amr_int = __pyx_t_8;
+
+  /* "simulator.pyx":257
+ *         cdef int use_amr_int = 1 if use_amr else 0
+ *         cdef int result = drift_diffusion_solve(
+ *             self._dd, &bc_array[0], bc_array.size, Vg,             # <<<<<<<<<<<<<<
+ *             max_steps, use_amr_int, poisson_max_iter, poisson_tol,
+ *             &V[0], &n[0], &p[0], &Jn[0], &Jp[0], dof_count)
+*/
+  __pyx_t_10 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_10 < 0) {
+    __pyx_t_10 += __pyx_pybuffernd_bc_array.diminfo[0].shape;
+    if (unlikely(__pyx_t_10 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_bc_array.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 257, __pyx_L1_error)
+  }
+
+  /* "simulator.pyx":259
+ *             self._dd, &bc_array[0], bc_array.size, Vg,
+ *             max_steps, use_amr_int, poisson_max_iter, poisson_tol,
+ *             &V[0], &n[0], &p[0], &Jn[0], &Jp[0], dof_count)             # <<<<<<<<<<<<<<
+ * 
+ *         if result != 0:
+*/
+  __pyx_t_11 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_11 < 0) {
+    __pyx_t_11 += __pyx_pybuffernd_V.diminfo[0].shape;
+    if (unlikely(__pyx_t_11 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_11 >= __pyx_pybuffernd_V.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 259, __pyx_L1_error)
+  }
+  __pyx_t_12 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_12 < 0) {
+    __pyx_t_12 += __pyx_pybuffernd_n.diminfo[0].shape;
+    if (unlikely(__pyx_t_12 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_12 >= __pyx_pybuffernd_n.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 259, __pyx_L1_error)
+  }
+  __pyx_t_13 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_13 < 0) {
+    __pyx_t_13 += __pyx_pybuffernd_p.diminfo[0].shape;
+    if (unlikely(__pyx_t_13 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_p.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 259, __pyx_L1_error)
+  }
+  __pyx_t_14 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_14 < 0) {
+    __pyx_t_14 += __pyx_pybuffernd_Jn.diminfo[0].shape;
+    if (unlikely(__pyx_t_14 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_14 >= __pyx_pybuffernd_Jn.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 259, __pyx_L1_error)
+  }
+  __pyx_t_15 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_15 < 0) {
+    __pyx_t_15 += __pyx_pybuffernd_Jp.diminfo[0].shape;
+    if (unlikely(__pyx_t_15 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_15 >= __pyx_pybuffernd_Jp.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
+    __PYX_ERR(0, 259, __pyx_L1_error)
+  }
+
+  /* "simulator.pyx":256
+ * 
+ *         cdef int use_amr_int = 1 if use_amr else 0
+ *         cdef int result = drift_diffusion_solve(             # <<<<<<<<<<<<<<
+ *             self._dd, &bc_array[0], bc_array.size, Vg,
+ *             max_steps, use_amr_int, poisson_max_iter, poisson_tol,
+*/
+  __pyx_v_result = drift_diffusion_solve(__pyx_v_self->_dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_bc_array.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_bc_array)), __pyx_v_Vg, __pyx_v_max_steps, __pyx_v_use_amr_int, __pyx_v_poisson_max_iter, __pyx_v_poisson_tol, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_V.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_V.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_n.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_n.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_p.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_p.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Jn.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_Jn.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Jp.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_Jp.diminfo[0].strides))), __pyx_v_dof_count);
+
+  /* "simulator.pyx":261
+ *             &V[0], &n[0], &p[0], &Jn[0], &Jp[0], dof_count)
+ * 
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Drift-diffusion solve failed")
+ * 
+*/
+  __pyx_t_9 = (__pyx_v_result != 0);
+  if (unlikely(__pyx_t_9)) {
+
+    /* "simulator.pyx":262
+ * 
+ *         if result != 0:
+ *             raise RuntimeError("Drift-diffusion solve failed")             # <<<<<<<<<<<<<<
+ * 
+ *         return {
+*/
+    __pyx_t_7 = NULL;
+    __Pyx_INCREF(__pyx_builtin_RuntimeError);
+    __pyx_t_2 = __pyx_builtin_RuntimeError; 
+    __pyx_t_6 = 1;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_mstate_global->__pyx_kp_u_Drift_diffusion_solve_failed};
+      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 262, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 262, __pyx_L1_error)
+
+    /* "simulator.pyx":261
+ *             &V[0], &n[0], &p[0], &Jn[0], &Jp[0], dof_count)
+ * 
+ *         if result != 0:             # <<<<<<<<<<<<<<
+ *             raise RuntimeError("Drift-diffusion solve failed")
+ * 
+*/
+  }
+
+  /* "simulator.pyx":264
+ *             raise RuntimeError("Drift-diffusion solve failed")
+ * 
+ *         return {             # <<<<<<<<<<<<<<
+ *             "potential": V,
+ *             "n": n,
+*/
+  __Pyx_XDECREF(__pyx_r);
+
+  /* "simulator.pyx":265
+ * 
+ *         return {
+ *             "potential": V,             # <<<<<<<<<<<<<<
+ *             "n": n,
+ *             "p": p,
+*/
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_potential, ((PyObject *)__pyx_v_V)) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+
+  /* "simulator.pyx":266
+ *         return {
+ *             "potential": V,
+ *             "n": n,             # <<<<<<<<<<<<<<
+ *             "p": p,
+ *             "Jn": Jn,
+*/
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_n, ((PyObject *)__pyx_v_n)) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+
+  /* "simulator.pyx":267
+ *             "potential": V,
+ *             "n": n,
+ *             "p": p,             # <<<<<<<<<<<<<<
+ *             "Jn": Jn,
+ *             "Jp": Jp
+*/
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_p, ((PyObject *)__pyx_v_p)) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+
+  /* "simulator.pyx":268
+ *             "n": n,
+ *             "p": p,
+ *             "Jn": Jn,             # <<<<<<<<<<<<<<
+ *             "Jp": Jp
+ *         }
+*/
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Jn, ((PyObject *)__pyx_v_Jn)) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+
+  /* "simulator.pyx":269
+ *             "p": p,
+ *             "Jn": Jn,
+ *             "Jp": Jp             # <<<<<<<<<<<<<<
+ *         }
+ * 
+*/
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Jp, ((PyObject *)__pyx_v_Jp)) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":242
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+ *     def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,             # <<<<<<<<<<<<<<
+ *               int poisson_max_iter=50, double poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_7);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.solve", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XDECREF((PyObject *)__pyx_v_bc_array);
+  __Pyx_XDECREF((PyObject *)__pyx_v_V);
+  __Pyx_XDECREF((PyObject *)__pyx_v_n);
+  __Pyx_XDECREF((PyObject *)__pyx_v_p);
+  __Pyx_XDECREF((PyObject *)__pyx_v_Jn);
+  __Pyx_XDECREF((PyObject *)__pyx_v_Jp);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":272
+ *         }
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return drift_diffusion_get_dof_count(self._dd)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_13get_dof_count(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_12get_dof_count, "Get degrees of freedom count.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_13get_dof_count = {"get_dof_count", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_13get_dof_count, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_12get_dof_count};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_13get_dof_count(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_dof_count (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_dof_count", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_dof_count", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_12get_dof_count(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_12get_dof_count(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_dof_count", 0);
+
+  /* "simulator.pyx":274
+ *     def get_dof_count(self):
+ *         """Get degrees of freedom count."""
+ *         return drift_diffusion_get_dof_count(self._dd)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_convergence_residual(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyLong_FromSize_t(drift_diffusion_get_dof_count(__pyx_v_self->_dd)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":272
+ *         }
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return drift_diffusion_get_dof_count(self._dd)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.get_dof_count", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":276
+ *         return drift_diffusion_get_dof_count(self._dd)
+ * 
+ *     def get_convergence_residual(self):             # <<<<<<<<<<<<<<
+ *         """Get convergence residual."""
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_15get_convergence_residual(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_14get_convergence_residual, "Get convergence residual.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_15get_convergence_residual = {"get_convergence_residual", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_15get_convergence_residual, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_14get_convergence_residual};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_15get_convergence_residual(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_convergence_residual (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_convergence_residual", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_convergence_residual", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_14get_convergence_residual(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_14get_convergence_residual(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_convergence_residual", 0);
+
+  /* "simulator.pyx":278
+ *     def get_convergence_residual(self):
+ *         """Get convergence residual."""
+ *         return drift_diffusion_get_convergence_residual(self._dd)             # <<<<<<<<<<<<<<
+ * 
+ *     def get_order(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = PyFloat_FromDouble(drift_diffusion_get_convergence_residual(__pyx_v_self->_dd)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":276
+ *         return drift_diffusion_get_dof_count(self._dd)
+ * 
+ *     def get_convergence_residual(self):             # <<<<<<<<<<<<<<
+ *         """Get convergence residual."""
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.get_convergence_residual", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":280
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+ * 
+ *     def get_order(self):             # <<<<<<<<<<<<<<
+ *         """Get polynomial order."""
+ *         return drift_diffusion_get_order(self._dd)
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_17get_order(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_20DriftDiffusionSolver_16get_order, "Get polynomial order.");
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_17get_order = {"get_order", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_17get_order, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_16get_order};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_17get_order(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_order (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_order", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_order", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_16get_order(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_16get_order(struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_order", 0);
+
+  /* "simulator.pyx":282
+ *     def get_order(self):
+ *         """Get polynomial order."""
+ *         return drift_diffusion_get_order(self._dd)             # <<<<<<<<<<<<<<
+ * 
+ * # Legacy Simulator class for backward compatibility
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyLong_From_int(drift_diffusion_get_order(__pyx_v_self->_dd)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "simulator.pyx":280
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+ * 
+ *     def get_order(self):             # <<<<<<<<<<<<<<
+ *         """Get polynomial order."""
+ *         return drift_diffusion_get_order(self._dd)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.get_order", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_19__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_19__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_19__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_19__reduce_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__reduce_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("__reduce_cython__", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_18__reduce_cython__(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_18__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__reduce_cython__", 0);
+
+  /* "(tree fragment)":2
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 2, __pyx_L1_error)
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_21__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_9simulator_20DriftDiffusionSolver_21__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_21__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_20DriftDiffusionSolver_21__setstate_cython__(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  CYTHON_UNUSED PyObject *__pyx_v___pyx_state = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("__setstate_cython__ (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_pyx_state,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__setstate_cython__", 0) < 0) __PYX_ERR(1, 3, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, i); __PYX_ERR(1, 3, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(1, 3, __pyx_L3_error)
+    }
+    __pyx_v___pyx_state = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("__setstate_cython__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 3, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_9simulator_20DriftDiffusionSolver_20__setstate_cython__(((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_v_self), __pyx_v___pyx_state);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_20DriftDiffusionSolver_20__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_DriftDiffusionSolver *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__setstate_cython__", 0);
+
+  /* "(tree fragment)":4
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"             # <<<<<<<<<<<<<<
+*/
+  __Pyx_Raise(__pyx_builtin_TypeError, __pyx_mstate_global->__pyx_kp_u_no_default___reduce___due_to_non, 0, 0);
+  __PYX_ERR(1, 4, __pyx_L1_error)
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("simulator.DriftDiffusionSolver.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":298
  *     cdef public int _num_points_y
  * 
  *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,             # <<<<<<<<<<<<<<
  *                   method="DG", mesh_type="Structured", regions=None):
- *         # Declare variables at the beginning
+ * 
 */
 
 /* Python wrapper */
@@ -5329,7 +11538,7 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
   PyObject *__pyx_v_num_points_y = 0;
   PyObject *__pyx_v_method = 0;
   PyObject *__pyx_v_mesh_type = 0;
-  PyObject *__pyx_v_regions = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_regions = 0;
   CYTHON_UNUSED Py_ssize_t __pyx_nargs;
   CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
   PyObject* values[7] = {0,0,0,0,0,0,0};
@@ -5348,42 +11557,42 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_dimension,&__pyx_mstate_global->__pyx_n_u_extents,&__pyx_mstate_global->__pyx_n_u_num_points_x,&__pyx_mstate_global->__pyx_n_u_num_points_y,&__pyx_mstate_global->__pyx_n_u_method,&__pyx_mstate_global->__pyx_n_u_mesh_type,&__pyx_mstate_global->__pyx_n_u_regions,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 59, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 298, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  7:
         values[6] = __Pyx_ArgRef_VARARGS(__pyx_args, 6);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  6:
         values[5] = __Pyx_ArgRef_VARARGS(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_VARARGS(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_VARARGS(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 59, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__cinit__", 0) < 0) __PYX_ERR(0, 298, __pyx_L3_error)
       if (!values[0]) values[0] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_n_u_TwoD));
       if (!values[1]) values[1] = __Pyx_NewRef(__pyx_mstate_global->__pyx_k_);
       if (!values[2]) values[2] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_int_50));
@@ -5391,43 +11600,43 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
       if (!values[4]) values[4] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_n_u_DG));
       if (!values[5]) values[5] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_n_u_Structured));
 
-      /* "simulator.pyx":60
+      /* "simulator.pyx":299
  * 
  *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,
  *                   method="DG", mesh_type="Structured", regions=None):             # <<<<<<<<<<<<<<
- *         # Declare variables at the beginning
- *         cdef vector[map[string, double]] c_regions
+ * 
+ *         self.num_points_x = num_points_x
 */
       if (!values[6]) values[6] = __Pyx_NewRef(((PyObject *)Py_None));
     } else {
       switch (__pyx_nargs) {
         case  7:
         values[6] = __Pyx_ArgRef_VARARGS(__pyx_args, 6);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  6:
         values[5] = __Pyx_ArgRef_VARARGS(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_VARARGS(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_VARARGS(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_VARARGS(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_VARARGS(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 59, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 298, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
@@ -5450,7 +11659,7 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 0, 7, __pyx_nargs); __PYX_ERR(0, 59, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 0, 0, 7, __pyx_nargs); __PYX_ERR(0, 298, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -5463,12 +11672,12 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_9simulator_9Simulator___cinit__(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self), __pyx_v_dimension, __pyx_v_extents, __pyx_v_num_points_x, __pyx_v_num_points_y, __pyx_v_method, __pyx_v_mesh_type, __pyx_v_regions);
 
-  /* "simulator.pyx":59
+  /* "simulator.pyx":298
  *     cdef public int _num_points_y
  * 
  *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,             # <<<<<<<<<<<<<<
  *                   method="DG", mesh_type="Structured", regions=None):
- *         # Declare variables at the beginning
+ * 
 */
 
   /* function exit code */
@@ -5479,91 +11688,57 @@ static int __pyx_pw_9simulator_9Simulator_1__cinit__(PyObject *__pyx_v_self, PyO
   return __pyx_r;
 }
 
-static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_dimension, PyObject *__pyx_v_extents, PyObject *__pyx_v_num_points_x, PyObject *__pyx_v_num_points_y, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, PyObject *__pyx_v_regions) {
-  std::vector<std::map<std::string,double> >  __pyx_v_c_regions;
-  int __pyx_v_mesh_enum;
-  int __pyx_v_method_enum;
-  PyObject *__pyx_v_r = NULL;
-  CYTHON_UNUSED PyObject *__pyx_v_e = NULL;
+static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_dimension, PyObject *__pyx_v_extents, PyObject *__pyx_v_num_points_x, PyObject *__pyx_v_num_points_y, PyObject *__pyx_v_method, PyObject *__pyx_v_mesh_type, CYTHON_UNUSED PyObject *__pyx_v_regions) {
+  PyObject *__pyx_v_e = NULL;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
-  int __pyx_t_3;
+  PyObject *__pyx_t_3 = NULL;
   PyObject *__pyx_t_4 = NULL;
-  Py_ssize_t __pyx_t_5;
-  PyObject *(*__pyx_t_6)(PyObject *);
-  std::map<std::string,double>  __pyx_t_7;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
   PyObject *__pyx_t_9 = NULL;
-  PyObject *__pyx_t_10 = NULL;
-  double __pyx_t_11;
-  double __pyx_t_12;
-  simulator::Device *__pyx_t_13;
-  PyObject *__pyx_t_14 = NULL;
-  size_t __pyx_t_15;
-  int __pyx_t_16;
-  char const *__pyx_t_17;
+  size_t __pyx_t_10;
+  PyObject *__pyx_t_11 = NULL;
+  PyObject *__pyx_t_12 = NULL;
+  PyObject *__pyx_t_13 = NULL;
+  int __pyx_t_14;
+  char const *__pyx_t_15;
+  PyObject *__pyx_t_16 = NULL;
+  PyObject *__pyx_t_17 = NULL;
   PyObject *__pyx_t_18 = NULL;
   PyObject *__pyx_t_19 = NULL;
   PyObject *__pyx_t_20 = NULL;
   PyObject *__pyx_t_21 = NULL;
-  PyObject *__pyx_t_22 = NULL;
-  PyObject *__pyx_t_23 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__cinit__", 0);
-  __Pyx_INCREF(__pyx_v_regions);
 
-  /* "simulator.pyx":66
- * 
- *         # Initialize pointers to NULL for safety
- *         self.device = NULL             # <<<<<<<<<<<<<<
- *         self.poisson = NULL
- *         self.dd = NULL
-*/
-  __pyx_v_self->device = NULL;
-
-  /* "simulator.pyx":67
- *         # Initialize pointers to NULL for safety
- *         self.device = NULL
- *         self.poisson = NULL             # <<<<<<<<<<<<<<
- *         self.dd = NULL
- * 
-*/
-  __pyx_v_self->poisson = NULL;
-
-  /* "simulator.pyx":68
- *         self.device = NULL
- *         self.poisson = NULL
- *         self.dd = NULL             # <<<<<<<<<<<<<<
- * 
- *         self.num_points_x = num_points_x
-*/
-  __pyx_v_self->dd = NULL;
-
-  /* "simulator.pyx":70
- *         self.dd = NULL
+  /* "simulator.pyx":301
+ *                   method="DG", mesh_type="Structured", regions=None):
  * 
  *         self.num_points_x = num_points_x             # <<<<<<<<<<<<<<
  *         self.num_points_y = num_points_y
  *         self.method = method
 */
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_x); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_x); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 301, __pyx_L1_error)
   __pyx_v_self->num_points_x = __pyx_t_1;
 
-  /* "simulator.pyx":71
+  /* "simulator.pyx":302
  * 
  *         self.num_points_x = num_points_x
  *         self.num_points_y = num_points_y             # <<<<<<<<<<<<<<
  *         self.method = method
  *         self.mesh_type = mesh_type
 */
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_y); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_y); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 302, __pyx_L1_error)
   __pyx_v_self->num_points_y = __pyx_t_1;
 
-  /* "simulator.pyx":72
+  /* "simulator.pyx":303
  *         self.num_points_x = num_points_x
  *         self.num_points_y = num_points_y
  *         self.method = method             # <<<<<<<<<<<<<<
@@ -5572,14 +11747,14 @@ static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_
 */
   __pyx_t_2 = __pyx_v_method;
   __Pyx_INCREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 303, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->method);
   __Pyx_DECREF(__pyx_v_self->method);
   __pyx_v_self->method = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "simulator.pyx":73
+  /* "simulator.pyx":304
  *         self.num_points_y = num_points_y
  *         self.method = method
  *         self.mesh_type = mesh_type             # <<<<<<<<<<<<<<
@@ -5588,34 +11763,34 @@ static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_
 */
   __pyx_t_2 = __pyx_v_mesh_type;
   __Pyx_INCREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 73, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 304, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->mesh_type);
   __Pyx_DECREF(__pyx_v_self->mesh_type);
   __pyx_v_self->mesh_type = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "simulator.pyx":76
+  /* "simulator.pyx":307
  * 
  *         # Set public attributes
  *         self._num_points_x = num_points_x             # <<<<<<<<<<<<<<
  *         self._num_points_y = num_points_y
  *         self._method = method
 */
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_x); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_x); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 307, __pyx_L1_error)
   __pyx_v_self->_num_points_x = __pyx_t_1;
 
-  /* "simulator.pyx":77
+  /* "simulator.pyx":308
  *         # Set public attributes
  *         self._num_points_x = num_points_x
  *         self._num_points_y = num_points_y             # <<<<<<<<<<<<<<
  *         self._method = method
  *         self._mesh_type = mesh_type
 */
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_y); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_num_points_y); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 308, __pyx_L1_error)
   __pyx_v_self->_num_points_y = __pyx_t_1;
 
-  /* "simulator.pyx":78
+  /* "simulator.pyx":309
  *         self._num_points_x = num_points_x
  *         self._num_points_y = num_points_y
  *         self._method = method             # <<<<<<<<<<<<<<
@@ -5624,627 +11799,261 @@ static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_
 */
   __pyx_t_2 = __pyx_v_method;
   __Pyx_INCREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 78, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 309, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->_method);
   __Pyx_DECREF(__pyx_v_self->_method);
   __pyx_v_self->_method = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "simulator.pyx":79
+  /* "simulator.pyx":310
  *         self._num_points_y = num_points_y
  *         self._method = method
  *         self._mesh_type = mesh_type             # <<<<<<<<<<<<<<
  * 
- *         regions = regions or []
+ *         try:
 */
   __pyx_t_2 = __pyx_v_mesh_type;
   __Pyx_INCREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 79, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 310, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->_mesh_type);
   __Pyx_DECREF(__pyx_v_self->_mesh_type);
   __pyx_v_self->_mesh_type = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "simulator.pyx":81
+  /* "simulator.pyx":312
  *         self._mesh_type = mesh_type
  * 
- *         regions = regions or []             # <<<<<<<<<<<<<<
- *         for r in regions:
- *             c_regions.push_back(r)
-*/
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_regions); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 81, __pyx_L1_error)
-  if (!__pyx_t_3) {
-  } else {
-    __Pyx_INCREF(__pyx_v_regions);
-    __pyx_t_2 = __pyx_v_regions;
-    goto __pyx_L3_bool_binop_done;
-  }
-  __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 81, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_INCREF(__pyx_t_4);
-  __pyx_t_2 = __pyx_t_4;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_L3_bool_binop_done:;
-  __Pyx_DECREF_SET(__pyx_v_regions, __pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "simulator.pyx":82
- * 
- *         regions = regions or []
- *         for r in regions:             # <<<<<<<<<<<<<<
- *             c_regions.push_back(r)
- * 
-*/
-  if (likely(PyList_CheckExact(__pyx_v_regions)) || PyTuple_CheckExact(__pyx_v_regions)) {
-    __pyx_t_2 = __pyx_v_regions; __Pyx_INCREF(__pyx_t_2);
-    __pyx_t_5 = 0;
-    __pyx_t_6 = NULL;
-  } else {
-    __pyx_t_5 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_regions); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 82, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 82, __pyx_L1_error)
-  }
-  for (;;) {
-    if (likely(!__pyx_t_6)) {
-      if (likely(PyList_CheckExact(__pyx_t_2))) {
-        {
-          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_2);
-          #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 82, __pyx_L1_error)
-          #endif
-          if (__pyx_t_5 >= __pyx_temp) break;
-        }
-        __pyx_t_4 = __Pyx_PyList_GetItemRef(__pyx_t_2, __pyx_t_5);
-        ++__pyx_t_5;
-      } else {
-        {
-          Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_2);
-          #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 82, __pyx_L1_error)
-          #endif
-          if (__pyx_t_5 >= __pyx_temp) break;
-        }
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_5));
-        #else
-        __pyx_t_4 = __Pyx_PySequence_ITEM(__pyx_t_2, __pyx_t_5);
-        #endif
-        ++__pyx_t_5;
-      }
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 82, __pyx_L1_error)
-    } else {
-      __pyx_t_4 = __pyx_t_6(__pyx_t_2);
-      if (unlikely(!__pyx_t_4)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 82, __pyx_L1_error)
-          PyErr_Clear();
-        }
-        break;
-      }
-    }
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_XDECREF_SET(__pyx_v_r, __pyx_t_4);
-    __pyx_t_4 = 0;
-
-    /* "simulator.pyx":83
- *         regions = regions or []
- *         for r in regions:
- *             c_regions.push_back(r)             # <<<<<<<<<<<<<<
- * 
- *         try:
-*/
-    __pyx_t_7 = __pyx_convert_map_from_py_std_3a__3a_string__and_double(__pyx_v_r); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 83, __pyx_L1_error)
-    try {
-      __pyx_v_c_regions.push_back(__pyx_t_7);
-    } catch(...) {
-      __Pyx_CppExn2PyErr();
-      __PYX_ERR(0, 83, __pyx_L1_error)
-    }
-
-    /* "simulator.pyx":82
- * 
- *         regions = regions or []
- *         for r in regions:             # <<<<<<<<<<<<<<
- *             c_regions.push_back(r)
- * 
-*/
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "simulator.pyx":85
- *             c_regions.push_back(r)
- * 
  *         try:             # <<<<<<<<<<<<<<
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:
+ *             # Create device using new wrapper
+ *             self._device = Device(extents[0], extents[1])
 */
   {
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
-    __Pyx_ExceptionSave(&__pyx_t_8, &__pyx_t_9, &__pyx_t_10);
-    __Pyx_XGOTREF(__pyx_t_8);
-    __Pyx_XGOTREF(__pyx_t_9);
-    __Pyx_XGOTREF(__pyx_t_10);
+    __Pyx_ExceptionSave(&__pyx_t_3, &__pyx_t_4, &__pyx_t_5);
+    __Pyx_XGOTREF(__pyx_t_3);
+    __Pyx_XGOTREF(__pyx_t_4);
+    __Pyx_XGOTREF(__pyx_t_5);
     /*try:*/ {
 
-      /* "simulator.pyx":87
+      /* "simulator.pyx":314
  *         try:
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:             # <<<<<<<<<<<<<<
- *                 self.device = new Device(extents[0], extents[1], c_regions)
- *             else:
+ *             # Create device using new wrapper
+ *             self._device = Device(extents[0], extents[1])             # <<<<<<<<<<<<<<
+ * 
+ *             # Create solvers using new wrappers
 */
-      __pyx_t_5 = PyObject_Length(__pyx_v_regions); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 87, __pyx_L8_error)
-      __pyx_t_3 = (__pyx_t_5 > 0);
-      if (__pyx_t_3) {
-
-        /* "simulator.pyx":88
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:
- *                 self.device = new Device(extents[0], extents[1], c_regions)             # <<<<<<<<<<<<<<
- *             else:
- *                 self.device = new Device(extents[0], extents[1])
-*/
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_extents, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L8_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_11 = __Pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L8_error)
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_extents, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L8_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_12 = __Pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L8_error)
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        try {
-          __pyx_t_13 = new simulator::Device(__pyx_t_11, __pyx_t_12, __pyx_v_c_regions);
-        } catch(...) {
-          __Pyx_CppExn2PyErr();
-          __PYX_ERR(0, 88, __pyx_L8_error)
-        }
-        __pyx_v_self->device = __pyx_t_13;
-
-        /* "simulator.pyx":87
- *         try:
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:             # <<<<<<<<<<<<<<
- *                 self.device = new Device(extents[0], extents[1], c_regions)
- *             else:
-*/
-        goto __pyx_L14;
+      __pyx_t_6 = NULL;
+      __Pyx_INCREF((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_Device);
+      __pyx_t_7 = ((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_Device); 
+      __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_extents, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 314, __pyx_L3_error)
+      __Pyx_GOTREF(__pyx_t_8);
+      __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_extents, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 314, __pyx_L3_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_10 = 1;
+      {
+        PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_t_8, __pyx_t_9};
+        __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+__pyx_t_10, (3-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 314, __pyx_L3_error)
+        __Pyx_GOTREF((PyObject *)__pyx_t_2);
       }
+      __Pyx_GIVEREF((PyObject *)__pyx_t_2);
+      __Pyx_GOTREF((PyObject *)__pyx_v_self->_device);
+      __Pyx_DECREF((PyObject *)__pyx_v_self->_device);
+      __pyx_v_self->_device = ((struct __pyx_obj_9simulator_Device *)__pyx_t_2);
+      __pyx_t_2 = 0;
 
-      /* "simulator.pyx":90
- *                 self.device = new Device(extents[0], extents[1], c_regions)
- *             else:
- *                 self.device = new Device(extents[0], extents[1])             # <<<<<<<<<<<<<<
+      /* "simulator.pyx":317
  * 
- *             if self.device == NULL:
+ *             # Create solvers using new wrappers
+ *             self._poisson = PoissonSolver(self._device, method, mesh_type)             # <<<<<<<<<<<<<<
+ *             self._dd = DriftDiffusionSolver(self._device, method, mesh_type, 3)
+ * 
 */
-      /*else*/ {
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_extents, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L8_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_12 = __Pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L8_error)
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_extents, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L8_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_11 = __Pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L8_error)
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        try {
-          __pyx_t_13 = new simulator::Device(__pyx_t_12, __pyx_t_11);
-        } catch(...) {
-          __Pyx_CppExn2PyErr();
-          __PYX_ERR(0, 90, __pyx_L8_error)
-        }
-        __pyx_v_self->device = __pyx_t_13;
+      __pyx_t_7 = NULL;
+      __Pyx_INCREF((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver);
+      __pyx_t_9 = ((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver); 
+      __pyx_t_10 = 1;
+      {
+        PyObject *__pyx_callargs[4] = {__pyx_t_7, ((PyObject *)__pyx_v_self->_device), __pyx_v_method, __pyx_v_mesh_type};
+        __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_9, __pyx_callargs+__pyx_t_10, (4-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 317, __pyx_L3_error)
+        __Pyx_GOTREF((PyObject *)__pyx_t_2);
       }
-      __pyx_L14:;
+      __Pyx_GIVEREF((PyObject *)__pyx_t_2);
+      __Pyx_GOTREF((PyObject *)__pyx_v_self->_poisson);
+      __Pyx_DECREF((PyObject *)__pyx_v_self->_poisson);
+      __pyx_v_self->_poisson = ((struct __pyx_obj_9simulator_PoissonSolver *)__pyx_t_2);
+      __pyx_t_2 = 0;
 
-      /* "simulator.pyx":92
- *                 self.device = new Device(extents[0], extents[1])
- * 
- *             if self.device == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create Device")
- * 
-*/
-      __pyx_t_3 = (__pyx_v_self->device == NULL);
-      if (unlikely(__pyx_t_3)) {
-
-        /* "simulator.pyx":93
- * 
- *             if self.device == NULL:
- *                 raise RuntimeError("Failed to create Device")             # <<<<<<<<<<<<<<
- * 
- *             # Use integer constants for enums
-*/
-        __pyx_t_4 = NULL;
-        __Pyx_INCREF(__pyx_builtin_RuntimeError);
-        __pyx_t_14 = __pyx_builtin_RuntimeError; 
-        __pyx_t_15 = 1;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_Device};
-          __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_14, __pyx_callargs+__pyx_t_15, (2-__pyx_t_15) | (__pyx_t_15*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L8_error)
-          __Pyx_GOTREF(__pyx_t_2);
-        }
-        __Pyx_Raise(__pyx_t_2, 0, 0, 0);
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __PYX_ERR(0, 93, __pyx_L8_error)
-
-        /* "simulator.pyx":92
- *                 self.device = new Device(extents[0], extents[1])
- * 
- *             if self.device == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create Device")
- * 
-*/
-      }
-
-      /* "simulator.pyx":96
- * 
- *             # Use integer constants for enums
- *             mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured             # <<<<<<<<<<<<<<
- *             method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
- * 
-*/
-      __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_v_mesh_type, __pyx_mstate_global->__pyx_n_u_Structured, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 96, __pyx_L8_error)
-      if (__pyx_t_3) {
-        __pyx_t_1 = 0;
-      } else {
-        __pyx_t_1 = 1;
-      }
-      __pyx_v_mesh_enum = __pyx_t_1;
-
-      /* "simulator.pyx":97
- *             # Use integer constants for enums
- *             mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured
- *             method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]             # <<<<<<<<<<<<<<
- * 
- *             # Create using C interface with error checking
-*/
-      __pyx_t_2 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L8_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_FDM, __pyx_mstate_global->__pyx_int_0) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_FEM, __pyx_mstate_global->__pyx_int_1) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_FVM, __pyx_mstate_global->__pyx_int_2) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_SEM, __pyx_mstate_global->__pyx_int_3) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_MC, __pyx_mstate_global->__pyx_int_4) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_DG, __pyx_mstate_global->__pyx_int_5) < 0) __PYX_ERR(0, 97, __pyx_L8_error)
-      __pyx_t_14 = __Pyx_PyDict_GetItem(__pyx_t_2, __pyx_v_method); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 97, __pyx_L8_error)
-      __Pyx_GOTREF(__pyx_t_14);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_t_14); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L8_error)
-      __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-      __pyx_v_method_enum = __pyx_t_1;
-
-      /* "simulator.pyx":100
- * 
- *             # Create using C interface with error checking
- *             self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)             # <<<<<<<<<<<<<<
- *             if self.poisson == NULL:
- *                 raise RuntimeError("Failed to create Poisson solver")
-*/
-      __pyx_v_self->poisson = create_poisson(((simulator::Device *)__pyx_v_self->device), __pyx_v_method_enum, __pyx_v_mesh_enum);
-
-      /* "simulator.pyx":101
- *             # Create using C interface with error checking
- *             self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
- *             if self.poisson == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create Poisson solver")
- * 
-*/
-      __pyx_t_3 = (__pyx_v_self->poisson == NULL);
-      if (unlikely(__pyx_t_3)) {
-
-        /* "simulator.pyx":102
- *             self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
- *             if self.poisson == NULL:
- *                 raise RuntimeError("Failed to create Poisson solver")             # <<<<<<<<<<<<<<
- * 
- *             self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
-*/
-        __pyx_t_2 = NULL;
-        __Pyx_INCREF(__pyx_builtin_RuntimeError);
-        __pyx_t_4 = __pyx_builtin_RuntimeError; 
-        __pyx_t_15 = 1;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_Poisson_solver};
-          __pyx_t_14 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+__pyx_t_15, (2-__pyx_t_15) | (__pyx_t_15*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 102, __pyx_L8_error)
-          __Pyx_GOTREF(__pyx_t_14);
-        }
-        __Pyx_Raise(__pyx_t_14, 0, 0, 0);
-        __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-        __PYX_ERR(0, 102, __pyx_L8_error)
-
-        /* "simulator.pyx":101
- *             # Create using C interface with error checking
- *             self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
- *             if self.poisson == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create Poisson solver")
- * 
-*/
-      }
-
-      /* "simulator.pyx":104
- *                 raise RuntimeError("Failed to create Poisson solver")
- * 
- *             self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)             # <<<<<<<<<<<<<<
- *             if self.dd == NULL:
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")
-*/
-      __pyx_v_self->dd = create_drift_diffusion(((simulator::Device *)__pyx_v_self->device), __pyx_v_method_enum, __pyx_v_mesh_enum, 3);
-
-      /* "simulator.pyx":105
- * 
- *             self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
- *             if self.dd == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")
- * 
-*/
-      __pyx_t_3 = (__pyx_v_self->dd == NULL);
-      if (unlikely(__pyx_t_3)) {
-
-        /* "simulator.pyx":106
- *             self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
- *             if self.dd == NULL:
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")             # <<<<<<<<<<<<<<
+      /* "simulator.pyx":318
+ *             # Create solvers using new wrappers
+ *             self._poisson = PoissonSolver(self._device, method, mesh_type)
+ *             self._dd = DriftDiffusionSolver(self._device, method, mesh_type, 3)             # <<<<<<<<<<<<<<
  * 
  *         except Exception as e:
 */
-        __pyx_t_4 = NULL;
-        __Pyx_INCREF(__pyx_builtin_RuntimeError);
-        __pyx_t_2 = __pyx_builtin_RuntimeError; 
-        __pyx_t_15 = 1;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_Failed_to_create_DriftDiffusion};
-          __pyx_t_14 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_15, (2-__pyx_t_15) | (__pyx_t_15*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 106, __pyx_L8_error)
-          __Pyx_GOTREF(__pyx_t_14);
-        }
-        __Pyx_Raise(__pyx_t_14, 0, 0, 0);
-        __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-        __PYX_ERR(0, 106, __pyx_L8_error)
-
-        /* "simulator.pyx":105
- * 
- *             self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
- *             if self.dd == NULL:             # <<<<<<<<<<<<<<
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")
- * 
-*/
+      __pyx_t_9 = NULL;
+      __Pyx_INCREF((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver);
+      __pyx_t_7 = ((PyObject *)__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver); 
+      __pyx_t_10 = 1;
+      {
+        PyObject *__pyx_callargs[5] = {__pyx_t_9, ((PyObject *)__pyx_v_self->_device), __pyx_v_method, __pyx_v_mesh_type, __pyx_mstate_global->__pyx_int_3};
+        __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+__pyx_t_10, (5-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L3_error)
+        __Pyx_GOTREF((PyObject *)__pyx_t_2);
       }
+      __Pyx_GIVEREF((PyObject *)__pyx_t_2);
+      __Pyx_GOTREF((PyObject *)__pyx_v_self->_dd);
+      __Pyx_DECREF((PyObject *)__pyx_v_self->_dd);
+      __pyx_v_self->_dd = ((struct __pyx_obj_9simulator_DriftDiffusionSolver *)__pyx_t_2);
+      __pyx_t_2 = 0;
 
-      /* "simulator.pyx":85
- *             c_regions.push_back(r)
+      /* "simulator.pyx":312
+ *         self._mesh_type = mesh_type
  * 
  *         try:             # <<<<<<<<<<<<<<
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:
+ *             # Create device using new wrapper
+ *             self._device = Device(extents[0], extents[1])
 */
     }
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    goto __pyx_L8_try_end;
+    __pyx_L3_error:;
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-    goto __pyx_L13_try_end;
-    __pyx_L8_error:;
-    __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "simulator.pyx":108
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")
+    /* "simulator.pyx":320
+ *             self._dd = DriftDiffusionSolver(self._device, method, mesh_type, 3)
  * 
  *         except Exception as e:             # <<<<<<<<<<<<<<
- *             # Clean up on error
- *             if self.dd:
+ *             raise RuntimeError(f"Failed to create Simulator: {e}")
+ * 
 */
     __pyx_t_1 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_Exception))));
     if (__pyx_t_1) {
       __Pyx_AddTraceback("simulator.Simulator.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_14, &__pyx_t_2, &__pyx_t_4) < 0) __PYX_ERR(0, 108, __pyx_L10_except_error)
-      __Pyx_XGOTREF(__pyx_t_14);
+      if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_7, &__pyx_t_9) < 0) __PYX_ERR(0, 320, __pyx_L5_except_error)
       __Pyx_XGOTREF(__pyx_t_2);
-      __Pyx_XGOTREF(__pyx_t_4);
-      __Pyx_INCREF(__pyx_t_2);
-      __pyx_v_e = __pyx_t_2;
+      __Pyx_XGOTREF(__pyx_t_7);
+      __Pyx_XGOTREF(__pyx_t_9);
+      __Pyx_INCREF(__pyx_t_7);
+      __pyx_v_e = __pyx_t_7;
       /*try:*/ {
 
-        /* "simulator.pyx":110
- *         except Exception as e:
- *             # Clean up on error
- *             if self.dd:             # <<<<<<<<<<<<<<
- *                 destroy_drift_diffusion(self.dd)
- *                 self.dd = NULL
-*/
-        __pyx_t_3 = (__pyx_v_self->dd != 0);
-        if (__pyx_t_3) {
-
-          /* "simulator.pyx":111
- *             # Clean up on error
- *             if self.dd:
- *                 destroy_drift_diffusion(self.dd)             # <<<<<<<<<<<<<<
- *                 self.dd = NULL
- *             if self.poisson:
-*/
-          destroy_drift_diffusion(__pyx_v_self->dd);
-
-          /* "simulator.pyx":112
- *             if self.dd:
- *                 destroy_drift_diffusion(self.dd)
- *                 self.dd = NULL             # <<<<<<<<<<<<<<
- *             if self.poisson:
- *                 destroy_poisson(self.poisson)
-*/
-          __pyx_v_self->dd = NULL;
-
-          /* "simulator.pyx":110
- *         except Exception as e:
- *             # Clean up on error
- *             if self.dd:             # <<<<<<<<<<<<<<
- *                 destroy_drift_diffusion(self.dd)
- *                 self.dd = NULL
-*/
-        }
-
-        /* "simulator.pyx":113
- *                 destroy_drift_diffusion(self.dd)
- *                 self.dd = NULL
- *             if self.poisson:             # <<<<<<<<<<<<<<
- *                 destroy_poisson(self.poisson)
- *                 self.poisson = NULL
-*/
-        __pyx_t_3 = (__pyx_v_self->poisson != 0);
-        if (__pyx_t_3) {
-
-          /* "simulator.pyx":114
- *                 self.dd = NULL
- *             if self.poisson:
- *                 destroy_poisson(self.poisson)             # <<<<<<<<<<<<<<
- *                 self.poisson = NULL
- *             if self.device:
-*/
-          destroy_poisson(__pyx_v_self->poisson);
-
-          /* "simulator.pyx":115
- *             if self.poisson:
- *                 destroy_poisson(self.poisson)
- *                 self.poisson = NULL             # <<<<<<<<<<<<<<
- *             if self.device:
- *                 del self.device
-*/
-          __pyx_v_self->poisson = NULL;
-
-          /* "simulator.pyx":113
- *                 destroy_drift_diffusion(self.dd)
- *                 self.dd = NULL
- *             if self.poisson:             # <<<<<<<<<<<<<<
- *                 destroy_poisson(self.poisson)
- *                 self.poisson = NULL
-*/
-        }
-
-        /* "simulator.pyx":116
- *                 destroy_poisson(self.poisson)
- *                 self.poisson = NULL
- *             if self.device:             # <<<<<<<<<<<<<<
- *                 del self.device
- *                 self.device = NULL
-*/
-        __pyx_t_3 = (__pyx_v_self->device != 0);
-        if (__pyx_t_3) {
-
-          /* "simulator.pyx":117
- *                 self.poisson = NULL
- *             if self.device:
- *                 del self.device             # <<<<<<<<<<<<<<
- *                 self.device = NULL
- *             raise
-*/
-          delete __pyx_v_self->device;
-
-          /* "simulator.pyx":118
- *             if self.device:
- *                 del self.device
- *                 self.device = NULL             # <<<<<<<<<<<<<<
- *             raise
+        /* "simulator.pyx":321
  * 
-*/
-          __pyx_v_self->device = NULL;
-
-          /* "simulator.pyx":116
- *                 destroy_poisson(self.poisson)
- *                 self.poisson = NULL
- *             if self.device:             # <<<<<<<<<<<<<<
- *                 del self.device
- *                 self.device = NULL
-*/
-        }
-
-        /* "simulator.pyx":119
- *                 del self.device
- *                 self.device = NULL
- *             raise             # <<<<<<<<<<<<<<
+ *         except Exception as e:
+ *             raise RuntimeError(f"Failed to create Simulator: {e}")             # <<<<<<<<<<<<<<
  * 
  *     def __dealloc__(self):
 */
-        __Pyx_GIVEREF(__pyx_t_14);
-        __Pyx_GIVEREF(__pyx_t_2);
-        __Pyx_XGIVEREF(__pyx_t_4);
-        __Pyx_ErrRestoreWithState(__pyx_t_14, __pyx_t_2, __pyx_t_4);
-        __pyx_t_14 = 0;  __pyx_t_2 = 0;  __pyx_t_4 = 0; 
-        __PYX_ERR(0, 119, __pyx_L23_error)
+        __pyx_t_6 = NULL;
+        __Pyx_INCREF(__pyx_builtin_RuntimeError);
+        __pyx_t_11 = __pyx_builtin_RuntimeError; 
+        __pyx_t_12 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 321, __pyx_L14_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_t_13 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Failed_to_create_Simulator, __pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 321, __pyx_L14_error)
+        __Pyx_GOTREF(__pyx_t_13);
+        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __pyx_t_10 = 1;
+        {
+          PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_t_13};
+          __pyx_t_8 = __Pyx_PyObject_FastCall(__pyx_t_11, __pyx_callargs+__pyx_t_10, (2-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+          __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 321, __pyx_L14_error)
+          __Pyx_GOTREF(__pyx_t_8);
+        }
+        __Pyx_Raise(__pyx_t_8, 0, 0, 0);
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __PYX_ERR(0, 321, __pyx_L14_error)
       }
 
-      /* "simulator.pyx":108
- *                 raise RuntimeError("Failed to create DriftDiffusion solver")
+      /* "simulator.pyx":320
+ *             self._dd = DriftDiffusionSolver(self._device, method, mesh_type, 3)
  * 
  *         except Exception as e:             # <<<<<<<<<<<<<<
- *             # Clean up on error
- *             if self.dd:
+ *             raise RuntimeError(f"Failed to create Simulator: {e}")
+ * 
 */
       /*finally:*/ {
-        __pyx_L23_error:;
+        __pyx_L14_error:;
         /*exception exit:*/{
           __Pyx_PyThreadState_declare
           __Pyx_PyThreadState_assign
-          __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0; __pyx_t_23 = 0;
-           __Pyx_ExceptionSwap(&__pyx_t_21, &__pyx_t_22, &__pyx_t_23);
-          if ( unlikely(__Pyx_GetException(&__pyx_t_18, &__pyx_t_19, &__pyx_t_20) < 0)) __Pyx_ErrFetch(&__pyx_t_18, &__pyx_t_19, &__pyx_t_20);
+          __pyx_t_16 = 0; __pyx_t_17 = 0; __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0;
+          __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+          __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+          __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
+           __Pyx_ExceptionSwap(&__pyx_t_19, &__pyx_t_20, &__pyx_t_21);
+          if ( unlikely(__Pyx_GetException(&__pyx_t_16, &__pyx_t_17, &__pyx_t_18) < 0)) __Pyx_ErrFetch(&__pyx_t_16, &__pyx_t_17, &__pyx_t_18);
+          __Pyx_XGOTREF(__pyx_t_16);
+          __Pyx_XGOTREF(__pyx_t_17);
           __Pyx_XGOTREF(__pyx_t_18);
           __Pyx_XGOTREF(__pyx_t_19);
           __Pyx_XGOTREF(__pyx_t_20);
           __Pyx_XGOTREF(__pyx_t_21);
-          __Pyx_XGOTREF(__pyx_t_22);
-          __Pyx_XGOTREF(__pyx_t_23);
-          __pyx_t_1 = __pyx_lineno; __pyx_t_16 = __pyx_clineno; __pyx_t_17 = __pyx_filename;
+          __pyx_t_1 = __pyx_lineno; __pyx_t_14 = __pyx_clineno; __pyx_t_15 = __pyx_filename;
           {
             __Pyx_DECREF(__pyx_v_e); __pyx_v_e = 0;
           }
-          __Pyx_XGIVEREF(__pyx_t_21);
-          __Pyx_XGIVEREF(__pyx_t_22);
-          __Pyx_XGIVEREF(__pyx_t_23);
-          __Pyx_ExceptionReset(__pyx_t_21, __pyx_t_22, __pyx_t_23);
-          __Pyx_XGIVEREF(__pyx_t_18);
           __Pyx_XGIVEREF(__pyx_t_19);
           __Pyx_XGIVEREF(__pyx_t_20);
-          __Pyx_ErrRestore(__pyx_t_18, __pyx_t_19, __pyx_t_20);
-          __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0; __pyx_t_23 = 0;
-          __pyx_lineno = __pyx_t_1; __pyx_clineno = __pyx_t_16; __pyx_filename = __pyx_t_17;
-          goto __pyx_L10_except_error;
+          __Pyx_XGIVEREF(__pyx_t_21);
+          __Pyx_ExceptionReset(__pyx_t_19, __pyx_t_20, __pyx_t_21);
+          __Pyx_XGIVEREF(__pyx_t_16);
+          __Pyx_XGIVEREF(__pyx_t_17);
+          __Pyx_XGIVEREF(__pyx_t_18);
+          __Pyx_ErrRestore(__pyx_t_16, __pyx_t_17, __pyx_t_18);
+          __pyx_t_16 = 0; __pyx_t_17 = 0; __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0;
+          __pyx_lineno = __pyx_t_1; __pyx_clineno = __pyx_t_14; __pyx_filename = __pyx_t_15;
+          goto __pyx_L5_except_error;
         }
       }
     }
-    goto __pyx_L10_except_error;
+    goto __pyx_L5_except_error;
 
-    /* "simulator.pyx":85
- *             c_regions.push_back(r)
+    /* "simulator.pyx":312
+ *         self._mesh_type = mesh_type
  * 
  *         try:             # <<<<<<<<<<<<<<
- *             # Create C++ objects with error checking
- *             if len(regions) > 0:
+ *             # Create device using new wrapper
+ *             self._device = Device(extents[0], extents[1])
 */
-    __pyx_L10_except_error:;
-    __Pyx_XGIVEREF(__pyx_t_8);
-    __Pyx_XGIVEREF(__pyx_t_9);
-    __Pyx_XGIVEREF(__pyx_t_10);
-    __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_9, __pyx_t_10);
+    __pyx_L5_except_error:;
+    __Pyx_XGIVEREF(__pyx_t_3);
+    __Pyx_XGIVEREF(__pyx_t_4);
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_ExceptionReset(__pyx_t_3, __pyx_t_4, __pyx_t_5);
     goto __pyx_L1_error;
-    __pyx_L13_try_end:;
+    __pyx_L8_try_end:;
   }
 
-  /* "simulator.pyx":59
+  /* "simulator.pyx":298
  *     cdef public int _num_points_y
  * 
  *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,             # <<<<<<<<<<<<<<
  *                   method="DG", mesh_type="Structured", regions=None):
- *         # Declare variables at the beginning
+ * 
 */
 
   /* function exit code */
@@ -6252,24 +12061,27 @@ static int __pyx_pf_9simulator_9Simulator___cinit__(struct __pyx_obj_9simulator_
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_14);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_11);
+  __Pyx_XDECREF(__pyx_t_12);
+  __Pyx_XDECREF(__pyx_t_13);
   __Pyx_AddTraceback("simulator.Simulator.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_r);
   __Pyx_XDECREF(__pyx_v_e);
-  __Pyx_XDECREF(__pyx_v_regions);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "simulator.pyx":121
- *             raise
+/* "simulator.pyx":323
+ *             raise RuntimeError(f"Failed to create Simulator: {e}")
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
- *         if self.dd:
- *             destroy_drift_diffusion(self.dd)
+ *         # Cleanup handled by individual wrapper classes
+ *         pass
 */
 
 /* Python wrapper */
@@ -6285,91 +12097,17 @@ static void __pyx_pw_9simulator_9Simulator_3__dealloc__(PyObject *__pyx_v_self) 
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_pf_9simulator_9Simulator_2__dealloc__(struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
-  int __pyx_t_1;
-
-  /* "simulator.pyx":122
- * 
- *     def __dealloc__(self):
- *         if self.dd:             # <<<<<<<<<<<<<<
- *             destroy_drift_diffusion(self.dd)
- *         if self.poisson:
-*/
-  __pyx_t_1 = (__pyx_v_self->dd != 0);
-  if (__pyx_t_1) {
-
-    /* "simulator.pyx":123
- *     def __dealloc__(self):
- *         if self.dd:
- *             destroy_drift_diffusion(self.dd)             # <<<<<<<<<<<<<<
- *         if self.poisson:
- *             destroy_poisson(self.poisson)
-*/
-    destroy_drift_diffusion(__pyx_v_self->dd);
-
-    /* "simulator.pyx":122
- * 
- *     def __dealloc__(self):
- *         if self.dd:             # <<<<<<<<<<<<<<
- *             destroy_drift_diffusion(self.dd)
- *         if self.poisson:
-*/
-  }
-
-  /* "simulator.pyx":124
- *         if self.dd:
- *             destroy_drift_diffusion(self.dd)
- *         if self.poisson:             # <<<<<<<<<<<<<<
- *             destroy_poisson(self.poisson)
- *         del self.device
-*/
-  __pyx_t_1 = (__pyx_v_self->poisson != 0);
-  if (__pyx_t_1) {
-
-    /* "simulator.pyx":125
- *             destroy_drift_diffusion(self.dd)
- *         if self.poisson:
- *             destroy_poisson(self.poisson)             # <<<<<<<<<<<<<<
- *         del self.device
- * 
-*/
-    destroy_poisson(__pyx_v_self->poisson);
-
-    /* "simulator.pyx":124
- *         if self.dd:
- *             destroy_drift_diffusion(self.dd)
- *         if self.poisson:             # <<<<<<<<<<<<<<
- *             destroy_poisson(self.poisson)
- *         del self.device
-*/
-  }
-
-  /* "simulator.pyx":126
- *         if self.poisson:
- *             destroy_poisson(self.poisson)
- *         del self.device             # <<<<<<<<<<<<<<
- * 
- *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
-*/
-  delete __pyx_v_self->device;
-
-  /* "simulator.pyx":121
- *             raise
- * 
- *     def __dealloc__(self):             # <<<<<<<<<<<<<<
- *         if self.dd:
- *             destroy_drift_diffusion(self.dd)
-*/
+static void __pyx_pf_9simulator_9Simulator_2__dealloc__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
 
   /* function exit code */
 }
 
-/* "simulator.pyx":128
- *         del self.device
+/* "simulator.pyx":327
+ *         pass
  * 
  *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
- *         if Nd.size != Na.size:
- *             raise ValueError("Nd and Na arrays must have the same size")
+ *         """Set doping concentrations."""
+ *         self._dd.set_doping(Nd, Na)
 */
 
 /* Python wrapper */
@@ -6380,7 +12118,8 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_5set_doping = {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_5set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_4set_doping, "Set doping concentrations.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_5set_doping = {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_5set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_4set_doping};
 static PyObject *__pyx_pw_9simulator_9Simulator_5set_doping(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
@@ -6412,39 +12151,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_Nd,&__pyx_mstate_global->__pyx_n_u_Na,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 128, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 327, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 128, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 327, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 128, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 327, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_doping", 0) < 0) __PYX_ERR(0, 128, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_doping", 0) < 0) __PYX_ERR(0, 327, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, i); __PYX_ERR(0, 128, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, i); __PYX_ERR(0, 327, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 128, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 327, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 128, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 327, __pyx_L3_error)
     }
     __pyx_v_Nd = ((PyArrayObject *)values[0]);
     __pyx_v_Na = ((PyArrayObject *)values[1]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 128, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_doping", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 327, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6455,8 +12194,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Nd), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Nd", 0))) __PYX_ERR(0, 128, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Na), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Na", 0))) __PYX_ERR(0, 128, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Nd), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Nd", 0))) __PYX_ERR(0, 327, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Na), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Na", 0))) __PYX_ERR(0, 327, __pyx_L1_error)
   __pyx_r = __pyx_pf_9simulator_9Simulator_4set_doping(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self), __pyx_v_Nd, __pyx_v_Na);
 
   /* function exit code */
@@ -6477,21 +12216,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 }
 
 static PyObject *__pyx_pf_9simulator_9Simulator_4set_doping(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyArrayObject *__pyx_v_Nd, PyArrayObject *__pyx_v_Na) {
-  int __pyx_v_result;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_Na;
   __Pyx_Buffer __pyx_pybuffer_Na;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_Nd;
   __Pyx_Buffer __pyx_pybuffer_Nd;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
+  PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  size_t __pyx_t_5;
-  Py_ssize_t __pyx_t_6;
-  int __pyx_t_7;
-  Py_ssize_t __pyx_t_8;
+  size_t __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6506,143 +12239,48 @@ static PyObject *__pyx_pf_9simulator_9Simulator_4set_doping(struct __pyx_obj_9si
   __pyx_pybuffernd_Na.rcbuffer = &__pyx_pybuffer_Na;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer, (PyObject*)__pyx_v_Nd, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 128, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Nd.rcbuffer->pybuffer, (PyObject*)__pyx_v_Nd, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 327, __pyx_L1_error)
   }
   __pyx_pybuffernd_Nd.diminfo[0].strides = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Nd.diminfo[0].shape = __pyx_pybuffernd_Nd.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Na.rcbuffer->pybuffer, (PyObject*)__pyx_v_Na, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 128, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Na.rcbuffer->pybuffer, (PyObject*)__pyx_v_Na, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 327, __pyx_L1_error)
   }
   __pyx_pybuffernd_Na.diminfo[0].strides = __pyx_pybuffernd_Na.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Na.diminfo[0].shape = __pyx_pybuffernd_Na.rcbuffer->pybuffer.shape[0];
 
-  /* "simulator.pyx":129
- * 
+  /* "simulator.pyx":329
  *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
- *         if Nd.size != Na.size:             # <<<<<<<<<<<<<<
- *             raise ValueError("Nd and Na arrays must have the same size")
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
-*/
-  __pyx_t_1 = (__pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Nd)) != __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Na)));
-  if (unlikely(__pyx_t_1)) {
-
-    /* "simulator.pyx":130
- *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
- *         if Nd.size != Na.size:
- *             raise ValueError("Nd and Na arrays must have the same size")             # <<<<<<<<<<<<<<
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
- *         if result != 0:
-*/
-    __pyx_t_3 = NULL;
-    __Pyx_INCREF(__pyx_builtin_ValueError);
-    __pyx_t_4 = __pyx_builtin_ValueError; 
-    __pyx_t_5 = 1;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_kp_u_Nd_and_Na_arrays_must_have_the_s};
-      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 130, __pyx_L1_error)
-
-    /* "simulator.pyx":129
- * 
- *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
- *         if Nd.size != Na.size:             # <<<<<<<<<<<<<<
- *             raise ValueError("Nd and Na arrays must have the same size")
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
-*/
-  }
-
-  /* "simulator.pyx":131
- *         if Nd.size != Na.size:
- *             raise ValueError("Nd and Na arrays must have the same size")
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)             # <<<<<<<<<<<<<<
- *         if result != 0:
- *             raise RuntimeError("Failed to set doping")
-*/
-  __pyx_t_6 = 0;
-  __pyx_t_7 = -1;
-  if (__pyx_t_6 < 0) {
-    __pyx_t_6 += __pyx_pybuffernd_Nd.diminfo[0].shape;
-    if (unlikely(__pyx_t_6 < 0)) __pyx_t_7 = 0;
-  } else if (unlikely(__pyx_t_6 >= __pyx_pybuffernd_Nd.diminfo[0].shape)) __pyx_t_7 = 0;
-  if (unlikely(__pyx_t_7 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 131, __pyx_L1_error)
-  }
-  __pyx_t_8 = 0;
-  __pyx_t_7 = -1;
-  if (__pyx_t_8 < 0) {
-    __pyx_t_8 += __pyx_pybuffernd_Na.diminfo[0].shape;
-    if (unlikely(__pyx_t_8 < 0)) __pyx_t_7 = 0;
-  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_Na.diminfo[0].shape)) __pyx_t_7 = 0;
-  if (unlikely(__pyx_t_7 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 131, __pyx_L1_error)
-  }
-  __pyx_v_result = drift_diffusion_set_doping(__pyx_v_self->dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Nd.rcbuffer->pybuffer.buf, __pyx_t_6, __pyx_pybuffernd_Nd.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Na.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_Na.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Nd)));
-
-  /* "simulator.pyx":132
- *             raise ValueError("Nd and Na arrays must have the same size")
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Failed to set doping")
- * 
-*/
-  __pyx_t_1 = (__pyx_v_result != 0);
-  if (unlikely(__pyx_t_1)) {
-
-    /* "simulator.pyx":133
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
- *         if result != 0:
- *             raise RuntimeError("Failed to set doping")             # <<<<<<<<<<<<<<
+ *         """Set doping concentrations."""
+ *         self._dd.set_doping(Nd, Na)             # <<<<<<<<<<<<<<
  * 
  *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
 */
-    __pyx_t_4 = NULL;
-    __Pyx_INCREF(__pyx_builtin_RuntimeError);
-    __pyx_t_3 = __pyx_builtin_RuntimeError; 
-    __pyx_t_5 = 1;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_Failed_to_set_doping};
-      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 133, __pyx_L1_error)
-
-    /* "simulator.pyx":132
- *             raise ValueError("Nd and Na arrays must have the same size")
- *         cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Failed to set doping")
- * 
-*/
+  __pyx_t_2 = ((PyObject *)__pyx_v_self->_dd);
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[3] = {__pyx_t_2, ((PyObject *)__pyx_v_Nd), ((PyObject *)__pyx_v_Na)};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_set_doping, __pyx_callargs+__pyx_t_3, (3-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 329, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "simulator.pyx":128
- *         del self.device
+  /* "simulator.pyx":327
+ *         pass
  * 
  *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
- *         if Nd.size != Na.size:
- *             raise ValueError("Nd and Na arrays must have the same size")
+ *         """Set doping concentrations."""
+ *         self._dd.set_doping(Nd, Na)
 */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
   { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
@@ -6662,12 +12300,12 @@ static PyObject *__pyx_pf_9simulator_9Simulator_4set_doping(struct __pyx_obj_9si
   return __pyx_r;
 }
 
-/* "simulator.pyx":135
- *             raise RuntimeError("Failed to set doping")
+/* "simulator.pyx":331
+ *         self._dd.set_doping(Nd, Na)
  * 
  *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:
+ *         """Set trap energy levels."""
+ *         self._dd.set_trap_level(Et)
 */
 
 /* Python wrapper */
@@ -6678,7 +12316,8 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_7set_trap_level = {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_7set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_6set_trap_level, "Set trap energy levels.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_7set_trap_level = {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_7set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_6set_trap_level};
 static PyObject *__pyx_pw_9simulator_9Simulator_7set_trap_level(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
@@ -6709,32 +12348,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_Et,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 135, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 331, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 135, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 331, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_trap_level", 0) < 0) __PYX_ERR(0, 135, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_trap_level", 0) < 0) __PYX_ERR(0, 331, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, i); __PYX_ERR(0, 135, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, i); __PYX_ERR(0, 331, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 135, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 331, __pyx_L3_error)
     }
     __pyx_v_Et = ((PyArrayObject *)values[0]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 135, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_trap_level", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 331, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6745,7 +12384,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Et), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Et", 0))) __PYX_ERR(0, 135, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Et), __pyx_mstate_global->__pyx_ptype_5numpy_ndarray, 1, "Et", 0))) __PYX_ERR(0, 331, __pyx_L1_error)
   __pyx_r = __pyx_pf_9simulator_9Simulator_6set_trap_level(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self), __pyx_v_Et);
 
   /* function exit code */
@@ -6766,18 +12405,13 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 }
 
 static PyObject *__pyx_pf_9simulator_9Simulator_6set_trap_level(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyArrayObject *__pyx_v_Et) {
-  int __pyx_v_result;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_Et;
   __Pyx_Buffer __pyx_pybuffer_Et;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  Py_ssize_t __pyx_t_1;
-  int __pyx_t_2;
-  int __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  size_t __pyx_t_7;
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  size_t __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6788,86 +12422,43 @@ static PyObject *__pyx_pf_9simulator_9Simulator_6set_trap_level(struct __pyx_obj
   __pyx_pybuffernd_Et.rcbuffer = &__pyx_pybuffer_Et;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Et.rcbuffer->pybuffer, (PyObject*)__pyx_v_Et, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 135, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Et.rcbuffer->pybuffer, (PyObject*)__pyx_v_Et, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 331, __pyx_L1_error)
   }
   __pyx_pybuffernd_Et.diminfo[0].strides = __pyx_pybuffernd_Et.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Et.diminfo[0].shape = __pyx_pybuffernd_Et.rcbuffer->pybuffer.shape[0];
 
-  /* "simulator.pyx":136
- * 
+  /* "simulator.pyx":333
  *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)             # <<<<<<<<<<<<<<
- *         if result != 0:
- *             raise RuntimeError("Failed to set trap level")
-*/
-  __pyx_t_1 = 0;
-  __pyx_t_2 = -1;
-  if (__pyx_t_1 < 0) {
-    __pyx_t_1 += __pyx_pybuffernd_Et.diminfo[0].shape;
-    if (unlikely(__pyx_t_1 < 0)) __pyx_t_2 = 0;
-  } else if (unlikely(__pyx_t_1 >= __pyx_pybuffernd_Et.diminfo[0].shape)) __pyx_t_2 = 0;
-  if (unlikely(__pyx_t_2 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_2);
-    __PYX_ERR(0, 136, __pyx_L1_error)
-  }
-  __pyx_v_result = drift_diffusion_set_trap_level(__pyx_v_self->dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Et.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_Et.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_Et)));
-
-  /* "simulator.pyx":137
- *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Failed to set trap level")
- * 
-*/
-  __pyx_t_3 = (__pyx_v_result != 0);
-  if (unlikely(__pyx_t_3)) {
-
-    /* "simulator.pyx":138
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:
- *             raise RuntimeError("Failed to set trap level")             # <<<<<<<<<<<<<<
+ *         """Set trap energy levels."""
+ *         self._dd.set_trap_level(Et)             # <<<<<<<<<<<<<<
  * 
  *     def solve_poisson(self, bc):
 */
-    __pyx_t_5 = NULL;
-    __Pyx_INCREF(__pyx_builtin_RuntimeError);
-    __pyx_t_6 = __pyx_builtin_RuntimeError; 
-    __pyx_t_7 = 1;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Failed_to_set_trap_level};
-      __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-    }
-    __Pyx_Raise(__pyx_t_4, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __PYX_ERR(0, 138, __pyx_L1_error)
-
-    /* "simulator.pyx":137
- *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Failed to set trap level")
- * 
-*/
+  __pyx_t_2 = ((PyObject *)__pyx_v_self->_dd);
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, ((PyObject *)__pyx_v_Et)};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_set_trap_level, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 333, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "simulator.pyx":135
- *             raise RuntimeError("Failed to set doping")
+  /* "simulator.pyx":331
+ *         self._dd.set_doping(Nd, Na)
  * 
  *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:
+ *         """Set trap energy levels."""
+ *         self._dd.set_trap_level(Et)
 */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
@@ -6885,12 +12476,12 @@ static PyObject *__pyx_pf_9simulator_9Simulator_6set_trap_level(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "simulator.pyx":140
- *             raise RuntimeError("Failed to set trap level")
+/* "simulator.pyx":335
+ *         self._dd.set_trap_level(Et)
  * 
  *     def solve_poisson(self, bc):             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
+ *         """Solve Poisson equation."""
+ *         return self._poisson.solve(bc)
 */
 
 /* Python wrapper */
@@ -6901,7 +12492,8 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_9solve_poisson = {"solve_poisson", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_9solve_poisson, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_8solve_poisson, "Solve Poisson equation.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_9solve_poisson = {"solve_poisson", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_9solve_poisson, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_8solve_poisson};
 static PyObject *__pyx_pw_9simulator_9Simulator_9solve_poisson(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
@@ -6932,32 +12524,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_bc,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 140, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 335, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 140, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 335, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve_poisson", 0) < 0) __PYX_ERR(0, 140, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve_poisson", 0) < 0) __PYX_ERR(0, 335, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve_poisson", 1, 1, 1, i); __PYX_ERR(0, 140, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve_poisson", 1, 1, 1, i); __PYX_ERR(0, 335, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 140, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 335, __pyx_L3_error)
     }
     __pyx_v_bc = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("solve_poisson", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 140, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("solve_poisson", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 335, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6979,278 +12571,64 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 }
 
 static PyObject *__pyx_pf_9simulator_9Simulator_8solve_poisson(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_bc) {
-  PyArrayObject *__pyx_v_bc_array = 0;
-  PyArrayObject *__pyx_v_V = 0;
-  int __pyx_v_result;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_V;
-  __Pyx_Buffer __pyx_pybuffer_V;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_bc_array;
-  __Pyx_Buffer __pyx_pybuffer_bc_array;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  size_t __pyx_t_6;
-  PyObject *__pyx_t_7 = NULL;
-  Py_ssize_t __pyx_t_8;
-  int __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
-  int __pyx_t_11;
+  size_t __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("solve_poisson", 0);
-  __pyx_pybuffer_bc_array.pybuffer.buf = NULL;
-  __pyx_pybuffer_bc_array.refcount = 0;
-  __pyx_pybuffernd_bc_array.data = NULL;
-  __pyx_pybuffernd_bc_array.rcbuffer = &__pyx_pybuffer_bc_array;
-  __pyx_pybuffer_V.pybuffer.buf = NULL;
-  __pyx_pybuffer_V.refcount = 0;
-  __pyx_pybuffernd_V.data = NULL;
-  __pyx_pybuffernd_V.rcbuffer = &__pyx_pybuffer_V;
 
-  /* "simulator.pyx":141
- * 
+  /* "simulator.pyx":337
  *     def solve_poisson(self, bc):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
-*/
-  __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_4))) {
-    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
-    assert(__pyx_t_2);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
-    __Pyx_INCREF(__pyx_t_2);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_bc};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 141, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_bc_array = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 141, __pyx_L1_error)
-    } else {__pyx_pybuffernd_bc_array.diminfo[0].strides = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_bc_array.diminfo[0].shape = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_bc_array = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":142
- *     def solve_poisson(self, bc):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
- *         if result != 0:
-*/
-  __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyLong_From_int((__pyx_v_self->num_points_x * __pyx_v_self->num_points_y)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-    assert(__pyx_t_4);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
-    __Pyx_INCREF(__pyx_t_4);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_3};
-    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 142, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_V.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_V = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_V.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 142, __pyx_L1_error)
-    } else {__pyx_pybuffernd_V.diminfo[0].strides = __pyx_pybuffernd_V.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_V.diminfo[0].shape = __pyx_pybuffernd_V.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_V = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":143
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)             # <<<<<<<<<<<<<<
- *         if result != 0:
- *             raise RuntimeError("Poisson solve failed")
-*/
-  __pyx_t_8 = 0;
-  __pyx_t_9 = -1;
-  if (__pyx_t_8 < 0) {
-    __pyx_t_8 += __pyx_pybuffernd_bc_array.diminfo[0].shape;
-    if (unlikely(__pyx_t_8 < 0)) __pyx_t_9 = 0;
-  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_bc_array.diminfo[0].shape)) __pyx_t_9 = 0;
-  if (unlikely(__pyx_t_9 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_9);
-    __PYX_ERR(0, 143, __pyx_L1_error)
-  }
-  __pyx_t_10 = 0;
-  __pyx_t_9 = -1;
-  if (__pyx_t_10 < 0) {
-    __pyx_t_10 += __pyx_pybuffernd_V.diminfo[0].shape;
-    if (unlikely(__pyx_t_10 < 0)) __pyx_t_9 = 0;
-  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_V.diminfo[0].shape)) __pyx_t_9 = 0;
-  if (unlikely(__pyx_t_9 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_9);
-    __PYX_ERR(0, 143, __pyx_L1_error)
-  }
-  __pyx_v_result = poisson_solve_2d(__pyx_v_self->poisson, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_bc_array.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_bc_array)), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_V.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_V.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_V)));
-
-  /* "simulator.pyx":144
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Poisson solve failed")
- *         return V
-*/
-  __pyx_t_11 = (__pyx_v_result != 0);
-  if (unlikely(__pyx_t_11)) {
-
-    /* "simulator.pyx":145
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
- *         if result != 0:
- *             raise RuntimeError("Poisson solve failed")             # <<<<<<<<<<<<<<
- *         return V
- * 
-*/
-    __pyx_t_5 = NULL;
-    __Pyx_INCREF(__pyx_builtin_RuntimeError);
-    __pyx_t_2 = __pyx_builtin_RuntimeError; 
-    __pyx_t_6 = 1;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Poisson_solve_failed};
-      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-    }
-    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 145, __pyx_L1_error)
-
-    /* "simulator.pyx":144
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
- *         cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Poisson solve failed")
- *         return V
-*/
-  }
-
-  /* "simulator.pyx":146
- *         if result != 0:
- *             raise RuntimeError("Poisson solve failed")
- *         return V             # <<<<<<<<<<<<<<
+ *         """Solve Poisson equation."""
+ *         return self._poisson.solve(bc)             # <<<<<<<<<<<<<<
  * 
  *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,
 */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_INCREF((PyObject *)__pyx_v_V);
-  __pyx_r = ((PyObject *)__pyx_v_V);
+  __pyx_t_2 = ((PyObject *)__pyx_v_self->_poisson);
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_v_bc};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_solve, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 337, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "simulator.pyx":140
- *             raise RuntimeError("Failed to set trap level")
+  /* "simulator.pyx":335
+ *         self._dd.set_trap_level(Et)
  * 
  *     def solve_poisson(self, bc):             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
+ *         """Solve Poisson equation."""
+ *         return self._poisson.solve(bc)
 */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_7);
-  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
-  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("simulator.Simulator.solve_poisson", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
-  goto __pyx_L2;
   __pyx_L0:;
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
-  __pyx_L2:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_bc_array);
-  __Pyx_XDECREF((PyObject *)__pyx_v_V);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "simulator.pyx":148
- *         return V
+/* "simulator.pyx":339
+ *         return self._poisson.solve(bc)
  * 
  *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,             # <<<<<<<<<<<<<<
  *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         """Solve drift-diffusion equations."""
 */
 
 /* Python wrapper */
@@ -7261,7 +12639,8 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_11solve_drift_diffusion = {"solve_drift_diffusion", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_10solve_drift_diffusion, "Solve drift-diffusion equations.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_11solve_drift_diffusion = {"solve_drift_diffusion", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_10solve_drift_diffusion};
 static PyObject *__pyx_pw_9simulator_9Simulator_11solve_drift_diffusion(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
@@ -7297,71 +12676,71 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_bc,&__pyx_mstate_global->__pyx_n_u_Vg,&__pyx_mstate_global->__pyx_n_u_max_steps,&__pyx_mstate_global->__pyx_n_u_use_amr,&__pyx_mstate_global->__pyx_n_u_poisson_max_iter,&__pyx_mstate_global->__pyx_n_u_poisson_tol,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 148, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 339, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve_drift_diffusion", 0) < 0) __PYX_ERR(0, 148, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "solve_drift_diffusion", 0) < 0) __PYX_ERR(0, 339, __pyx_L3_error)
       if (!values[1]) values[1] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_float_0_0));
       if (!values[2]) values[2] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_int_100));
       if (!values[3]) values[3] = __Pyx_NewRef(((PyObject *)Py_False));
       if (!values[4]) values[4] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_int_50));
       if (!values[5]) values[5] = __Pyx_NewRef(((PyObject *)__pyx_mstate_global->__pyx_float_1eneg_6));
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve_drift_diffusion", 0, 1, 6, i); __PYX_ERR(0, 148, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("solve_drift_diffusion", 0, 1, 6, i); __PYX_ERR(0, 339, __pyx_L3_error) }
       }
     } else {
       switch (__pyx_nargs) {
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 339, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 339, __pyx_L3_error)
         break;
         default: goto __pyx_L5_argtuple_error;
       }
@@ -7380,7 +12759,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("solve_drift_diffusion", 0, 1, 6, __pyx_nargs); __PYX_ERR(0, 148, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("solve_drift_diffusion", 0, 1, 6, __pyx_nargs); __PYX_ERR(0, 339, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7402,694 +12781,308 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 }
 
 static PyObject *__pyx_pf_9simulator_9Simulator_10solve_drift_diffusion(struct __pyx_obj_9simulator_Simulator *__pyx_v_self, PyObject *__pyx_v_bc, PyObject *__pyx_v_Vg, PyObject *__pyx_v_max_steps, PyObject *__pyx_v_use_amr, PyObject *__pyx_v_poisson_max_iter, PyObject *__pyx_v_poisson_tol) {
-  PyArrayObject *__pyx_v_bc_array = 0;
-  int __pyx_v_size;
-  PyArrayObject *__pyx_v_V = 0;
-  PyArrayObject *__pyx_v_n = 0;
-  PyArrayObject *__pyx_v_p = 0;
-  PyArrayObject *__pyx_v_Jn = 0;
-  PyArrayObject *__pyx_v_Jp = 0;
-  int __pyx_v_use_amr_int;
-  int __pyx_v_result;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_Jn;
-  __Pyx_Buffer __pyx_pybuffer_Jn;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_Jp;
-  __Pyx_Buffer __pyx_pybuffer_Jp;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_V;
-  __Pyx_Buffer __pyx_pybuffer_V;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_bc_array;
-  __Pyx_Buffer __pyx_pybuffer_bc_array;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_n;
-  __Pyx_Buffer __pyx_pybuffer_n;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_p;
-  __Pyx_Buffer __pyx_pybuffer_p;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  size_t __pyx_t_6;
-  PyObject *__pyx_t_7 = NULL;
-  int __pyx_t_8;
-  int __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
-  double __pyx_t_11;
-  int __pyx_t_12;
-  double __pyx_t_13;
-  Py_ssize_t __pyx_t_14;
-  int __pyx_t_15;
-  Py_ssize_t __pyx_t_16;
-  Py_ssize_t __pyx_t_17;
-  Py_ssize_t __pyx_t_18;
-  Py_ssize_t __pyx_t_19;
+  size_t __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("solve_drift_diffusion", 0);
-  __pyx_pybuffer_bc_array.pybuffer.buf = NULL;
-  __pyx_pybuffer_bc_array.refcount = 0;
-  __pyx_pybuffernd_bc_array.data = NULL;
-  __pyx_pybuffernd_bc_array.rcbuffer = &__pyx_pybuffer_bc_array;
-  __pyx_pybuffer_V.pybuffer.buf = NULL;
-  __pyx_pybuffer_V.refcount = 0;
-  __pyx_pybuffernd_V.data = NULL;
-  __pyx_pybuffernd_V.rcbuffer = &__pyx_pybuffer_V;
-  __pyx_pybuffer_n.pybuffer.buf = NULL;
-  __pyx_pybuffer_n.refcount = 0;
-  __pyx_pybuffernd_n.data = NULL;
-  __pyx_pybuffernd_n.rcbuffer = &__pyx_pybuffer_n;
-  __pyx_pybuffer_p.pybuffer.buf = NULL;
-  __pyx_pybuffer_p.refcount = 0;
-  __pyx_pybuffernd_p.data = NULL;
-  __pyx_pybuffernd_p.rcbuffer = &__pyx_pybuffer_p;
-  __pyx_pybuffer_Jn.pybuffer.buf = NULL;
-  __pyx_pybuffer_Jn.refcount = 0;
-  __pyx_pybuffernd_Jn.data = NULL;
-  __pyx_pybuffernd_Jn.rcbuffer = &__pyx_pybuffer_Jn;
-  __pyx_pybuffer_Jp.pybuffer.buf = NULL;
-  __pyx_pybuffer_Jp.refcount = 0;
-  __pyx_pybuffernd_Jp.data = NULL;
-  __pyx_pybuffernd_Jp.rcbuffer = &__pyx_pybuffer_Jp;
 
-  /* "simulator.pyx":150
- *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,
+  /* "simulator.pyx":342
  *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef int size = self.num_points_x * self.num_points_y
+ *         """Solve drift-diffusion equations."""
+ *         return self._dd.solve(bc, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol)             # <<<<<<<<<<<<<<
  * 
-*/
-  __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_4))) {
-    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
-    assert(__pyx_t_2);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
-    __Pyx_INCREF(__pyx_t_2);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, __pyx_v_bc};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 150, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_bc_array = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 150, __pyx_L1_error)
-    } else {__pyx_pybuffernd_bc_array.diminfo[0].strides = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_bc_array.diminfo[0].shape = __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_bc_array = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":151
- *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef int size = self.num_points_x * self.num_points_y             # <<<<<<<<<<<<<<
- * 
- *         # Prepare output arrays
-*/
-  __pyx_v_size = (__pyx_v_self->num_points_x * __pyx_v_self->num_points_y);
-
-  /* "simulator.pyx":154
- * 
- *         # Prepare output arrays
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(size, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
-*/
-  __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-    assert(__pyx_t_4);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
-    __Pyx_INCREF(__pyx_t_4);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_3};
-    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 154, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 154, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_V.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_V = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_V.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 154, __pyx_L1_error)
-    } else {__pyx_pybuffernd_V.diminfo[0].strides = __pyx_pybuffernd_V.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_V.diminfo[0].shape = __pyx_pybuffernd_V.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_V = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":155
- *         # Prepare output arrays
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)
-*/
-  __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_size); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_7))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
-    assert(__pyx_t_5);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
-    __Pyx_INCREF(__pyx_t_5);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_5, __pyx_t_2};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_4, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 155, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_7, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 155, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_n.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_n = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_n.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 155, __pyx_L1_error)
-    } else {__pyx_pybuffernd_n.diminfo[0].strides = __pyx_pybuffernd_n.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_n.diminfo[0].shape = __pyx_pybuffernd_n.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_n = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":156
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)
-*/
-  __pyx_t_7 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 156, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 156, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 156, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_4))) {
-    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_4);
-    assert(__pyx_t_7);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
-    __Pyx_INCREF(__pyx_t_7);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_7, __pyx_t_3};
-    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_5, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 156, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_4, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
-    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 156, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_p.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_p = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_p.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 156, __pyx_L1_error)
-    } else {__pyx_pybuffernd_p.diminfo[0].strides = __pyx_pybuffernd_p.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_p.diminfo[0].shape = __pyx_pybuffernd_p.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_p = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":157
- *         cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)
- * 
-*/
-  __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_size); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-    assert(__pyx_t_4);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
-    __Pyx_INCREF(__pyx_t_4);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_2};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 157, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_7, __pyx_t_3, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 157, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_5, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 157, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_Jn = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_Jn.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 157, __pyx_L1_error)
-    } else {__pyx_pybuffernd_Jn.diminfo[0].strides = __pyx_pybuffernd_Jn.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Jn.diminfo[0].shape = __pyx_pybuffernd_Jn.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_Jn = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":158
- *         cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)             # <<<<<<<<<<<<<<
- * 
- *         cdef int use_amr_int = 1 if use_amr else 0
-*/
-  __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyLong_From_int(__pyx_v_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_6 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_7))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
-    assert(__pyx_t_5);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
-    __Pyx_INCREF(__pyx_t_5);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
-    __pyx_t_6 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_5, __pyx_t_3};
-    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_dtype, __pyx_t_4, __pyx_t_2, __pyx_callargs+2, 0) < 0) __PYX_ERR(0, 158, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder(__pyx_t_7, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 158, __pyx_L1_error)
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer, (PyObject*)((PyArrayObject *)__pyx_t_1), &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_Jp = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_Jp.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 158, __pyx_L1_error)
-    } else {__pyx_pybuffernd_Jp.diminfo[0].strides = __pyx_pybuffernd_Jp.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_Jp.diminfo[0].shape = __pyx_pybuffernd_Jp.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_v_Jp = ((PyArrayObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
-
-  /* "simulator.pyx":160
- *         cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)
- * 
- *         cdef int use_amr_int = 1 if use_amr else 0             # <<<<<<<<<<<<<<
- *         cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,
- *                                                max_steps, use_amr_int, poisson_max_iter, poisson_tol,
-*/
-  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_use_amr); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 160, __pyx_L1_error)
-  if (__pyx_t_9) {
-    __pyx_t_8 = 1;
-  } else {
-    __pyx_t_8 = 0;
-  }
-  __pyx_v_use_amr_int = __pyx_t_8;
-
-  /* "simulator.pyx":161
- * 
- *         cdef int use_amr_int = 1 if use_amr else 0
- *         cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,             # <<<<<<<<<<<<<<
- *                                                max_steps, use_amr_int, poisson_max_iter, poisson_tol,
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
-*/
-  __pyx_t_10 = 0;
-  __pyx_t_8 = -1;
-  if (__pyx_t_10 < 0) {
-    __pyx_t_10 += __pyx_pybuffernd_bc_array.diminfo[0].shape;
-    if (unlikely(__pyx_t_10 < 0)) __pyx_t_8 = 0;
-  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_bc_array.diminfo[0].shape)) __pyx_t_8 = 0;
-  if (unlikely(__pyx_t_8 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_8);
-    __PYX_ERR(0, 161, __pyx_L1_error)
-  }
-  __pyx_t_11 = __Pyx_PyFloat_AsDouble(__pyx_v_Vg); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 161, __pyx_L1_error)
-
-  /* "simulator.pyx":162
- *         cdef int use_amr_int = 1 if use_amr else 0
- *         cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,
- *                                                max_steps, use_amr_int, poisson_max_iter, poisson_tol,             # <<<<<<<<<<<<<<
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
- * 
-*/
-  __pyx_t_8 = __Pyx_PyLong_As_int(__pyx_v_max_steps); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L1_error)
-  __pyx_t_12 = __Pyx_PyLong_As_int(__pyx_v_poisson_max_iter); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L1_error)
-  __pyx_t_13 = __Pyx_PyFloat_AsDouble(__pyx_v_poisson_tol); if (unlikely((__pyx_t_13 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L1_error)
-
-  /* "simulator.pyx":163
- *         cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,
- *                                                max_steps, use_amr_int, poisson_max_iter, poisson_tol,
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)             # <<<<<<<<<<<<<<
- * 
- *         if result != 0:
-*/
-  __pyx_t_14 = 0;
-  __pyx_t_15 = -1;
-  if (__pyx_t_14 < 0) {
-    __pyx_t_14 += __pyx_pybuffernd_V.diminfo[0].shape;
-    if (unlikely(__pyx_t_14 < 0)) __pyx_t_15 = 0;
-  } else if (unlikely(__pyx_t_14 >= __pyx_pybuffernd_V.diminfo[0].shape)) __pyx_t_15 = 0;
-  if (unlikely(__pyx_t_15 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_15);
-    __PYX_ERR(0, 163, __pyx_L1_error)
-  }
-  __pyx_t_16 = 0;
-  __pyx_t_15 = -1;
-  if (__pyx_t_16 < 0) {
-    __pyx_t_16 += __pyx_pybuffernd_n.diminfo[0].shape;
-    if (unlikely(__pyx_t_16 < 0)) __pyx_t_15 = 0;
-  } else if (unlikely(__pyx_t_16 >= __pyx_pybuffernd_n.diminfo[0].shape)) __pyx_t_15 = 0;
-  if (unlikely(__pyx_t_15 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_15);
-    __PYX_ERR(0, 163, __pyx_L1_error)
-  }
-  __pyx_t_17 = 0;
-  __pyx_t_15 = -1;
-  if (__pyx_t_17 < 0) {
-    __pyx_t_17 += __pyx_pybuffernd_p.diminfo[0].shape;
-    if (unlikely(__pyx_t_17 < 0)) __pyx_t_15 = 0;
-  } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_p.diminfo[0].shape)) __pyx_t_15 = 0;
-  if (unlikely(__pyx_t_15 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_15);
-    __PYX_ERR(0, 163, __pyx_L1_error)
-  }
-  __pyx_t_18 = 0;
-  __pyx_t_15 = -1;
-  if (__pyx_t_18 < 0) {
-    __pyx_t_18 += __pyx_pybuffernd_Jn.diminfo[0].shape;
-    if (unlikely(__pyx_t_18 < 0)) __pyx_t_15 = 0;
-  } else if (unlikely(__pyx_t_18 >= __pyx_pybuffernd_Jn.diminfo[0].shape)) __pyx_t_15 = 0;
-  if (unlikely(__pyx_t_15 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_15);
-    __PYX_ERR(0, 163, __pyx_L1_error)
-  }
-  __pyx_t_19 = 0;
-  __pyx_t_15 = -1;
-  if (__pyx_t_19 < 0) {
-    __pyx_t_19 += __pyx_pybuffernd_Jp.diminfo[0].shape;
-    if (unlikely(__pyx_t_19 < 0)) __pyx_t_15 = 0;
-  } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_Jp.diminfo[0].shape)) __pyx_t_15 = 0;
-  if (unlikely(__pyx_t_15 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_15);
-    __PYX_ERR(0, 163, __pyx_L1_error)
-  }
-
-  /* "simulator.pyx":161
- * 
- *         cdef int use_amr_int = 1 if use_amr else 0
- *         cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,             # <<<<<<<<<<<<<<
- *                                                max_steps, use_amr_int, poisson_max_iter, poisson_tol,
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
-*/
-  __pyx_v_result = drift_diffusion_solve(__pyx_v_self->dd, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_bc_array.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_bc_array.diminfo[0].strides))), __pyx_f_5numpy_7ndarray_4size_size(((PyArrayObject *)__pyx_v_bc_array)), __pyx_t_11, __pyx_t_8, __pyx_v_use_amr_int, __pyx_t_12, __pyx_t_13, (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_V.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_V.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_n.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_n.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_p.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_p.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Jn.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_Jn.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided1d(double *, __pyx_pybuffernd_Jp.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_Jp.diminfo[0].strides))), __pyx_v_size);
-
-  /* "simulator.pyx":165
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
- * 
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Drift-diffusion solve failed")
- * 
-*/
-  __pyx_t_9 = (__pyx_v_result != 0);
-  if (unlikely(__pyx_t_9)) {
-
-    /* "simulator.pyx":166
- * 
- *         if result != 0:
- *             raise RuntimeError("Drift-diffusion solve failed")             # <<<<<<<<<<<<<<
- * 
- *         return {
-*/
-    __pyx_t_7 = NULL;
-    __Pyx_INCREF(__pyx_builtin_RuntimeError);
-    __pyx_t_2 = __pyx_builtin_RuntimeError; 
-    __pyx_t_6 = 1;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_mstate_global->__pyx_kp_u_Drift_diffusion_solve_failed};
-      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-    }
-    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 166, __pyx_L1_error)
-
-    /* "simulator.pyx":165
- *                                                &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
- * 
- *         if result != 0:             # <<<<<<<<<<<<<<
- *             raise RuntimeError("Drift-diffusion solve failed")
- * 
-*/
-  }
-
-  /* "simulator.pyx":168
- *             raise RuntimeError("Drift-diffusion solve failed")
- * 
- *         return {             # <<<<<<<<<<<<<<
- *             "potential": V,
- *             "n": n,
+ *     # Additional convenience methods
 */
   __Pyx_XDECREF(__pyx_r);
-
-  /* "simulator.pyx":169
- * 
- *         return {
- *             "potential": V,             # <<<<<<<<<<<<<<
- *             "n": n,
- *             "p": p,
-*/
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_potential, ((PyObject *)__pyx_v_V)) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
-
-  /* "simulator.pyx":170
- *         return {
- *             "potential": V,
- *             "n": n,             # <<<<<<<<<<<<<<
- *             "p": p,
- *             "Jn": Jn,
-*/
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_n, ((PyObject *)__pyx_v_n)) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
-
-  /* "simulator.pyx":171
- *             "potential": V,
- *             "n": n,
- *             "p": p,             # <<<<<<<<<<<<<<
- *             "Jn": Jn,
- *             "Jp": Jp
-*/
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_p, ((PyObject *)__pyx_v_p)) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
-
-  /* "simulator.pyx":172
- *             "n": n,
- *             "p": p,
- *             "Jn": Jn,             # <<<<<<<<<<<<<<
- *             "Jp": Jp
- *         }
-*/
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Jn, ((PyObject *)__pyx_v_Jn)) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
-
-  /* "simulator.pyx":173
- *             "p": p,
- *             "Jn": Jn,
- *             "Jp": Jp             # <<<<<<<<<<<<<<
- *         }
- * 
-*/
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Jp, ((PyObject *)__pyx_v_Jp)) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_v_self->_dd);
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[7] = {__pyx_t_2, __pyx_v_bc, __pyx_v_Vg, __pyx_v_max_steps, __pyx_v_use_amr, __pyx_v_poisson_max_iter, __pyx_v_poisson_tol};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_solve, __pyx_callargs+__pyx_t_3, (7-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 342, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "simulator.pyx":148
- *         return V
+  /* "simulator.pyx":339
+ *         return self._poisson.solve(bc)
  * 
  *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,             # <<<<<<<<<<<<<<
  *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *         """Solve drift-diffusion equations."""
 */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_7);
-  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
-  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("simulator.Simulator.solve_drift_diffusion", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
-  goto __pyx_L2;
   __pyx_L0:;
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jn.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_Jp.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_V.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_bc_array.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_n.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_p.rcbuffer->pybuffer);
-  __pyx_L2:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_bc_array);
-  __Pyx_XDECREF((PyObject *)__pyx_v_V);
-  __Pyx_XDECREF((PyObject *)__pyx_v_n);
-  __Pyx_XDECREF((PyObject *)__pyx_v_p);
-  __Pyx_XDECREF((PyObject *)__pyx_v_Jn);
-  __Pyx_XDECREF((PyObject *)__pyx_v_Jp);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "simulator.pyx":177
+/* "simulator.pyx":345
+ * 
+ *     # Additional convenience methods
+ *     def get_device(self):             # <<<<<<<<<<<<<<
+ *         """Get the device object."""
+ *         return self._device
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_9Simulator_13get_device(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_12get_device, "Get the device object.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_13get_device = {"get_device", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_13get_device, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_12get_device};
+static PyObject *__pyx_pw_9simulator_9Simulator_13get_device(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_device (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_device", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_device", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_9Simulator_12get_device(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_9Simulator_12get_device(struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_device", 0);
+
+  /* "simulator.pyx":347
+ *     def get_device(self):
+ *         """Get the device object."""
+ *         return self._device             # <<<<<<<<<<<<<<
+ * 
+ *     def get_poisson_solver(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF((PyObject *)__pyx_v_self->_device);
+  __pyx_r = ((PyObject *)__pyx_v_self->_device);
+  goto __pyx_L0;
+
+  /* "simulator.pyx":345
+ * 
+ *     # Additional convenience methods
+ *     def get_device(self):             # <<<<<<<<<<<<<<
+ *         """Get the device object."""
+ *         return self._device
+*/
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":349
+ *         return self._device
+ * 
+ *     def get_poisson_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the Poisson solver object."""
+ *         return self._poisson
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_9Simulator_15get_poisson_solver(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_14get_poisson_solver, "Get the Poisson solver object.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_15get_poisson_solver = {"get_poisson_solver", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_15get_poisson_solver, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_14get_poisson_solver};
+static PyObject *__pyx_pw_9simulator_9Simulator_15get_poisson_solver(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_poisson_solver (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_poisson_solver", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_poisson_solver", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_9Simulator_14get_poisson_solver(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_9Simulator_14get_poisson_solver(struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_poisson_solver", 0);
+
+  /* "simulator.pyx":351
+ *     def get_poisson_solver(self):
+ *         """Get the Poisson solver object."""
+ *         return self._poisson             # <<<<<<<<<<<<<<
+ * 
+ *     def get_drift_diffusion_solver(self):
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF((PyObject *)__pyx_v_self->_poisson);
+  __pyx_r = ((PyObject *)__pyx_v_self->_poisson);
+  goto __pyx_L0;
+
+  /* "simulator.pyx":349
+ *         return self._device
+ * 
+ *     def get_poisson_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the Poisson solver object."""
+ *         return self._poisson
+*/
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":353
+ *         return self._poisson
+ * 
+ *     def get_drift_diffusion_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the drift-diffusion solver object."""
+ *         return self._dd
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_9simulator_9Simulator_17get_drift_diffusion_solver(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_9simulator_9Simulator_16get_drift_diffusion_solver, "Get the drift-diffusion solver object.");
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_17get_drift_diffusion_solver = {"get_drift_diffusion_solver", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_17get_drift_diffusion_solver, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_16get_drift_diffusion_solver};
+static PyObject *__pyx_pw_9simulator_9Simulator_17get_drift_diffusion_solver(PyObject *__pyx_v_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_drift_diffusion_solver (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  if (unlikely(__pyx_nargs > 0)) { __Pyx_RaiseArgtupleInvalid("get_drift_diffusion_solver", 1, 0, 0, __pyx_nargs); return NULL; }
+  const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+  if (unlikely(__pyx_kwds_len < 0)) return NULL;
+  if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("get_drift_diffusion_solver", __pyx_kwds); return NULL;}
+  __pyx_r = __pyx_pf_9simulator_9Simulator_16get_drift_diffusion_solver(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_9simulator_9Simulator_16get_drift_diffusion_solver(struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_drift_diffusion_solver", 0);
+
+  /* "simulator.pyx":355
+ *     def get_drift_diffusion_solver(self):
+ *         """Get the drift-diffusion solver object."""
+ *         return self._dd             # <<<<<<<<<<<<<<
+ * 
+ *     # Python properties to access C attributes
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF((PyObject *)__pyx_v_self->_dd);
+  __pyx_r = ((PyObject *)__pyx_v_self->_dd);
+  goto __pyx_L0;
+
+  /* "simulator.pyx":353
+ *         return self._poisson
+ * 
+ *     def get_drift_diffusion_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the drift-diffusion solver object."""
+ *         return self._dd
+*/
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "simulator.pyx":358
  * 
  *     # Python properties to access C attributes
  *     @property             # <<<<<<<<<<<<<<
@@ -8117,7 +13110,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_6method___get__(struct __pyx_obj
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "simulator.pyx":180
+  /* "simulator.pyx":361
  *     def method(self):
  *         """Get the numerical method"""
  *         return self._method             # <<<<<<<<<<<<<<
@@ -8129,7 +13122,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_6method___get__(struct __pyx_obj
   __pyx_r = __pyx_v_self->_method;
   goto __pyx_L0;
 
-  /* "simulator.pyx":177
+  /* "simulator.pyx":358
  * 
  *     # Python properties to access C attributes
  *     @property             # <<<<<<<<<<<<<<
@@ -8144,7 +13137,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_6method___get__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "simulator.pyx":182
+/* "simulator.pyx":363
  *         return self._method
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8172,7 +13165,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_9mesh_type___get__(struct __pyx_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "simulator.pyx":185
+  /* "simulator.pyx":366
  *     def mesh_type(self):
  *         """Get the mesh type"""
  *         return self._mesh_type             # <<<<<<<<<<<<<<
@@ -8184,7 +13177,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_9mesh_type___get__(struct __pyx_
   __pyx_r = __pyx_v_self->_mesh_type;
   goto __pyx_L0;
 
-  /* "simulator.pyx":182
+  /* "simulator.pyx":363
  *         return self._method
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8199,7 +13192,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_9mesh_type___get__(struct __pyx_
   return __pyx_r;
 }
 
-/* "simulator.pyx":187
+/* "simulator.pyx":368
  *         return self._mesh_type
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8231,7 +13224,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_x___get__(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "simulator.pyx":190
+  /* "simulator.pyx":371
  *     def num_points_x(self):
  *         """Get number of grid points in x direction"""
  *         return self._num_points_x             # <<<<<<<<<<<<<<
@@ -8239,13 +13232,13 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_x___get__(struct __
  *     @property
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 371, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "simulator.pyx":187
+  /* "simulator.pyx":368
  *         return self._mesh_type
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8264,7 +13257,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_x___get__(struct __
   return __pyx_r;
 }
 
-/* "simulator.pyx":192
+/* "simulator.pyx":373
  *         return self._num_points_x
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8296,19 +13289,19 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_y___get__(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "simulator.pyx":195
+  /* "simulator.pyx":376
  *     def num_points_y(self):
  *         """Get number of grid points in y direction"""
  *         return self._num_points_y             # <<<<<<<<<<<<<<
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "simulator.pyx":192
+  /* "simulator.pyx":373
  *         return self._num_points_x
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8327,7 +13320,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12num_points_y___get__(struct __
   return __pyx_r;
 }
 
-/* "simulator.pyx":54
+/* "simulator.pyx":293
  * 
  *     # Python-accessible attributes
  *     cdef public str _method             # <<<<<<<<<<<<<<
@@ -8391,7 +13384,7 @@ static int __pyx_pf_9simulator_9Simulator_7_method_2__set__(struct __pyx_obj_9si
   __Pyx_RefNannySetupContext("__set__", 0);
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 54, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 293, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->_method);
   __Pyx_DECREF(__pyx_v_self->_method);
@@ -8441,7 +13434,7 @@ static int __pyx_pf_9simulator_9Simulator_7_method_4__del__(struct __pyx_obj_9si
   return __pyx_r;
 }
 
-/* "simulator.pyx":55
+/* "simulator.pyx":294
  *     # Python-accessible attributes
  *     cdef public str _method
  *     cdef public str _mesh_type             # <<<<<<<<<<<<<<
@@ -8505,7 +13498,7 @@ static int __pyx_pf_9simulator_9Simulator_10_mesh_type_2__set__(struct __pyx_obj
   __Pyx_RefNannySetupContext("__set__", 0);
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 55, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 294, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->_mesh_type);
   __Pyx_DECREF(__pyx_v_self->_mesh_type);
@@ -8555,7 +13548,7 @@ static int __pyx_pf_9simulator_9Simulator_10_mesh_type_4__del__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "simulator.pyx":56
+/* "simulator.pyx":295
  *     cdef public str _method
  *     cdef public str _mesh_type
  *     cdef public int _num_points_x             # <<<<<<<<<<<<<<
@@ -8587,7 +13580,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_13_num_points_x___get__(struct _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8625,7 +13618,7 @@ static int __pyx_pf_9simulator_9Simulator_13_num_points_x_2__set__(struct __pyx_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 295, __pyx_L1_error)
   __pyx_v_self->_num_points_x = __pyx_t_1;
 
   /* function exit code */
@@ -8638,7 +13631,7 @@ static int __pyx_pf_9simulator_9Simulator_13_num_points_x_2__set__(struct __pyx_
   return __pyx_r;
 }
 
-/* "simulator.pyx":57
+/* "simulator.pyx":296
  *     cdef public str _mesh_type
  *     cdef public int _num_points_x
  *     cdef public int _num_points_y             # <<<<<<<<<<<<<<
@@ -8670,7 +13663,7 @@ static PyObject *__pyx_pf_9simulator_9Simulator_13_num_points_y___get__(struct _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_From_int(__pyx_v_self->_num_points_y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 296, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8708,7 +13701,7 @@ static int __pyx_pf_9simulator_9Simulator_13_num_points_y_2__set__(struct __pyx_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 296, __pyx_L1_error)
   __pyx_v_self->_num_points_y = __pyx_t_1;
 
   /* function exit code */
@@ -8728,15 +13721,15 @@ static int __pyx_pf_9simulator_9Simulator_13_num_points_y_2__set__(struct __pyx_
 */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9simulator_9Simulator_13__reduce_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_9simulator_9Simulator_19__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_13__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_13__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_9simulator_9Simulator_13__reduce_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_19__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_19__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_9Simulator_19__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -8762,14 +13755,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   const Py_ssize_t __pyx_kwds_len = unlikely(__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
   if (unlikely(__pyx_kwds_len < 0)) return NULL;
   if (unlikely(__pyx_kwds_len > 0)) {__Pyx_RejectKeywords("__reduce_cython__", __pyx_kwds); return NULL;}
-  __pyx_r = __pyx_pf_9simulator_9Simulator_12__reduce_cython__(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self));
+  __pyx_r = __pyx_pf_9simulator_9Simulator_18__reduce_cython__(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9simulator_9Simulator_12__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
+static PyObject *__pyx_pf_9simulator_9Simulator_18__reduce_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_lineno = 0;
@@ -8809,15 +13802,15 @@ static PyObject *__pyx_pf_9simulator_9Simulator_12__reduce_cython__(CYTHON_UNUSE
 */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_9simulator_9Simulator_15__setstate_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_9simulator_9Simulator_21__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_9simulator_9Simulator_15__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_15__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_9simulator_9Simulator_15__setstate_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_9simulator_9Simulator_21__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_21__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_9simulator_9Simulator_21__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -8883,7 +13876,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9simulator_9Simulator_14__setstate_cython__(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self), __pyx_v___pyx_state);
+  __pyx_r = __pyx_pf_9simulator_9Simulator_20__setstate_cython__(((struct __pyx_obj_9simulator_Simulator *)__pyx_v_self), __pyx_v___pyx_state);
 
   /* function exit code */
   for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
@@ -8893,7 +13886,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9simulator_9Simulator_14__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_9simulator_9Simulator_20__setstate_cython__(CYTHON_UNUSED struct __pyx_obj_9simulator_Simulator *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_lineno = 0;
@@ -8926,6 +13919,710 @@ static PyObject *__pyx_pf_9simulator_9Simulator_14__setstate_cython__(CYTHON_UNU
 }
 /* #### Code section: module_exttypes ### */
 
+static PyObject *__pyx_tp_new_9simulator_Device(PyTypeObject *t, PyObject *a, PyObject *k) {
+  PyObject *o;
+  #if CYTHON_COMPILING_IN_LIMITED_API
+  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
+  o = alloc_func(t, 0);
+  #else
+  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_mstate_global->__pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  #endif
+  if (unlikely(__pyx_pw_9simulator_6Device_1__cinit__(o, a, k) < 0)) goto bad;
+  return o;
+  bad:
+  Py_DECREF(o); o = 0;
+  return NULL;
+}
+
+static void __pyx_tp_dealloc_9simulator_Device(PyObject *o) {
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && (!PyType_IS_GC(Py_TYPE(o)) || !__Pyx_PyObject_GC_IsFinalized(o))) {
+    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_9simulator_Device) {
+      if (PyObject_CallFinalizerFromDealloc(o)) return;
+    }
+  }
+  #endif
+  {
+    PyObject *etype, *eval, *etb;
+    PyErr_Fetch(&etype, &eval, &etb);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
+    __pyx_pw_9simulator_6Device_3__dealloc__(o);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
+    PyErr_Restore(etype, eval, etb);
+  }
+  #if CYTHON_USE_TYPE_SLOTS
+  (*Py_TYPE(o)->tp_free)(o);
+  #else
+  {
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
+    if (tp_free) tp_free(o);
+  }
+  #endif
+}
+
+static PyObject *__pyx_getprop_9simulator_6Device_length(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_9simulator_6Device_6length_1__get__(o);
+}
+
+static PyObject *__pyx_getprop_9simulator_6Device_width(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_9simulator_6Device_5width_1__get__(o);
+}
+
+static PyMethodDef __pyx_methods_9simulator_Device[] = {
+  {"get_epsilon_at", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_5get_epsilon_at, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_6Device_4get_epsilon_at},
+  {"get_extents", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_7get_extents, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_6Device_6get_extents},
+  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_9__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_6Device_11__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {0, 0, 0, 0}
+};
+
+static struct PyGetSetDef __pyx_getsets_9simulator_Device[] = {
+  {"length", __pyx_getprop_9simulator_6Device_length, 0, 0, 0},
+  {"width", __pyx_getprop_9simulator_6Device_width, 0, 0, 0},
+  {0, 0, 0, 0, 0}
+};
+#if CYTHON_USE_TYPE_SPECS
+static PyType_Slot __pyx_type_9simulator_Device_slots[] = {
+  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_9simulator_Device},
+  {Py_tp_methods, (void *)__pyx_methods_9simulator_Device},
+  {Py_tp_getset, (void *)__pyx_getsets_9simulator_Device},
+  {Py_tp_new, (void *)__pyx_tp_new_9simulator_Device},
+  {0, 0},
+};
+static PyType_Spec __pyx_type_9simulator_Device_spec = {
+  "simulator.Device",
+  sizeof(struct __pyx_obj_9simulator_Device),
+  0,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE,
+  __pyx_type_9simulator_Device_slots,
+};
+#else
+
+static PyTypeObject __pyx_type_9simulator_Device = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "simulator.""Device", /*tp_name*/
+  sizeof(struct __pyx_obj_9simulator_Device), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_9simulator_Device, /*tp_dealloc*/
+  #if PY_VERSION_HEX < 0x030800b4
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b4
+  0, /*tp_vectorcall_offset*/
+  #endif
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  0, /*tp_as_async*/
+  0, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  0, /*tp_doc*/
+  0, /*tp_traverse*/
+  0, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_9simulator_Device, /*tp_methods*/
+  0, /*tp_members*/
+  __pyx_getsets_9simulator_Device, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  #if !CYTHON_USE_TYPE_SPECS
+  0, /*tp_dictoffset*/
+  #endif
+  0, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_9simulator_Device, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if CYTHON_USE_TP_FINALIZE
+  0, /*tp_finalize*/
+  #else
+  NULL, /*tp_finalize*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)
+  0, /*tp_vectorcall*/
+  #endif
+  #if __PYX_NEED_TP_PRINT_SLOT == 1
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030C0000
+  0, /*tp_watched*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030d00A4
+  0, /*tp_versions_used*/
+  #endif
+  #if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000
+  0, /*tp_pypy_flags*/
+  #endif
+};
+#endif
+
+static PyObject *__pyx_tp_new_9simulator_Mesh(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_9simulator_Mesh *p;
+  PyObject *o;
+  #if CYTHON_COMPILING_IN_LIMITED_API
+  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
+  o = alloc_func(t, 0);
+  #else
+  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_mstate_global->__pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  #endif
+  p = ((struct __pyx_obj_9simulator_Mesh *)o);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  if (unlikely(__pyx_pw_9simulator_4Mesh_1__cinit__(o, a, k) < 0)) goto bad;
+  return o;
+  bad:
+  Py_DECREF(o); o = 0;
+  return NULL;
+}
+
+static void __pyx_tp_dealloc_9simulator_Mesh(PyObject *o) {
+  struct __pyx_obj_9simulator_Mesh *p = (struct __pyx_obj_9simulator_Mesh *)o;
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && !__Pyx_PyObject_GC_IsFinalized(o)) {
+    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_9simulator_Mesh) {
+      if (PyObject_CallFinalizerFromDealloc(o)) return;
+    }
+  }
+  #endif
+  PyObject_GC_UnTrack(o);
+  {
+    PyObject *etype, *eval, *etb;
+    PyErr_Fetch(&etype, &eval, &etb);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
+    __pyx_pw_9simulator_4Mesh_3__dealloc__(o);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
+    PyErr_Restore(etype, eval, etb);
+  }
+  Py_CLEAR(p->_device);
+  #if CYTHON_USE_TYPE_SLOTS
+  (*Py_TYPE(o)->tp_free)(o);
+  #else
+  {
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
+    if (tp_free) tp_free(o);
+  }
+  #endif
+}
+
+static int __pyx_tp_traverse_9simulator_Mesh(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_9simulator_Mesh *p = (struct __pyx_obj_9simulator_Mesh *)o;
+  {
+    e = __Pyx_call_type_traverse(o, 1, v, a);
+    if (e) return e;
+  }
+  if (p->_device) {
+    e = (*v)(((PyObject *)p->_device), a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_9simulator_Mesh(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_9simulator_Mesh *p = (struct __pyx_obj_9simulator_Mesh *)o;
+  tmp = ((PyObject*)p->_device);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
+}
+
+static PyMethodDef __pyx_methods_9simulator_Mesh[] = {
+  {"generate_gmsh", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_5generate_gmsh, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_4generate_gmsh},
+  {"get_num_nodes", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_7get_num_nodes, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_6get_num_nodes},
+  {"get_num_elements", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_9get_num_elements, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_8get_num_elements},
+  {"get_grid_points", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_11get_grid_points, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_4Mesh_10get_grid_points},
+  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_13__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_4Mesh_15__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {0, 0, 0, 0}
+};
+#if CYTHON_USE_TYPE_SPECS
+static PyType_Slot __pyx_type_9simulator_Mesh_slots[] = {
+  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_9simulator_Mesh},
+  {Py_tp_traverse, (void *)__pyx_tp_traverse_9simulator_Mesh},
+  {Py_tp_clear, (void *)__pyx_tp_clear_9simulator_Mesh},
+  {Py_tp_methods, (void *)__pyx_methods_9simulator_Mesh},
+  {Py_tp_new, (void *)__pyx_tp_new_9simulator_Mesh},
+  {0, 0},
+};
+static PyType_Spec __pyx_type_9simulator_Mesh_spec = {
+  "simulator.Mesh",
+  sizeof(struct __pyx_obj_9simulator_Mesh),
+  0,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+  __pyx_type_9simulator_Mesh_slots,
+};
+#else
+
+static PyTypeObject __pyx_type_9simulator_Mesh = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "simulator.""Mesh", /*tp_name*/
+  sizeof(struct __pyx_obj_9simulator_Mesh), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_9simulator_Mesh, /*tp_dealloc*/
+  #if PY_VERSION_HEX < 0x030800b4
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b4
+  0, /*tp_vectorcall_offset*/
+  #endif
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  0, /*tp_as_async*/
+  0, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+  0, /*tp_doc*/
+  __pyx_tp_traverse_9simulator_Mesh, /*tp_traverse*/
+  __pyx_tp_clear_9simulator_Mesh, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_9simulator_Mesh, /*tp_methods*/
+  0, /*tp_members*/
+  0, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  #if !CYTHON_USE_TYPE_SPECS
+  0, /*tp_dictoffset*/
+  #endif
+  0, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_9simulator_Mesh, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if CYTHON_USE_TP_FINALIZE
+  0, /*tp_finalize*/
+  #else
+  NULL, /*tp_finalize*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)
+  0, /*tp_vectorcall*/
+  #endif
+  #if __PYX_NEED_TP_PRINT_SLOT == 1
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030C0000
+  0, /*tp_watched*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030d00A4
+  0, /*tp_versions_used*/
+  #endif
+  #if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000
+  0, /*tp_pypy_flags*/
+  #endif
+};
+#endif
+
+static PyObject *__pyx_tp_new_9simulator_PoissonSolver(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_9simulator_PoissonSolver *p;
+  PyObject *o;
+  #if CYTHON_COMPILING_IN_LIMITED_API
+  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
+  o = alloc_func(t, 0);
+  #else
+  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_mstate_global->__pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  #endif
+  p = ((struct __pyx_obj_9simulator_PoissonSolver *)o);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  if (unlikely(__pyx_pw_9simulator_13PoissonSolver_1__cinit__(o, a, k) < 0)) goto bad;
+  return o;
+  bad:
+  Py_DECREF(o); o = 0;
+  return NULL;
+}
+
+static void __pyx_tp_dealloc_9simulator_PoissonSolver(PyObject *o) {
+  struct __pyx_obj_9simulator_PoissonSolver *p = (struct __pyx_obj_9simulator_PoissonSolver *)o;
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && !__Pyx_PyObject_GC_IsFinalized(o)) {
+    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_9simulator_PoissonSolver) {
+      if (PyObject_CallFinalizerFromDealloc(o)) return;
+    }
+  }
+  #endif
+  PyObject_GC_UnTrack(o);
+  {
+    PyObject *etype, *eval, *etb;
+    PyErr_Fetch(&etype, &eval, &etb);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
+    __pyx_pw_9simulator_13PoissonSolver_3__dealloc__(o);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
+    PyErr_Restore(etype, eval, etb);
+  }
+  Py_CLEAR(p->_device);
+  #if CYTHON_USE_TYPE_SLOTS
+  (*Py_TYPE(o)->tp_free)(o);
+  #else
+  {
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
+    if (tp_free) tp_free(o);
+  }
+  #endif
+}
+
+static int __pyx_tp_traverse_9simulator_PoissonSolver(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_9simulator_PoissonSolver *p = (struct __pyx_obj_9simulator_PoissonSolver *)o;
+  {
+    e = __Pyx_call_type_traverse(o, 1, v, a);
+    if (e) return e;
+  }
+  if (p->_device) {
+    e = (*v)(((PyObject *)p->_device), a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_9simulator_PoissonSolver(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_9simulator_PoissonSolver *p = (struct __pyx_obj_9simulator_PoissonSolver *)o;
+  tmp = ((PyObject*)p->_device);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
+}
+
+static PyMethodDef __pyx_methods_9simulator_PoissonSolver[] = {
+  {"is_valid", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_5is_valid, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_4is_valid},
+  {"set_charge_density", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_7set_charge_density, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_6set_charge_density},
+  {"solve", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_9solve, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_8solve},
+  {"solve_self_consistent", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_11solve_self_consistent, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_10solve_self_consistent},
+  {"get_dof_count", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_13get_dof_count, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_12get_dof_count},
+  {"get_residual_norm", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_15get_residual_norm, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_13PoissonSolver_14get_residual_norm},
+  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_17__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_13PoissonSolver_19__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {0, 0, 0, 0}
+};
+#if CYTHON_USE_TYPE_SPECS
+static PyType_Slot __pyx_type_9simulator_PoissonSolver_slots[] = {
+  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_9simulator_PoissonSolver},
+  {Py_tp_traverse, (void *)__pyx_tp_traverse_9simulator_PoissonSolver},
+  {Py_tp_clear, (void *)__pyx_tp_clear_9simulator_PoissonSolver},
+  {Py_tp_methods, (void *)__pyx_methods_9simulator_PoissonSolver},
+  {Py_tp_new, (void *)__pyx_tp_new_9simulator_PoissonSolver},
+  {0, 0},
+};
+static PyType_Spec __pyx_type_9simulator_PoissonSolver_spec = {
+  "simulator.PoissonSolver",
+  sizeof(struct __pyx_obj_9simulator_PoissonSolver),
+  0,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+  __pyx_type_9simulator_PoissonSolver_slots,
+};
+#else
+
+static PyTypeObject __pyx_type_9simulator_PoissonSolver = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "simulator.""PoissonSolver", /*tp_name*/
+  sizeof(struct __pyx_obj_9simulator_PoissonSolver), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_9simulator_PoissonSolver, /*tp_dealloc*/
+  #if PY_VERSION_HEX < 0x030800b4
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b4
+  0, /*tp_vectorcall_offset*/
+  #endif
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  0, /*tp_as_async*/
+  0, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+  0, /*tp_doc*/
+  __pyx_tp_traverse_9simulator_PoissonSolver, /*tp_traverse*/
+  __pyx_tp_clear_9simulator_PoissonSolver, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_9simulator_PoissonSolver, /*tp_methods*/
+  0, /*tp_members*/
+  0, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  #if !CYTHON_USE_TYPE_SPECS
+  0, /*tp_dictoffset*/
+  #endif
+  0, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_9simulator_PoissonSolver, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if CYTHON_USE_TP_FINALIZE
+  0, /*tp_finalize*/
+  #else
+  NULL, /*tp_finalize*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)
+  0, /*tp_vectorcall*/
+  #endif
+  #if __PYX_NEED_TP_PRINT_SLOT == 1
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030C0000
+  0, /*tp_watched*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030d00A4
+  0, /*tp_versions_used*/
+  #endif
+  #if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000
+  0, /*tp_pypy_flags*/
+  #endif
+};
+#endif
+
+static PyObject *__pyx_tp_new_9simulator_DriftDiffusionSolver(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_9simulator_DriftDiffusionSolver *p;
+  PyObject *o;
+  #if CYTHON_COMPILING_IN_LIMITED_API
+  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
+  o = alloc_func(t, 0);
+  #else
+  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
+    o = (*t->tp_alloc)(t, 0);
+  } else {
+    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_mstate_global->__pyx_empty_tuple, 0);
+  }
+  if (unlikely(!o)) return 0;
+  #endif
+  p = ((struct __pyx_obj_9simulator_DriftDiffusionSolver *)o);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  if (unlikely(__pyx_pw_9simulator_20DriftDiffusionSolver_1__cinit__(o, a, k) < 0)) goto bad;
+  return o;
+  bad:
+  Py_DECREF(o); o = 0;
+  return NULL;
+}
+
+static void __pyx_tp_dealloc_9simulator_DriftDiffusionSolver(PyObject *o) {
+  struct __pyx_obj_9simulator_DriftDiffusionSolver *p = (struct __pyx_obj_9simulator_DriftDiffusionSolver *)o;
+  #if CYTHON_USE_TP_FINALIZE
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && !__Pyx_PyObject_GC_IsFinalized(o)) {
+    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_9simulator_DriftDiffusionSolver) {
+      if (PyObject_CallFinalizerFromDealloc(o)) return;
+    }
+  }
+  #endif
+  PyObject_GC_UnTrack(o);
+  {
+    PyObject *etype, *eval, *etb;
+    PyErr_Fetch(&etype, &eval, &etb);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) + 1);
+    __pyx_pw_9simulator_20DriftDiffusionSolver_3__dealloc__(o);
+    __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
+    PyErr_Restore(etype, eval, etb);
+  }
+  Py_CLEAR(p->_device);
+  #if CYTHON_USE_TYPE_SLOTS
+  (*Py_TYPE(o)->tp_free)(o);
+  #else
+  {
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
+    if (tp_free) tp_free(o);
+  }
+  #endif
+}
+
+static int __pyx_tp_traverse_9simulator_DriftDiffusionSolver(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_9simulator_DriftDiffusionSolver *p = (struct __pyx_obj_9simulator_DriftDiffusionSolver *)o;
+  {
+    e = __Pyx_call_type_traverse(o, 1, v, a);
+    if (e) return e;
+  }
+  if (p->_device) {
+    e = (*v)(((PyObject *)p->_device), a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_9simulator_DriftDiffusionSolver(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_9simulator_DriftDiffusionSolver *p = (struct __pyx_obj_9simulator_DriftDiffusionSolver *)o;
+  tmp = ((PyObject*)p->_device);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
+}
+
+static PyMethodDef __pyx_methods_9simulator_DriftDiffusionSolver[] = {
+  {"is_valid", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_5is_valid, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_4is_valid},
+  {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_7set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_6set_doping},
+  {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_9set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_8set_trap_level},
+  {"solve", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_11solve, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_10solve},
+  {"get_dof_count", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_13get_dof_count, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_12get_dof_count},
+  {"get_convergence_residual", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_15get_convergence_residual, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_14get_convergence_residual},
+  {"get_order", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_17get_order, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_20DriftDiffusionSolver_16get_order},
+  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_19__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_20DriftDiffusionSolver_21__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {0, 0, 0, 0}
+};
+#if CYTHON_USE_TYPE_SPECS
+static PyType_Slot __pyx_type_9simulator_DriftDiffusionSolver_slots[] = {
+  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_9simulator_DriftDiffusionSolver},
+  {Py_tp_traverse, (void *)__pyx_tp_traverse_9simulator_DriftDiffusionSolver},
+  {Py_tp_clear, (void *)__pyx_tp_clear_9simulator_DriftDiffusionSolver},
+  {Py_tp_methods, (void *)__pyx_methods_9simulator_DriftDiffusionSolver},
+  {Py_tp_new, (void *)__pyx_tp_new_9simulator_DriftDiffusionSolver},
+  {0, 0},
+};
+static PyType_Spec __pyx_type_9simulator_DriftDiffusionSolver_spec = {
+  "simulator.DriftDiffusionSolver",
+  sizeof(struct __pyx_obj_9simulator_DriftDiffusionSolver),
+  0,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+  __pyx_type_9simulator_DriftDiffusionSolver_slots,
+};
+#else
+
+static PyTypeObject __pyx_type_9simulator_DriftDiffusionSolver = {
+  PyVarObject_HEAD_INIT(0, 0)
+  "simulator.""DriftDiffusionSolver", /*tp_name*/
+  sizeof(struct __pyx_obj_9simulator_DriftDiffusionSolver), /*tp_basicsize*/
+  0, /*tp_itemsize*/
+  __pyx_tp_dealloc_9simulator_DriftDiffusionSolver, /*tp_dealloc*/
+  #if PY_VERSION_HEX < 0x030800b4
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b4
+  0, /*tp_vectorcall_offset*/
+  #endif
+  0, /*tp_getattr*/
+  0, /*tp_setattr*/
+  0, /*tp_as_async*/
+  0, /*tp_repr*/
+  0, /*tp_as_number*/
+  0, /*tp_as_sequence*/
+  0, /*tp_as_mapping*/
+  0, /*tp_hash*/
+  0, /*tp_call*/
+  0, /*tp_str*/
+  0, /*tp_getattro*/
+  0, /*tp_setattro*/
+  0, /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+  0, /*tp_doc*/
+  __pyx_tp_traverse_9simulator_DriftDiffusionSolver, /*tp_traverse*/
+  __pyx_tp_clear_9simulator_DriftDiffusionSolver, /*tp_clear*/
+  0, /*tp_richcompare*/
+  0, /*tp_weaklistoffset*/
+  0, /*tp_iter*/
+  0, /*tp_iternext*/
+  __pyx_methods_9simulator_DriftDiffusionSolver, /*tp_methods*/
+  0, /*tp_members*/
+  0, /*tp_getset*/
+  0, /*tp_base*/
+  0, /*tp_dict*/
+  0, /*tp_descr_get*/
+  0, /*tp_descr_set*/
+  #if !CYTHON_USE_TYPE_SPECS
+  0, /*tp_dictoffset*/
+  #endif
+  0, /*tp_init*/
+  0, /*tp_alloc*/
+  __pyx_tp_new_9simulator_DriftDiffusionSolver, /*tp_new*/
+  0, /*tp_free*/
+  0, /*tp_is_gc*/
+  0, /*tp_bases*/
+  0, /*tp_mro*/
+  0, /*tp_cache*/
+  0, /*tp_subclasses*/
+  0, /*tp_weaklist*/
+  0, /*tp_del*/
+  0, /*tp_version_tag*/
+  #if CYTHON_USE_TP_FINALIZE
+  0, /*tp_finalize*/
+  #else
+  NULL, /*tp_finalize*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)
+  0, /*tp_vectorcall*/
+  #endif
+  #if __PYX_NEED_TP_PRINT_SLOT == 1
+  0, /*tp_print*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030C0000
+  0, /*tp_watched*/
+  #endif
+  #if PY_VERSION_HEX >= 0x030d00A4
+  0, /*tp_versions_used*/
+  #endif
+  #if CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000
+  0, /*tp_pypy_flags*/
+  #endif
+};
+#endif
+
 static PyObject *__pyx_tp_new_9simulator_Simulator(PyTypeObject *t, PyObject *a, PyObject *k) {
   struct __pyx_obj_9simulator_Simulator *p;
   PyObject *o;
@@ -8941,6 +14638,9 @@ static PyObject *__pyx_tp_new_9simulator_Simulator(PyTypeObject *t, PyObject *a,
   if (unlikely(!o)) return 0;
   #endif
   p = ((struct __pyx_obj_9simulator_Simulator *)o);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  p->_poisson = ((struct __pyx_obj_9simulator_PoissonSolver *)Py_None); Py_INCREF(Py_None);
+  p->_dd = ((struct __pyx_obj_9simulator_DriftDiffusionSolver *)Py_None); Py_INCREF(Py_None);
   p->mesh_type = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->method = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->_method = ((PyObject*)Py_None); Py_INCREF(Py_None);
@@ -8955,12 +14655,13 @@ static PyObject *__pyx_tp_new_9simulator_Simulator(PyTypeObject *t, PyObject *a,
 static void __pyx_tp_dealloc_9simulator_Simulator(PyObject *o) {
   struct __pyx_obj_9simulator_Simulator *p = (struct __pyx_obj_9simulator_Simulator *)o;
   #if CYTHON_USE_TP_FINALIZE
-  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && (!PyType_IS_GC(Py_TYPE(o)) || !__Pyx_PyObject_GC_IsFinalized(o))) {
+  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && !__Pyx_PyObject_GC_IsFinalized(o)) {
     if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_9simulator_Simulator) {
       if (PyObject_CallFinalizerFromDealloc(o)) return;
     }
   }
   #endif
+  PyObject_GC_UnTrack(o);
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
@@ -8969,6 +14670,9 @@ static void __pyx_tp_dealloc_9simulator_Simulator(PyObject *o) {
     __Pyx_SET_REFCNT(o, Py_REFCNT(o) - 1);
     PyErr_Restore(etype, eval, etb);
   }
+  Py_CLEAR(p->_device);
+  Py_CLEAR(p->_poisson);
+  Py_CLEAR(p->_dd);
   Py_CLEAR(p->mesh_type);
   Py_CLEAR(p->method);
   Py_CLEAR(p->_method);
@@ -8981,6 +14685,40 @@ static void __pyx_tp_dealloc_9simulator_Simulator(PyObject *o) {
     if (tp_free) tp_free(o);
   }
   #endif
+}
+
+static int __pyx_tp_traverse_9simulator_Simulator(PyObject *o, visitproc v, void *a) {
+  int e;
+  struct __pyx_obj_9simulator_Simulator *p = (struct __pyx_obj_9simulator_Simulator *)o;
+  {
+    e = __Pyx_call_type_traverse(o, 1, v, a);
+    if (e) return e;
+  }
+  if (p->_device) {
+    e = (*v)(((PyObject *)p->_device), a); if (e) return e;
+  }
+  if (p->_poisson) {
+    e = (*v)(((PyObject *)p->_poisson), a); if (e) return e;
+  }
+  if (p->_dd) {
+    e = (*v)(((PyObject *)p->_dd), a); if (e) return e;
+  }
+  return 0;
+}
+
+static int __pyx_tp_clear_9simulator_Simulator(PyObject *o) {
+  PyObject* tmp;
+  struct __pyx_obj_9simulator_Simulator *p = (struct __pyx_obj_9simulator_Simulator *)o;
+  tmp = ((PyObject*)p->_device);
+  p->_device = ((struct __pyx_obj_9simulator_Device *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->_poisson);
+  p->_poisson = ((struct __pyx_obj_9simulator_PoissonSolver *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  tmp = ((PyObject*)p->_dd);
+  p->_dd = ((struct __pyx_obj_9simulator_DriftDiffusionSolver *)Py_None); Py_INCREF(Py_None);
+  Py_XDECREF(tmp);
+  return 0;
 }
 
 static PyObject *__pyx_getprop_9simulator_9Simulator_method(PyObject *o, CYTHON_UNUSED void *x) {
@@ -9054,12 +14792,15 @@ static int __pyx_setprop_9simulator_9Simulator__num_points_y(PyObject *o, PyObje
 }
 
 static PyMethodDef __pyx_methods_9simulator_Simulator[] = {
-  {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_5set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_7set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"solve_poisson", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_9solve_poisson, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"solve_drift_diffusion", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_13__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_15__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"set_doping", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_5set_doping, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_4set_doping},
+  {"set_trap_level", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_7set_trap_level, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_6set_trap_level},
+  {"solve_poisson", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_9solve_poisson, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_8solve_poisson},
+  {"solve_drift_diffusion", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_10solve_drift_diffusion},
+  {"get_device", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_13get_device, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_12get_device},
+  {"get_poisson_solver", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_15get_poisson_solver, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_14get_poisson_solver},
+  {"get_drift_diffusion_solver", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_17get_drift_diffusion_solver, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9simulator_9Simulator_16get_drift_diffusion_solver},
+  {"__reduce_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_19__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9simulator_9Simulator_21__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
@@ -9077,6 +14818,8 @@ static struct PyGetSetDef __pyx_getsets_9simulator_Simulator[] = {
 #if CYTHON_USE_TYPE_SPECS
 static PyType_Slot __pyx_type_9simulator_Simulator_slots[] = {
   {Py_tp_dealloc, (void *)__pyx_tp_dealloc_9simulator_Simulator},
+  {Py_tp_traverse, (void *)__pyx_tp_traverse_9simulator_Simulator},
+  {Py_tp_clear, (void *)__pyx_tp_clear_9simulator_Simulator},
   {Py_tp_methods, (void *)__pyx_methods_9simulator_Simulator},
   {Py_tp_getset, (void *)__pyx_getsets_9simulator_Simulator},
   {Py_tp_new, (void *)__pyx_tp_new_9simulator_Simulator},
@@ -9086,7 +14829,7 @@ static PyType_Spec __pyx_type_9simulator_Simulator_spec = {
   "simulator.Simulator",
   sizeof(struct __pyx_obj_9simulator_Simulator),
   0,
-  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
   __pyx_type_9simulator_Simulator_slots,
 };
 #else
@@ -9116,10 +14859,10 @@ static PyTypeObject __pyx_type_9simulator_Simulator = {
   0, /*tp_getattro*/
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  0, /*tp_traverse*/
-  0, /*tp_clear*/
+  __pyx_tp_traverse_9simulator_Simulator, /*tp_traverse*/
+  __pyx_tp_clear_9simulator_Simulator, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
@@ -9223,23 +14966,95 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_9simulator_Simulator = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_Simulator_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_Simulator)) __PYX_ERR(0, 46, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_Simulator_spec, __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_9simulator_Device = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_Device_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_Device)) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_Device_spec, __pyx_mstate->__pyx_ptype_9simulator_Device) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  #else
+  __pyx_mstate->__pyx_ptype_9simulator_Device = &__pyx_type_9simulator_Device;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  #endif
+  #if !CYTHON_USE_TYPE_SPECS
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_Device) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_mstate->__pyx_ptype_9simulator_Device->tp_dictoffset && __pyx_mstate->__pyx_ptype_9simulator_Device->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_mstate->__pyx_ptype_9simulator_Device->tp_getattro = PyObject_GenericGetAttr;
+  }
+  #endif
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Device, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Device) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Device) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  #if CYTHON_USE_TYPE_SPECS
+  __pyx_mstate->__pyx_ptype_9simulator_Mesh = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_Mesh_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_Mesh)) __PYX_ERR(0, 106, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_Mesh_spec, __pyx_mstate->__pyx_ptype_9simulator_Mesh) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+  #else
+  __pyx_mstate->__pyx_ptype_9simulator_Mesh = &__pyx_type_9simulator_Mesh;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  #endif
+  #if !CYTHON_USE_TYPE_SPECS
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_Mesh) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_mstate->__pyx_ptype_9simulator_Mesh->tp_dictoffset && __pyx_mstate->__pyx_ptype_9simulator_Mesh->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_mstate->__pyx_ptype_9simulator_Mesh->tp_getattro = PyObject_GenericGetAttr;
+  }
+  #endif
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Mesh, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Mesh) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Mesh) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+  #if CYTHON_USE_TYPE_SPECS
+  __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_PoissonSolver_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_PoissonSolver)) __PYX_ERR(0, 145, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_PoissonSolver_spec, __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+  #else
+  __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver = &__pyx_type_9simulator_PoissonSolver;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  #endif
+  #if !CYTHON_USE_TYPE_SPECS
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_PoissonSolver) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_mstate->__pyx_ptype_9simulator_PoissonSolver->tp_dictoffset && __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver->tp_getattro = PyObject_GenericGetAttr;
+  }
+  #endif
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_PoissonSolver, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_PoissonSolver) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+  #if CYTHON_USE_TYPE_SPECS
+  __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_DriftDiffusionSolver_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver)) __PYX_ERR(0, 207, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_DriftDiffusionSolver_spec, __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
+  #else
+  __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver = &__pyx_type_9simulator_DriftDiffusionSolver;
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  #endif
+  #if !CYTHON_USE_TYPE_SPECS
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
+  #endif
+  #if !CYTHON_COMPILING_IN_LIMITED_API
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver->tp_dictoffset && __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver->tp_getattro = PyObject_GenericGetAttr;
+  }
+  #endif
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_DriftDiffusionSolver) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
+  #if CYTHON_USE_TYPE_SPECS
+  __pyx_mstate->__pyx_ptype_9simulator_Simulator = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9simulator_Simulator_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9simulator_Simulator)) __PYX_ERR(0, 285, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9simulator_Simulator_spec, __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_9simulator_Simulator = &__pyx_type_9simulator_Simulator;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_mstate->__pyx_ptype_9simulator_Simulator->tp_dictoffset && __pyx_mstate->__pyx_ptype_9simulator_Simulator->tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_mstate->__pyx_ptype_9simulator_Simulator->tp_getattro = PyObject_GenericGetAttr;
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Simulator, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Simulator, (PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_9simulator_Simulator) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -9744,7 +15559,7 @@ __Pyx_RefNannySetupContext("PyInit_simulator", 0);
  * # Set up logging
  * logger = logging.getLogger(__name__)             # <<<<<<<<<<<<<<
  * 
- * cdef extern from "device.hpp" namespace "simulator":
+ * # Complete C interface declarations
 */
   __pyx_t_3 = NULL;
   __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_logging); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 15, __pyx_L1_error)
@@ -9767,66 +15582,28 @@ __Pyx_RefNannySetupContext("PyInit_simulator", 0);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_logger, __pyx_t_2) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "simulator.pyx":59
- *     cdef public int _num_points_y
+  /* "simulator.pyx":87
+ *             destroy_device(self._device)
  * 
- *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,             # <<<<<<<<<<<<<<
- *                   method="DG", mesh_type="Structured", regions=None):
- *         # Declare variables at the beginning
+ *     def get_epsilon_at(self, double x, double y):             # <<<<<<<<<<<<<<
+ *         """Get permittivity at given coordinates."""
+ *         return device_get_epsilon_at(self._device, x, y)
 */
-  __pyx_t_2 = __Pyx_PyList_Pack(2, __pyx_mstate_global->__pyx_float_1eneg_6, __pyx_mstate_global->__pyx_float_0_5eneg_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_6Device_5get_epsilon_at, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Device_get_epsilon_at, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_mstate_global->__pyx_k_ = __pyx_t_2;
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "simulator.pyx":128
- *         del self.device
- * 
- *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
- *         if Nd.size != Na.size:
- *             raise ValueError("Nd and Na arrays must have the same size")
-*/
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_5set_doping, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_set_doping, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 128, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_set_doping, __pyx_t_2) < 0) __PYX_ERR(0, 128, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Device, __pyx_mstate_global->__pyx_n_u_get_epsilon_at, __pyx_t_2) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "simulator.pyx":135
- *             raise RuntimeError("Failed to set doping")
+  /* "simulator.pyx":91
+ *         return device_get_epsilon_at(self._device, x, y)
  * 
- *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
- *         cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
- *         if result != 0:
+ *     def get_extents(self):             # <<<<<<<<<<<<<<
+ *         """Get device extents [Lx, Ly]."""
+ *         cdef double extents[2]
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_7set_trap_level, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_set_trap_level, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_6Device_7get_extents, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Device_get_extents, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_set_trap_level, __pyx_t_2) < 0) __PYX_ERR(0, 135, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "simulator.pyx":140
- *             raise RuntimeError("Failed to set trap level")
- * 
- *     def solve_poisson(self, bc):             # <<<<<<<<<<<<<<
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
- *         cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
-*/
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_9solve_poisson, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_solve_poisson, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 140, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_solve_poisson, __pyx_t_2) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "simulator.pyx":148
- *         return V
- * 
- *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,             # <<<<<<<<<<<<<<
- *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
-*/
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_solve_drift_diffusion, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[0]);
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_solve_drift_diffusion, __pyx_t_2) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Device, __pyx_mstate_global->__pyx_n_u_get_extents, __pyx_t_2) < 0) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "(tree fragment)":1
@@ -9834,7 +15611,7 @@ __Pyx_RefNannySetupContext("PyInit_simulator", 0);
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
  * def __setstate_cython__(self, __pyx_state):
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_13__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_6Device_9__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Device___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9845,7 +15622,395 @@ __Pyx_RefNannySetupContext("PyInit_simulator", 0);
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
  *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_15__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator___setstate_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_6Device_11__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Device___setstate_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":121
+ *             destroy_mesh(self._mesh)
+ * 
+ *     def generate_gmsh(self, str filename):             # <<<<<<<<<<<<<<
+ *         """Generate GMSH mesh file."""
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_5generate_gmsh, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh_generate_gmsh, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Mesh, __pyx_mstate_global->__pyx_n_u_generate_gmsh, __pyx_t_2) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":125
+ *         mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+ * 
+ *     def get_num_nodes(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh nodes."""
+ *         return mesh_get_num_nodes(self._mesh)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_7get_num_nodes, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh_get_num_nodes, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Mesh, __pyx_mstate_global->__pyx_n_u_get_num_nodes, __pyx_t_2) < 0) __PYX_ERR(0, 125, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":129
+ *         return mesh_get_num_nodes(self._mesh)
+ * 
+ *     def get_num_elements(self):             # <<<<<<<<<<<<<<
+ *         """Get number of mesh elements."""
+ *         return mesh_get_num_elements(self._mesh)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_9get_num_elements, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh_get_num_elements, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Mesh, __pyx_mstate_global->__pyx_n_u_get_num_elements, __pyx_t_2) < 0) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":133
+ *         return mesh_get_num_elements(self._mesh)
+ * 
+ *     def get_grid_points(self):             # <<<<<<<<<<<<<<
+ *         """Get mesh grid points."""
+ *         num_nodes = self.get_num_nodes()
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_11get_grid_points, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh_get_grid_points, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Mesh, __pyx_mstate_global->__pyx_n_u_get_grid_points, __pyx_t_2) < 0) __PYX_ERR(0, 133, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_13__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_4Mesh_15__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Mesh___setstate_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":162
+ *             destroy_poisson(self._poisson)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return poisson_is_valid(self._poisson) != 0
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_5is_valid, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_is_valid, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_is_valid, __pyx_t_2) < 0) __PYX_ERR(0, 162, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":166
+ *         return poisson_is_valid(self._poisson) != 0
+ * 
+ *     def set_charge_density(self, np.ndarray[double, ndim=1] rho):             # <<<<<<<<<<<<<<
+ *         """Set charge density."""
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_7set_charge_density, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_set_charge_density, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[11])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_set_charge_density, __pyx_t_2) < 0) __PYX_ERR(0, 166, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":170
+ *         poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+ * 
+ *     def solve(self, bc):             # <<<<<<<<<<<<<<
+ *         """Solve Poisson equation."""
+ *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_9solve, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_solve, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[12])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_solve, __pyx_t_2) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":181
+ *         return V
+ * 
+ *     def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,             # <<<<<<<<<<<<<<
+ *                              np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na,
+ *                              int max_iter=100, double tol=1e-6):
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_11solve_self_consistent, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_solve_self_consist, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[13])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[0]);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_solve_self_consistent, __pyx_t_2) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":198
+ *         return V
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return poisson_get_dof_count(self._poisson)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_13get_dof_count, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_get_dof_count, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[14])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_get_dof_count, __pyx_t_2) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":202
+ *         return poisson_get_dof_count(self._poisson)
+ * 
+ *     def get_residual_norm(self):             # <<<<<<<<<<<<<<
+ *         """Get residual norm."""
+ *         return poisson_get_residual_norm(self._poisson)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_15get_residual_norm, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver_get_residual_norm, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[15])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_PoissonSolver, __pyx_mstate_global->__pyx_n_u_get_residual_norm, __pyx_t_2) < 0) __PYX_ERR(0, 202, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_17__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[16])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_13PoissonSolver_19__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_PoissonSolver___setstate_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[17])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":224
+ *             destroy_drift_diffusion(self._dd)
+ * 
+ *     def is_valid(self):             # <<<<<<<<<<<<<<
+ *         """Check if solver is valid."""
+ *         return drift_diffusion_is_valid(self._dd) != 0
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_5is_valid, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_is_valid, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[18])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_is_valid, __pyx_t_2) < 0) __PYX_ERR(0, 224, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":228
+ *         return drift_diffusion_is_valid(self._dd) != 0
+ * 
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
+ *         """Set doping concentrations."""
+ *         if Nd.size != Na.size:
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_7set_doping, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_set_doping, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[19])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_set_doping, __pyx_t_2) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":236
+ *             raise RuntimeError("Failed to set doping")
+ * 
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
+ *         """Set trap energy levels."""
+ *         cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_9set_trap_level, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_set_trap_le, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[20])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_set_trap_level, __pyx_t_2) < 0) __PYX_ERR(0, 236, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":242
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+ *     def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,             # <<<<<<<<<<<<<<
+ *               int poisson_max_iter=50, double poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_11solve, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_solve, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[21])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[1]);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_solve, __pyx_t_2) < 0) __PYX_ERR(0, 242, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":272
+ *         }
+ * 
+ *     def get_dof_count(self):             # <<<<<<<<<<<<<<
+ *         """Get degrees of freedom count."""
+ *         return drift_diffusion_get_dof_count(self._dd)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_13get_dof_count, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_get_dof_cou, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[22])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_get_dof_count, __pyx_t_2) < 0) __PYX_ERR(0, 272, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":276
+ *         return drift_diffusion_get_dof_count(self._dd)
+ * 
+ *     def get_convergence_residual(self):             # <<<<<<<<<<<<<<
+ *         """Get convergence residual."""
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_15get_convergence_residual, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_get_converg, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[23])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_get_convergence_residual, __pyx_t_2) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":280
+ *         return drift_diffusion_get_convergence_residual(self._dd)
+ * 
+ *     def get_order(self):             # <<<<<<<<<<<<<<
+ *         """Get polynomial order."""
+ *         return drift_diffusion_get_order(self._dd)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_17get_order, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver_get_order, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[24])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_DriftDiffusionSolver, __pyx_mstate_global->__pyx_n_u_get_order, __pyx_t_2) < 0) __PYX_ERR(0, 280, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_19__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver___reduce_cy, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[25])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_20DriftDiffusionSolver_21__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_DriftDiffusionSolver___setstate, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[26])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":298
+ *     cdef public int _num_points_y
+ * 
+ *     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,             # <<<<<<<<<<<<<<
+ *                   method="DG", mesh_type="Structured", regions=None):
+ * 
+*/
+  __pyx_t_2 = __Pyx_PyList_Pack(2, __pyx_mstate_global->__pyx_float_1eneg_6, __pyx_mstate_global->__pyx_float_0_5eneg_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 298, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_mstate_global->__pyx_k_ = __pyx_t_2;
+  __Pyx_GIVEREF(__pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "simulator.pyx":327
+ *         pass
+ * 
+ *     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):             # <<<<<<<<<<<<<<
+ *         """Set doping concentrations."""
+ *         self._dd.set_doping(Nd, Na)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_5set_doping, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_set_doping, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[27])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 327, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_set_doping, __pyx_t_2) < 0) __PYX_ERR(0, 327, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":331
+ *         self._dd.set_doping(Nd, Na)
+ * 
+ *     def set_trap_level(self, np.ndarray[double, ndim=1] Et):             # <<<<<<<<<<<<<<
+ *         """Set trap energy levels."""
+ *         self._dd.set_trap_level(Et)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_7set_trap_level, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_set_trap_level, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[28])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 331, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_set_trap_level, __pyx_t_2) < 0) __PYX_ERR(0, 331, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":335
+ *         self._dd.set_trap_level(Et)
+ * 
+ *     def solve_poisson(self, bc):             # <<<<<<<<<<<<<<
+ *         """Solve Poisson equation."""
+ *         return self._poisson.solve(bc)
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_9solve_poisson, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_solve_poisson, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[29])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 335, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_solve_poisson, __pyx_t_2) < 0) __PYX_ERR(0, 335, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":339
+ *         return self._poisson.solve(bc)
+ * 
+ *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,             # <<<<<<<<<<<<<<
+ *                               poisson_max_iter=50, poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_11solve_drift_diffusion, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_solve_drift_diffusion, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[30])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[1]);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_solve_drift_diffusion, __pyx_t_2) < 0) __PYX_ERR(0, 339, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":345
+ * 
+ *     # Additional convenience methods
+ *     def get_device(self):             # <<<<<<<<<<<<<<
+ *         """Get the device object."""
+ *         return self._device
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_13get_device, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_get_device, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[31])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 345, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_get_device, __pyx_t_2) < 0) __PYX_ERR(0, 345, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":349
+ *         return self._device
+ * 
+ *     def get_poisson_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the Poisson solver object."""
+ *         return self._poisson
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_15get_poisson_solver, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_get_poisson_solver, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[32])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 349, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_get_poisson_solver, __pyx_t_2) < 0) __PYX_ERR(0, 349, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "simulator.pyx":353
+ *         return self._poisson
+ * 
+ *     def get_drift_diffusion_solver(self):             # <<<<<<<<<<<<<<
+ *         """Get the drift-diffusion solver object."""
+ *         return self._dd
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_17get_drift_diffusion_solver, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator_get_drift_diffusion_so, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[33])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 353, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_9simulator_Simulator, __pyx_mstate_global->__pyx_n_u_get_drift_diffusion_solver, __pyx_t_2) < 0) __PYX_ERR(0, 353, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":1
+ * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_19__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator___reduce_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[34])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "(tree fragment)":3
+ * def __reduce_cython__(self):
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+ * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
+ *     raise TypeError, "no default __reduce__ due to non-trivial __cinit__"
+*/
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9simulator_9Simulator_21__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_Simulator___setstate_cython, NULL, __pyx_mstate_global->__pyx_n_u_simulator, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[35])); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9922,6 +16087,21 @@ typedef struct {
 static const char * const __pyx_string_tab_encodings[] = { 0 };
 static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_DG, sizeof(__pyx_k_DG), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DG */
+  {__pyx_k_Device, sizeof(__pyx_k_Device), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Device */
+  {__pyx_k_Device___reduce_cython, sizeof(__pyx_k_Device___reduce_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Device___reduce_cython */
+  {__pyx_k_Device___setstate_cython, sizeof(__pyx_k_Device___setstate_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Device___setstate_cython */
+  {__pyx_k_Device_get_epsilon_at, sizeof(__pyx_k_Device_get_epsilon_at), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Device_get_epsilon_at */
+  {__pyx_k_Device_get_extents, sizeof(__pyx_k_Device_get_extents), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Device_get_extents */
+  {__pyx_k_DriftDiffusionSolver, sizeof(__pyx_k_DriftDiffusionSolver), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver */
+  {__pyx_k_DriftDiffusionSolver___reduce_cy, sizeof(__pyx_k_DriftDiffusionSolver___reduce_cy), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver___reduce_cy */
+  {__pyx_k_DriftDiffusionSolver___setstate, sizeof(__pyx_k_DriftDiffusionSolver___setstate), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver___setstate */
+  {__pyx_k_DriftDiffusionSolver_get_converg, sizeof(__pyx_k_DriftDiffusionSolver_get_converg), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_get_converg */
+  {__pyx_k_DriftDiffusionSolver_get_dof_cou, sizeof(__pyx_k_DriftDiffusionSolver_get_dof_cou), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_get_dof_cou */
+  {__pyx_k_DriftDiffusionSolver_get_order, sizeof(__pyx_k_DriftDiffusionSolver_get_order), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_get_order */
+  {__pyx_k_DriftDiffusionSolver_is_valid, sizeof(__pyx_k_DriftDiffusionSolver_is_valid), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_is_valid */
+  {__pyx_k_DriftDiffusionSolver_set_doping, sizeof(__pyx_k_DriftDiffusionSolver_set_doping), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_set_doping */
+  {__pyx_k_DriftDiffusionSolver_set_trap_le, sizeof(__pyx_k_DriftDiffusionSolver_set_trap_le), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_set_trap_le */
+  {__pyx_k_DriftDiffusionSolver_solve, sizeof(__pyx_k_DriftDiffusionSolver_solve), 0, 1, 1}, /* PyObject cname: __pyx_n_u_DriftDiffusionSolver_solve */
   {__pyx_k_Drift_diffusion_solve_failed, sizeof(__pyx_k_Drift_diffusion_solve_failed), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Drift_diffusion_solve_failed */
   {__pyx_k_Et, sizeof(__pyx_k_Et), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Et */
   {__pyx_k_FDM, sizeof(__pyx_k_FDM), 0, 1, 1}, /* PyObject cname: __pyx_n_u_FDM */
@@ -9929,23 +16109,47 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_FVM, sizeof(__pyx_k_FVM), 0, 1, 1}, /* PyObject cname: __pyx_n_u_FVM */
   {__pyx_k_Failed_to_create_Device, sizeof(__pyx_k_Failed_to_create_Device), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_create_Device */
   {__pyx_k_Failed_to_create_DriftDiffusion, sizeof(__pyx_k_Failed_to_create_DriftDiffusion), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_create_DriftDiffusion */
+  {__pyx_k_Failed_to_create_Mesh, sizeof(__pyx_k_Failed_to_create_Mesh), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_create_Mesh */
   {__pyx_k_Failed_to_create_Poisson_solver, sizeof(__pyx_k_Failed_to_create_Poisson_solver), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_create_Poisson_solver */
+  {__pyx_k_Failed_to_create_Simulator, sizeof(__pyx_k_Failed_to_create_Simulator), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_create_Simulator */
   {__pyx_k_Failed_to_set_doping, sizeof(__pyx_k_Failed_to_set_doping), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_set_doping */
   {__pyx_k_Failed_to_set_trap_level, sizeof(__pyx_k_Failed_to_set_trap_level), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Failed_to_set_trap_level */
   {__pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 1, 1}, /* PyObject cname: __pyx_n_u_ImportError */
   {__pyx_k_Jn, sizeof(__pyx_k_Jn), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Jn */
   {__pyx_k_Jp, sizeof(__pyx_k_Jp), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Jp */
+  {__pyx_k_Lx, sizeof(__pyx_k_Lx), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Lx */
+  {__pyx_k_Ly, sizeof(__pyx_k_Ly), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Ly */
   {__pyx_k_MC, sizeof(__pyx_k_MC), 0, 1, 1}, /* PyObject cname: __pyx_n_u_MC */
+  {__pyx_k_Mesh, sizeof(__pyx_k_Mesh), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh */
+  {__pyx_k_Mesh___reduce_cython, sizeof(__pyx_k_Mesh___reduce_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh___reduce_cython */
+  {__pyx_k_Mesh___setstate_cython, sizeof(__pyx_k_Mesh___setstate_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh___setstate_cython */
+  {__pyx_k_Mesh_generate_gmsh, sizeof(__pyx_k_Mesh_generate_gmsh), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh_generate_gmsh */
+  {__pyx_k_Mesh_get_grid_points, sizeof(__pyx_k_Mesh_get_grid_points), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh_get_grid_points */
+  {__pyx_k_Mesh_get_num_elements, sizeof(__pyx_k_Mesh_get_num_elements), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh_get_num_elements */
+  {__pyx_k_Mesh_get_num_nodes, sizeof(__pyx_k_Mesh_get_num_nodes), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Mesh_get_num_nodes */
   {__pyx_k_Na, sizeof(__pyx_k_Na), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Na */
   {__pyx_k_Nd, sizeof(__pyx_k_Nd), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Nd */
   {__pyx_k_Nd_and_Na_arrays_must_have_the_s, sizeof(__pyx_k_Nd_and_Na_arrays_must_have_the_s), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Nd_and_Na_arrays_must_have_the_s */
   {__pyx_k_Note_that_Cython_is_deliberately, sizeof(__pyx_k_Note_that_Cython_is_deliberately), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Note_that_Cython_is_deliberately */
+  {__pyx_k_PoissonSolver, sizeof(__pyx_k_PoissonSolver), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver */
+  {__pyx_k_PoissonSolver___reduce_cython, sizeof(__pyx_k_PoissonSolver___reduce_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver___reduce_cython */
+  {__pyx_k_PoissonSolver___setstate_cython, sizeof(__pyx_k_PoissonSolver___setstate_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver___setstate_cython */
+  {__pyx_k_PoissonSolver_get_dof_count, sizeof(__pyx_k_PoissonSolver_get_dof_count), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_get_dof_count */
+  {__pyx_k_PoissonSolver_get_residual_norm, sizeof(__pyx_k_PoissonSolver_get_residual_norm), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_get_residual_norm */
+  {__pyx_k_PoissonSolver_is_valid, sizeof(__pyx_k_PoissonSolver_is_valid), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_is_valid */
+  {__pyx_k_PoissonSolver_set_charge_density, sizeof(__pyx_k_PoissonSolver_set_charge_density), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_set_charge_density */
+  {__pyx_k_PoissonSolver_solve, sizeof(__pyx_k_PoissonSolver_solve), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_solve */
+  {__pyx_k_PoissonSolver_solve_self_consist, sizeof(__pyx_k_PoissonSolver_solve_self_consist), 0, 1, 1}, /* PyObject cname: __pyx_n_u_PoissonSolver_solve_self_consist */
   {__pyx_k_Poisson_solve_failed, sizeof(__pyx_k_Poisson_solve_failed), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Poisson_solve_failed */
   {__pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 1, 1}, /* PyObject cname: __pyx_n_u_RuntimeError */
   {__pyx_k_SEM, sizeof(__pyx_k_SEM), 0, 1, 1}, /* PyObject cname: __pyx_n_u_SEM */
+  {__pyx_k_Self_consistent_Poisson_solve_fa, sizeof(__pyx_k_Self_consistent_Poisson_solve_fa), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_Self_consistent_Poisson_solve_fa */
   {__pyx_k_Simulator, sizeof(__pyx_k_Simulator), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator */
   {__pyx_k_Simulator___reduce_cython, sizeof(__pyx_k_Simulator___reduce_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator___reduce_cython */
   {__pyx_k_Simulator___setstate_cython, sizeof(__pyx_k_Simulator___setstate_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator___setstate_cython */
+  {__pyx_k_Simulator_get_device, sizeof(__pyx_k_Simulator_get_device), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_get_device */
+  {__pyx_k_Simulator_get_drift_diffusion_so, sizeof(__pyx_k_Simulator_get_drift_diffusion_so), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_get_drift_diffusion_so */
+  {__pyx_k_Simulator_get_poisson_solver, sizeof(__pyx_k_Simulator_get_poisson_solver), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_get_poisson_solver */
   {__pyx_k_Simulator_set_doping, sizeof(__pyx_k_Simulator_set_doping), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_set_doping */
   {__pyx_k_Simulator_set_trap_level, sizeof(__pyx_k_Simulator_set_trap_level), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_set_trap_level */
   {__pyx_k_Simulator_solve_drift_diffusion, sizeof(__pyx_k_Simulator_solve_drift_diffusion), 0, 1, 1}, /* PyObject cname: __pyx_n_u_Simulator_solve_drift_diffusion */
@@ -9963,23 +16167,40 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_bc, sizeof(__pyx_k_bc), 0, 1, 1}, /* PyObject cname: __pyx_n_u_bc */
   {__pyx_k_bc_array, sizeof(__pyx_k_bc_array), 0, 1, 1}, /* PyObject cname: __pyx_n_u_bc_array */
   {__pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 1, 1}, /* PyObject cname: __pyx_n_u_cline_in_traceback */
+  {__pyx_k_device, sizeof(__pyx_k_device), 0, 1, 1}, /* PyObject cname: __pyx_n_u_device */
   {__pyx_k_dimension, sizeof(__pyx_k_dimension), 0, 1, 1}, /* PyObject cname: __pyx_n_u_dimension */
   {__pyx_k_disable, sizeof(__pyx_k_disable), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_disable */
+  {__pyx_k_dof_count, sizeof(__pyx_k_dof_count), 0, 1, 1}, /* PyObject cname: __pyx_n_u_dof_count */
   {__pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 1, 1}, /* PyObject cname: __pyx_n_u_dtype */
   {__pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_enable */
   {__pyx_k_extents, sizeof(__pyx_k_extents), 0, 1, 1}, /* PyObject cname: __pyx_n_u_extents */
+  {__pyx_k_filename, sizeof(__pyx_k_filename), 0, 1, 1}, /* PyObject cname: __pyx_n_u_filename */
   {__pyx_k_float64, sizeof(__pyx_k_float64), 0, 1, 1}, /* PyObject cname: __pyx_n_u_float64 */
   {__pyx_k_func, sizeof(__pyx_k_func), 0, 1, 1}, /* PyObject cname: __pyx_n_u_func */
   {__pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_gc */
+  {__pyx_k_generate_gmsh, sizeof(__pyx_k_generate_gmsh), 0, 1, 1}, /* PyObject cname: __pyx_n_u_generate_gmsh */
   {__pyx_k_getLogger, sizeof(__pyx_k_getLogger), 0, 1, 1}, /* PyObject cname: __pyx_n_u_getLogger */
+  {__pyx_k_get_convergence_residual, sizeof(__pyx_k_get_convergence_residual), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_convergence_residual */
+  {__pyx_k_get_device, sizeof(__pyx_k_get_device), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_device */
+  {__pyx_k_get_dof_count, sizeof(__pyx_k_get_dof_count), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_dof_count */
+  {__pyx_k_get_drift_diffusion_solver, sizeof(__pyx_k_get_drift_diffusion_solver), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_drift_diffusion_solver */
+  {__pyx_k_get_epsilon_at, sizeof(__pyx_k_get_epsilon_at), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_epsilon_at */
+  {__pyx_k_get_extents, sizeof(__pyx_k_get_extents), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_extents */
+  {__pyx_k_get_grid_points, sizeof(__pyx_k_get_grid_points), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_grid_points */
+  {__pyx_k_get_num_elements, sizeof(__pyx_k_get_num_elements), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_num_elements */
+  {__pyx_k_get_num_nodes, sizeof(__pyx_k_get_num_nodes), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_num_nodes */
+  {__pyx_k_get_order, sizeof(__pyx_k_get_order), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_order */
+  {__pyx_k_get_poisson_solver, sizeof(__pyx_k_get_poisson_solver), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_poisson_solver */
+  {__pyx_k_get_residual_norm, sizeof(__pyx_k_get_residual_norm), 0, 1, 1}, /* PyObject cname: __pyx_n_u_get_residual_norm */
   {__pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 1, 1}, /* PyObject cname: __pyx_n_u_getstate */
   {__pyx_k_initializing, sizeof(__pyx_k_initializing), 0, 1, 1}, /* PyObject cname: __pyx_n_u_initializing */
   {__pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 1, 1}, /* PyObject cname: __pyx_n_u_is_coroutine */
+  {__pyx_k_is_valid, sizeof(__pyx_k_is_valid), 0, 1, 1}, /* PyObject cname: __pyx_n_u_is_valid */
   {__pyx_k_isenabled, sizeof(__pyx_k_isenabled), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_isenabled */
-  {__pyx_k_items, sizeof(__pyx_k_items), 0, 1, 1}, /* PyObject cname: __pyx_n_u_items */
   {__pyx_k_logger, sizeof(__pyx_k_logger), 0, 1, 1}, /* PyObject cname: __pyx_n_u_logger */
   {__pyx_k_logging, sizeof(__pyx_k_logging), 0, 1, 1}, /* PyObject cname: __pyx_n_u_logging */
   {__pyx_k_main, sizeof(__pyx_k_main), 0, 1, 1}, /* PyObject cname: __pyx_n_u_main */
+  {__pyx_k_max_iter, sizeof(__pyx_k_max_iter), 0, 1, 1}, /* PyObject cname: __pyx_n_u_max_iter */
   {__pyx_k_max_steps, sizeof(__pyx_k_max_steps), 0, 1, 1}, /* PyObject cname: __pyx_n_u_max_steps */
   {__pyx_k_mesh_type, sizeof(__pyx_k_mesh_type), 0, 1, 1}, /* PyObject cname: __pyx_n_u_mesh_type */
   {__pyx_k_method, sizeof(__pyx_k_method), 0, 1, 1}, /* PyObject cname: __pyx_n_u_method */
@@ -9988,11 +16209,13 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_name, sizeof(__pyx_k_name), 0, 1, 1}, /* PyObject cname: __pyx_n_u_name */
   {__pyx_k_no_default___reduce___due_to_non, sizeof(__pyx_k_no_default___reduce___due_to_non), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_no_default___reduce___due_to_non */
   {__pyx_k_np, sizeof(__pyx_k_np), 0, 1, 1}, /* PyObject cname: __pyx_n_u_np */
+  {__pyx_k_num_nodes, sizeof(__pyx_k_num_nodes), 0, 1, 1}, /* PyObject cname: __pyx_n_u_num_nodes */
   {__pyx_k_num_points_x, sizeof(__pyx_k_num_points_x), 0, 1, 1}, /* PyObject cname: __pyx_n_u_num_points_x */
   {__pyx_k_num_points_y, sizeof(__pyx_k_num_points_y), 0, 1, 1}, /* PyObject cname: __pyx_n_u_num_points_y */
   {__pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 1, 1}, /* PyObject cname: __pyx_n_u_numpy */
   {__pyx_k_numpy__core_multiarray_failed_to, sizeof(__pyx_k_numpy__core_multiarray_failed_to), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_numpy__core_multiarray_failed_to */
   {__pyx_k_numpy__core_umath_failed_to_impo, sizeof(__pyx_k_numpy__core_umath_failed_to_impo), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_numpy__core_umath_failed_to_impo */
+  {__pyx_k_order, sizeof(__pyx_k_order), 0, 1, 1}, /* PyObject cname: __pyx_n_u_order */
   {__pyx_k_p, sizeof(__pyx_k_p), 0, 1, 1}, /* PyObject cname: __pyx_n_u_p */
   {__pyx_k_poisson_max_iter, sizeof(__pyx_k_poisson_max_iter), 0, 1, 1}, /* PyObject cname: __pyx_n_u_poisson_max_iter */
   {__pyx_k_poisson_tol, sizeof(__pyx_k_poisson_tol), 0, 1, 1}, /* PyObject cname: __pyx_n_u_poisson_tol */
@@ -10005,7 +16228,9 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_reduce_ex, sizeof(__pyx_k_reduce_ex), 0, 1, 1}, /* PyObject cname: __pyx_n_u_reduce_ex */
   {__pyx_k_regions, sizeof(__pyx_k_regions), 0, 1, 1}, /* PyObject cname: __pyx_n_u_regions */
   {__pyx_k_result, sizeof(__pyx_k_result), 0, 1, 1}, /* PyObject cname: __pyx_n_u_result */
+  {__pyx_k_rho, sizeof(__pyx_k_rho), 0, 1, 1}, /* PyObject cname: __pyx_n_u_rho */
   {__pyx_k_self, sizeof(__pyx_k_self), 0, 1, 1}, /* PyObject cname: __pyx_n_u_self */
+  {__pyx_k_set_charge_density, sizeof(__pyx_k_set_charge_density), 0, 1, 1}, /* PyObject cname: __pyx_n_u_set_charge_density */
   {__pyx_k_set_doping, sizeof(__pyx_k_set_doping), 0, 1, 1}, /* PyObject cname: __pyx_n_u_set_doping */
   {__pyx_k_set_name, sizeof(__pyx_k_set_name), 0, 1, 1}, /* PyObject cname: __pyx_n_u_set_name */
   {__pyx_k_set_trap_level, sizeof(__pyx_k_set_trap_level), 0, 1, 1}, /* PyObject cname: __pyx_n_u_set_trap_level */
@@ -10013,14 +16238,20 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 1, 1}, /* PyObject cname: __pyx_n_u_setstate_cython */
   {__pyx_k_simulator, sizeof(__pyx_k_simulator), 0, 1, 1}, /* PyObject cname: __pyx_n_u_simulator */
   {__pyx_k_simulator_pyx, sizeof(__pyx_k_simulator_pyx), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_simulator_pyx */
-  {__pyx_k_size, sizeof(__pyx_k_size), 0, 1, 1}, /* PyObject cname: __pyx_n_u_size */
+  {__pyx_k_solve, sizeof(__pyx_k_solve), 0, 1, 1}, /* PyObject cname: __pyx_n_u_solve */
   {__pyx_k_solve_drift_diffusion, sizeof(__pyx_k_solve_drift_diffusion), 0, 1, 1}, /* PyObject cname: __pyx_n_u_solve_drift_diffusion */
   {__pyx_k_solve_poisson, sizeof(__pyx_k_solve_poisson), 0, 1, 1}, /* PyObject cname: __pyx_n_u_solve_poisson */
+  {__pyx_k_solve_self_consistent, sizeof(__pyx_k_solve_self_consistent), 0, 1, 1}, /* PyObject cname: __pyx_n_u_solve_self_consistent */
   {__pyx_k_spec, sizeof(__pyx_k_spec), 0, 1, 1}, /* PyObject cname: __pyx_n_u_spec */
   {__pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 1, 0}, /* PyObject cname: __pyx_kp_u_stringsource */
   {__pyx_k_test, sizeof(__pyx_k_test), 0, 1, 1}, /* PyObject cname: __pyx_n_u_test */
+  {__pyx_k_tol, sizeof(__pyx_k_tol), 0, 1, 1}, /* PyObject cname: __pyx_n_u_tol */
   {__pyx_k_use_amr, sizeof(__pyx_k_use_amr), 0, 1, 1}, /* PyObject cname: __pyx_n_u_use_amr */
   {__pyx_k_use_amr_int, sizeof(__pyx_k_use_amr_int), 0, 1, 1}, /* PyObject cname: __pyx_n_u_use_amr_int */
+  {__pyx_k_x, sizeof(__pyx_k_x), 0, 1, 1}, /* PyObject cname: __pyx_n_u_x */
+  {__pyx_k_x_points, sizeof(__pyx_k_x_points), 0, 1, 1}, /* PyObject cname: __pyx_n_u_x_points */
+  {__pyx_k_y, sizeof(__pyx_k_y), 0, 1, 1}, /* PyObject cname: __pyx_n_u_y */
+  {__pyx_k_y_points, sizeof(__pyx_k_y_points), 0, 1, 1}, /* PyObject cname: __pyx_n_u_y_points */
   {__pyx_k_zeros, sizeof(__pyx_k_zeros), 0, 1, 1}, /* PyObject cname: __pyx_n_u_zeros */
   {0, 0, 0, 0, 0}
 };
@@ -10031,9 +16262,9 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry const *t, PyObject **target, c
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 93, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 79, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 231, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(2, 1051, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -10046,16 +16277,27 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "simulator.pyx":148
+  /* "simulator.pyx":181
  *         return V
  * 
- *     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,             # <<<<<<<<<<<<<<
- *                               poisson_max_iter=50, poisson_tol=1e-6):
- *         cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+ *     def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,             # <<<<<<<<<<<<<<
+ *                              np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na,
+ *                              int max_iter=100, double tol=1e-6):
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(5, __pyx_mstate_global->__pyx_float_0_0, __pyx_mstate_global->__pyx_int_100, Py_False, __pyx_mstate_global->__pyx_int_50, __pyx_mstate_global->__pyx_float_1eneg_6); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_int_100, __pyx_mstate_global->__pyx_float_1eneg_6); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
+
+  /* "simulator.pyx":242
+ *             raise RuntimeError("Failed to set trap level")
+ * 
+ *     def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,             # <<<<<<<<<<<<<<
+ *               int poisson_max_iter=50, double poisson_tol=1e-6):
+ *         """Solve drift-diffusion equations."""
+*/
+  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(5, __pyx_mstate_global->__pyx_float_0_0, __pyx_mstate_global->__pyx_int_100, Py_False, __pyx_mstate_global->__pyx_int_50, __pyx_mstate_global->__pyx_float_1eneg_6); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 242, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[1]);
+  __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[1]);
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -10088,12 +16330,12 @@ static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
 /* #### Code section: init_codeobjects ### */
 \
         typedef struct {
-            unsigned int argcount : 3;
+            unsigned int argcount : 4;
             unsigned int num_posonly_args : 1;
             unsigned int num_kwonly_args : 1;
             unsigned int nlocals : 5;
             unsigned int flags : 10;
-            unsigned int first_line : 8;
+            unsigned int first_line : 9;
             unsigned int line_table_length : 13;
         } __Pyx_PyCode_New_function_description;
 /* NewCodeObj.proto */
@@ -10111,34 +16353,184 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 128, 75};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Nd, __pyx_mstate->__pyx_n_u_Na, __pyx_mstate->__pyx_n_u_result};
-    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_doping, __pyx_k_A_2V3b_AQ_4AT_ar_ar_bPQ_7_Q_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 87, 18};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_x, __pyx_mstate->__pyx_n_u_y};
+    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_epsilon_at, __pyx_k_A_AT_3a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 135, 44};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Et, __pyx_mstate->__pyx_n_u_result};
-    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_trap_level, __pyx_k_A_8_U_2Qd_A_7_Q_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
-  }
-  {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 5, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 140, 112};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_bc_array, __pyx_mstate->__pyx_n_u_V, __pyx_mstate->__pyx_n_u_result};
-    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve_poisson, __pyx_k_A_32V1D_b_BfAT_r___bbdde_4z_4xwV, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
-  }
-  {
-    const __Pyx_PyCode_New_function_description descr = {7, 0, 0, 16, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 148, 269};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_Vg, __pyx_mstate->__pyx_n_u_max_steps, __pyx_mstate->__pyx_n_u_use_amr, __pyx_mstate->__pyx_n_u_poisson_max_iter, __pyx_mstate->__pyx_n_u_poisson_tol, __pyx_mstate->__pyx_n_u_bc_array, __pyx_mstate->__pyx_n_u_size, __pyx_mstate->__pyx_n_u_V, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_p, __pyx_mstate->__pyx_n_u_Jn, __pyx_mstate->__pyx_n_u_Jp, __pyx_mstate->__pyx_n_u_use_amr_int, __pyx_mstate->__pyx_n_u_result};
-    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve_drift_diffusion, __pyx_k_q_q_32V1D_b_N_D_BfAV6_1_BfAV6_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 91, 32};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_extents};
+    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_extents, __pyx_k_A_4z_q_q_G1A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1, 9};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
-    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3, 9};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
-    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 121, 19};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_filename};
+    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_generate_gmsh, __pyx_k_A_4xxwaq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 125, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_num_nodes, __pyx_k_A_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 129, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_num_elements, __pyx_k_A_AT, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 133, 90};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_num_nodes, __pyx_mstate->__pyx_n_u_x_points, __pyx_mstate->__pyx_n_u_y_points};
+    __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_grid_points, __pyx_k_A_D_a_32V1KvRq_32V1KvRq_at81HAT, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
+    __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 162, 18};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[10] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_is_valid, __pyx_k_A_q_Ks, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[10])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 166, 23};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_rho};
+    __pyx_mstate_global->__pyx_codeobj_tab[11] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_charge_density, __pyx_k_A_4_3at3a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[11])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 170, 116};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_bc_array, __pyx_mstate->__pyx_n_u_dof_count, __pyx_mstate->__pyx_n_u_V, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[12] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve, __pyx_k_A_32V1D_b_U_7q_A_BfA_b_4_81D_PWW, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[12])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {8, 0, 0, 12, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 181, 157};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_p, __pyx_mstate->__pyx_n_u_Nd, __pyx_mstate->__pyx_n_u_Na, __pyx_mstate->__pyx_n_u_max_iter, __pyx_mstate->__pyx_n_u_tol, __pyx_mstate->__pyx_n_u_bc_array, __pyx_mstate->__pyx_n_u_dof_count, __pyx_mstate->__pyx_n_u_V, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[13] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve_self_consistent, __pyx_k_A_32V1D_b_U_7q_A_BfA_b_1HAT_Qat1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[13])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 198, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[14] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_dof_count, __pyx_k_A_AT, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[14])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 202, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[15] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_residual_norm, __pyx_k_A_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[15])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[16] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[16])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
+    __pyx_mstate_global->__pyx_codeobj_tab[17] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[17])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 224, 18};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[18] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_is_valid, __pyx_k_A_q_F_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[18])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 228, 75};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Nd, __pyx_mstate->__pyx_n_u_Na, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[19] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_doping, __pyx_k_A_2V3b_AQ_4AT_q_4q_4rQR_7_Q_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[19])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 236, 44};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Et, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[20] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_trap_level, __pyx_k_A_8_V1Bat2Q_7_Q_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[20])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {7, 0, 0, 16, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 242, 269};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_Vg, __pyx_mstate->__pyx_n_u_max_steps, __pyx_mstate->__pyx_n_u_use_amr, __pyx_mstate->__pyx_n_u_poisson_max_iter, __pyx_mstate->__pyx_n_u_poisson_tol, __pyx_mstate->__pyx_n_u_bc_array, __pyx_mstate->__pyx_n_u_dof_count, __pyx_mstate->__pyx_n_u_V, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_p, __pyx_mstate->__pyx_n_u_Jn, __pyx_mstate->__pyx_n_u_Jp, __pyx_mstate->__pyx_n_u_use_amr_int, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[21] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve, __pyx_k_55Gq_32V1D_b_U_q_A_BfA_b_BfA_b, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[21])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 272, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[22] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_dof_count, __pyx_k_A_AT_2, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[22])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 276, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[23] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_convergence_residual, __pyx_k_A_7q_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[23])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 280, 14};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[24] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_order, __pyx_k_A_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[24])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[25] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[25])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
+    __pyx_mstate_global->__pyx_codeobj_tab[26] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[26])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 327, 15};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Nd, __pyx_mstate->__pyx_n_u_Na};
+    __pyx_mstate_global->__pyx_codeobj_tab[27] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_doping, __pyx_k_A_D_1D, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[27])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 331, 13};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_Et};
+    __pyx_mstate_global->__pyx_codeobj_tab[28] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_set_trap_level, __pyx_k_A_D_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[28])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 335, 15};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc};
+    __pyx_mstate_global->__pyx_codeobj_tab[29] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve_poisson, __pyx_k_A_t9F_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[29])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {7, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 339, 38};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_bc, __pyx_mstate->__pyx_n_u_Vg, __pyx_mstate->__pyx_n_u_max_steps, __pyx_mstate->__pyx_n_u_use_amr, __pyx_mstate->__pyx_n_u_poisson_max_iter, __pyx_mstate->__pyx_n_u_poisson_tol};
+    __pyx_mstate_global->__pyx_codeobj_tab[30] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_solve_drift_diffusion, __pyx_k_q_q_t4vQd_k_LA, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[30])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 345, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[31] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_device, __pyx_k_A_t1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[31])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 349, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[32] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_poisson_solver, __pyx_k_A_t1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[32])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 353, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[33] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_simulator_pyx, __pyx_mstate->__pyx_n_u_get_drift_diffusion_solver, __pyx_k_A_t1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[33])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
+    __pyx_mstate_global->__pyx_codeobj_tab[34] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_reduce_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[34])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 3, 9};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_pyx_state};
+    __pyx_mstate_global->__pyx_codeobj_tab[35] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_k_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[35])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
   return 0;
@@ -10375,19 +16767,189 @@ static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
     return result;
 }
 
-/* IterFinish */
-static CYTHON_INLINE int __Pyx_IterFinish(void) {
-    PyObject* exc_type;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    exc_type = __Pyx_PyErr_CurrentExceptionType();
-    if (unlikely(exc_type)) {
-        if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration)))
-            return -1;
-        __Pyx_PyErr_Clear();
-        return 0;
+/* GetTopmostException */
+#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
+static _PyErr_StackItem *
+__Pyx_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
+           exc_info->previous_item != NULL)
+    {
+        exc_info = exc_info->previous_item;
     }
+    return exc_info;
+}
+#endif
+
+/* SaveResetException */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
+    PyObject *exc_value = exc_info->exc_value;
+    if (exc_value == NULL || exc_value == Py_None) {
+        *value = NULL;
+        *type = NULL;
+        *tb = NULL;
+    } else {
+        *value = exc_value;
+        Py_INCREF(*value);
+        *type = (PyObject*) Py_TYPE(exc_value);
+        Py_INCREF(*type);
+        *tb = PyException_GetTraceback(exc_value);
+    }
+  #elif CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
+    *type = exc_info->exc_type;
+    *value = exc_info->exc_value;
+    *tb = exc_info->exc_traceback;
+    Py_XINCREF(*type);
+    Py_XINCREF(*value);
+    Py_XINCREF(*tb);
+  #else
+    *type = tstate->exc_type;
+    *value = tstate->exc_value;
+    *tb = tstate->exc_traceback;
+    Py_XINCREF(*type);
+    Py_XINCREF(*value);
+    Py_XINCREF(*tb);
+  #endif
+}
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    PyObject *tmp_value = exc_info->exc_value;
+    exc_info->exc_value = value;
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+  #else
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    #if CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_type = exc_info->exc_type;
+    tmp_value = exc_info->exc_value;
+    tmp_tb = exc_info->exc_traceback;
+    exc_info->exc_type = type;
+    exc_info->exc_value = value;
+    exc_info->exc_traceback = tb;
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = type;
+    tstate->exc_value = value;
+    tstate->exc_traceback = tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+  #endif
+}
+#endif
+
+/* GetException */
+#if CYTHON_FAST_THREAD_STATE
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb)
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb)
+#endif
+{
+    PyObject *local_type = NULL, *local_value, *local_tb = NULL;
+#if CYTHON_FAST_THREAD_STATE
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+  #if PY_VERSION_HEX >= 0x030C0000
+    local_value = tstate->current_exception;
+    tstate->current_exception = 0;
+  #else
+    local_type = tstate->curexc_type;
+    local_value = tstate->curexc_value;
+    local_tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+  #endif
+#elif __PYX_LIMITED_VERSION_HEX > 0x030C0000
+    local_value = PyErr_GetRaisedException();
+#else
+    PyErr_Fetch(&local_type, &local_value, &local_tb);
+#endif
+#if __PYX_LIMITED_VERSION_HEX > 0x030C0000
+    if (likely(local_value)) {
+        local_type = (PyObject*) Py_TYPE(local_value);
+        Py_INCREF(local_type);
+        local_tb = PyException_GetTraceback(local_value);
+    }
+#else
+    PyErr_NormalizeException(&local_type, &local_value, &local_tb);
+#if CYTHON_FAST_THREAD_STATE
+    if (unlikely(tstate->curexc_type))
+#else
+    if (unlikely(PyErr_Occurred()))
+#endif
+        goto bad;
+    if (local_tb) {
+        if (unlikely(PyException_SetTraceback(local_value, local_tb) < 0))
+            goto bad;
+    }
+#endif // __PYX_LIMITED_VERSION_HEX > 0x030C0000
+    Py_XINCREF(local_tb);
+    Py_XINCREF(local_type);
+    Py_XINCREF(local_value);
+    *type = local_type;
+    *value = local_value;
+    *tb = local_tb;
+#if CYTHON_FAST_THREAD_STATE
+    #if CYTHON_USE_EXC_INFO_STACK
+    {
+        _PyErr_StackItem *exc_info = tstate->exc_info;
+      #if PY_VERSION_HEX >= 0x030B00a4
+        tmp_value = exc_info->exc_value;
+        exc_info->exc_value = local_value;
+        tmp_type = NULL;
+        tmp_tb = NULL;
+        Py_XDECREF(local_type);
+        Py_XDECREF(local_tb);
+      #else
+        tmp_type = exc_info->exc_type;
+        tmp_value = exc_info->exc_value;
+        tmp_tb = exc_info->exc_traceback;
+        exc_info->exc_type = local_type;
+        exc_info->exc_value = local_value;
+        exc_info->exc_traceback = local_tb;
+      #endif
+    }
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = local_type;
+    tstate->exc_value = local_value;
+    tstate->exc_traceback = local_tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+#elif __PYX_LIMITED_VERSION_HEX >= 0x030b0000
+    PyErr_SetHandledException(local_value);
+    Py_XDECREF(local_value);
+    Py_XDECREF(local_type);
+    Py_XDECREF(local_tb);
+#else
+    PyErr_SetExcInfo(local_type, local_value, local_tb);
+#endif
     return 0;
+#if __PYX_LIMITED_VERSION_HEX <= 0x030C0000
+bad:
+    *type = 0;
+    *value = 0;
+    *tb = 0;
+    Py_XDECREF(local_type);
+    Py_XDECREF(local_value);
+    Py_XDECREF(local_tb);
+    return -1;
+#endif
 }
 
 /* PyFunctionFastCall */
@@ -10631,590 +17193,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObj
     #else
     return __Pyx_PyObject_FastCall_fallback(func, args, (size_t)nargs, kwargs);
     #endif
-}
-
-/* PyObjectCallNoArg */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
-    PyObject *arg[2] = {NULL, NULL};
-    return __Pyx_PyObject_FastCall(func, arg + 1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* PyObjectCallOneArg */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
-    PyObject *args[2] = {NULL, arg};
-    return __Pyx_PyObject_FastCall(func, args+1, 1 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* PyObjectGetMethod */
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
-    PyObject *attr;
-#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
-    __Pyx_TypeName type_name;
-    PyTypeObject *tp = Py_TYPE(obj);
-    PyObject *descr;
-    descrgetfunc f = NULL;
-    PyObject **dictptr, *dict;
-    int meth_found = 0;
-    assert (*method == NULL);
-    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
-        attr = __Pyx_PyObject_GetAttrStr(obj, name);
-        goto try_unpack;
-    }
-    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
-        return 0;
-    }
-    descr = _PyType_Lookup(tp, name);
-    if (likely(descr != NULL)) {
-        Py_INCREF(descr);
-#if defined(Py_TPFLAGS_METHOD_DESCRIPTOR) && Py_TPFLAGS_METHOD_DESCRIPTOR
-        if (__Pyx_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
-#else
-        #ifdef __Pyx_CyFunction_USED
-        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
-        #else
-        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type)))
-        #endif
-#endif
-        {
-            meth_found = 1;
-        } else {
-            f = Py_TYPE(descr)->tp_descr_get;
-            if (f != NULL && PyDescr_IsData(descr)) {
-                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-                Py_DECREF(descr);
-                goto try_unpack;
-            }
-        }
-    }
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr != NULL && (dict = *dictptr) != NULL) {
-        Py_INCREF(dict);
-        attr = __Pyx_PyDict_GetItemStr(dict, name);
-        if (attr != NULL) {
-            Py_INCREF(attr);
-            Py_DECREF(dict);
-            Py_XDECREF(descr);
-            goto try_unpack;
-        }
-        Py_DECREF(dict);
-    }
-    if (meth_found) {
-        *method = descr;
-        return 1;
-    }
-    if (f != NULL) {
-        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-        Py_DECREF(descr);
-        goto try_unpack;
-    }
-    if (likely(descr != NULL)) {
-        *method = descr;
-        return 0;
-    }
-    type_name = __Pyx_PyType_GetFullyQualifiedName(tp);
-    PyErr_Format(PyExc_AttributeError,
-                 "'" __Pyx_FMT_TYPENAME "' object has no attribute '%U'",
-                 type_name, name);
-    __Pyx_DECREF_TypeName(type_name);
-    return 0;
-#else
-    attr = __Pyx_PyObject_GetAttrStr(obj, name);
-    goto try_unpack;
-#endif
-try_unpack:
-#if CYTHON_UNPACK_METHODS
-    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
-        PyObject *function = PyMethod_GET_FUNCTION(attr);
-        Py_INCREF(function);
-        Py_DECREF(attr);
-        *method = function;
-        return 1;
-    }
-#endif
-    *method = attr;
-    return 0;
-}
-
-/* PyObjectCallMethod0 */
-static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name) {
-    PyObject *method = NULL, *result = NULL;
-    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
-    if (likely(is_method)) {
-        result = __Pyx_PyObject_CallOneArg(method, obj);
-        Py_DECREF(method);
-        return result;
-    }
-    if (unlikely(!method)) goto bad;
-    result = __Pyx_PyObject_CallNoArg(method);
-    Py_DECREF(method);
-bad:
-    return result;
-}
-
-/* RaiseNeedMoreValuesToUnpack */
-static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index) {
-    PyErr_Format(PyExc_ValueError,
-                 "need more than %" CYTHON_FORMAT_SSIZE_T "d value%.1s to unpack",
-                 index, (index == 1) ? "" : "s");
-}
-
-/* RaiseTooManyValuesToUnpack */
-static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected) {
-    PyErr_Format(PyExc_ValueError,
-                 "too many values to unpack (expected %" CYTHON_FORMAT_SSIZE_T "d)", expected);
-}
-
-/* UnpackItemEndCheck */
-static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected) {
-    if (unlikely(retval)) {
-        Py_DECREF(retval);
-        __Pyx_RaiseTooManyValuesError(expected);
-        return -1;
-    }
-    return __Pyx_IterFinish();
-}
-
-/* RaiseNoneIterError */
-static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void) {
-    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-}
-
-/* UnpackTupleError */
-static void __Pyx_UnpackTupleError(PyObject *t, Py_ssize_t index) {
-    if (t == Py_None) {
-      __Pyx_RaiseNoneNotIterableError();
-    } else {
-      Py_ssize_t size = __Pyx_PyTuple_GET_SIZE(t);
- #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely(size < 0)) return;
- #endif
-      if (size < index) {
-        __Pyx_RaiseNeedMoreValuesError(size);
-      } else {
-        __Pyx_RaiseTooManyValuesError(index);
-      }
-    }
-}
-
-/* UnpackTuple2 */
-static CYTHON_INLINE int __Pyx_unpack_tuple2(
-        PyObject* tuple, PyObject** value1, PyObject** value2, int is_tuple, int has_known_size, int decref_tuple) {
-    if (likely(is_tuple || PyTuple_Check(tuple))) {
-        Py_ssize_t size;
-        if (has_known_size) {
-            return __Pyx_unpack_tuple2_exact(tuple, value1, value2, decref_tuple);
-        }
-        size = __Pyx_PyTuple_GET_SIZE(tuple);
-        if (likely(size == 2)) {
-            return __Pyx_unpack_tuple2_exact(tuple, value1, value2, decref_tuple);
-        }
-        if (size >= 0) {
-            __Pyx_UnpackTupleError(tuple, 2);
-        }
-        return -1;
-    } else {
-        return __Pyx_unpack_tuple2_generic(tuple, value1, value2, has_known_size, decref_tuple);
-    }
-}
-static CYTHON_INLINE int __Pyx_unpack_tuple2_exact(
-        PyObject* tuple, PyObject** pvalue1, PyObject** pvalue2, int decref_tuple) {
-    PyObject *value1 = NULL, *value2 = NULL;
-#if CYTHON_AVOID_BORROWED_REFS || !CYTHON_ASSUME_SAFE_MACROS
-    value1 = __Pyx_PySequence_ITEM(tuple, 0);  if (unlikely(!value1)) goto bad;
-    value2 = __Pyx_PySequence_ITEM(tuple, 1);  if (unlikely(!value2)) goto bad;
-#else
-    value1 = PyTuple_GET_ITEM(tuple, 0);  Py_INCREF(value1);
-    value2 = PyTuple_GET_ITEM(tuple, 1);  Py_INCREF(value2);
-#endif
-    if (decref_tuple) {
-        Py_DECREF(tuple);
-    }
-    *pvalue1 = value1;
-    *pvalue2 = value2;
-    return 0;
-#if CYTHON_AVOID_BORROWED_REFS || !CYTHON_ASSUME_SAFE_MACROS
-bad:
-    Py_XDECREF(value1);
-    Py_XDECREF(value2);
-    if (decref_tuple) { Py_XDECREF(tuple); }
-    return -1;
-#endif
-}
-static int __Pyx_unpack_tuple2_generic(PyObject* tuple, PyObject** pvalue1, PyObject** pvalue2,
-                                       int has_known_size, int decref_tuple) {
-    Py_ssize_t index;
-    PyObject *value1 = NULL, *value2 = NULL, *iter = NULL;
-    iternextfunc iternext;
-    iter = PyObject_GetIter(tuple);
-    if (unlikely(!iter)) goto bad;
-    if (decref_tuple) { Py_DECREF(tuple); tuple = NULL; }
-    iternext = __Pyx_PyObject_GetIterNextFunc(iter);
-    value1 = iternext(iter); if (unlikely(!value1)) { index = 0; goto unpacking_failed; }
-    value2 = iternext(iter); if (unlikely(!value2)) { index = 1; goto unpacking_failed; }
-    if (!has_known_size && unlikely(__Pyx_IternextUnpackEndCheck(iternext(iter), 2))) goto bad;
-    Py_DECREF(iter);
-    *pvalue1 = value1;
-    *pvalue2 = value2;
-    return 0;
-unpacking_failed:
-    if (!has_known_size && __Pyx_IterFinish() == 0)
-        __Pyx_RaiseNeedMoreValuesError(index);
-bad:
-    Py_XDECREF(iter);
-    Py_XDECREF(value1);
-    Py_XDECREF(value2);
-    if (decref_tuple) { Py_XDECREF(tuple); }
-    return -1;
-}
-
-/* dict_iter */
-#if CYTHON_COMPILING_IN_PYPY
-#include <string.h>
-#endif
-static CYTHON_INLINE PyObject* __Pyx_dict_iterator(PyObject* iterable, int is_dict, PyObject* method_name,
-                                                   Py_ssize_t* p_orig_length, int* p_source_is_dict) {
-    is_dict = is_dict || likely(PyDict_CheckExact(iterable));
-    *p_source_is_dict = is_dict;
-    if (is_dict) {
-#if !CYTHON_COMPILING_IN_PYPY
-        *p_orig_length = PyDict_Size(iterable);
-        Py_INCREF(iterable);
-        return iterable;
-#else
-        static PyObject *py_items = NULL, *py_keys = NULL, *py_values = NULL;
-        PyObject **pp = NULL;
-        if (method_name) {
-            const char *name = PyUnicode_AsUTF8(method_name);
-            if (strcmp(name, "iteritems") == 0) pp = &py_items;
-            else if (strcmp(name, "iterkeys") == 0) pp = &py_keys;
-            else if (strcmp(name, "itervalues") == 0) pp = &py_values;
-            if (pp) {
-                if (!*pp) {
-                    *pp = PyUnicode_FromString(name + 4);
-                    if (!*pp)
-                        return NULL;
-                }
-                method_name = *pp;
-            }
-        }
-#endif
-    }
-    *p_orig_length = 0;
-    if (method_name) {
-        PyObject* iter;
-        iterable = __Pyx_PyObject_CallMethod0(iterable, method_name);
-        if (!iterable)
-            return NULL;
-#if !CYTHON_COMPILING_IN_PYPY
-        if (PyTuple_CheckExact(iterable) || PyList_CheckExact(iterable))
-            return iterable;
-#endif
-        iter = PyObject_GetIter(iterable);
-        Py_DECREF(iterable);
-        return iter;
-    }
-    return PyObject_GetIter(iterable);
-}
-#if !CYTHON_COMPILING_IN_PYPY
-static CYTHON_INLINE int __Pyx_dict_iter_next_source_is_dict(
-        PyObject* iter_obj, CYTHON_NCP_UNUSED Py_ssize_t orig_length, CYTHON_NCP_UNUSED Py_ssize_t* ppos,
-        PyObject** pkey, PyObject** pvalue, PyObject** pitem) {
-    PyObject *key, *value;
-    if (unlikely(orig_length != PyDict_Size(iter_obj))) {
-        PyErr_SetString(PyExc_RuntimeError, "dictionary changed size during iteration");
-        return -1;
-    }
-    if (unlikely(!PyDict_Next(iter_obj, ppos, &key, &value))) {
-        return 0;
-    }
-    if (pitem) {
-        PyObject* tuple = PyTuple_New(2);
-        if (unlikely(!tuple)) {
-            return -1;
-        }
-        Py_INCREF(key);
-        Py_INCREF(value);
-        #if CYTHON_ASSUME_SAFE_MACROS
-        PyTuple_SET_ITEM(tuple, 0, key);
-        PyTuple_SET_ITEM(tuple, 1, value);
-        #else
-        if (unlikely(PyTuple_SetItem(tuple, 0, key) < 0)) {
-            Py_DECREF(value);
-            Py_DECREF(tuple);
-            return -1;
-        }
-        if (unlikely(PyTuple_SetItem(tuple, 1, value) < 0)) {
-            Py_DECREF(tuple);
-            return -1;
-        }
-        #endif
-        *pitem = tuple;
-    } else {
-        if (pkey) {
-            Py_INCREF(key);
-            *pkey = key;
-        }
-        if (pvalue) {
-            Py_INCREF(value);
-            *pvalue = value;
-        }
-    }
-    return 1;
-}
-#endif
-static CYTHON_INLINE int __Pyx_dict_iter_next(
-        PyObject* iter_obj, CYTHON_NCP_UNUSED Py_ssize_t orig_length, CYTHON_NCP_UNUSED Py_ssize_t* ppos,
-        PyObject** pkey, PyObject** pvalue, PyObject** pitem, int source_is_dict) {
-    PyObject* next_item;
-#if !CYTHON_COMPILING_IN_PYPY
-    if (source_is_dict) {
-        int result;
-#if PY_VERSION_HEX >= 0x030d0000 && !CYTHON_COMPILING_IN_LIMITED_API
-        Py_BEGIN_CRITICAL_SECTION(iter_obj);
-#endif
-        result = __Pyx_dict_iter_next_source_is_dict(iter_obj, orig_length, ppos, pkey, pvalue, pitem);
-#if PY_VERSION_HEX >= 0x030d0000 && !CYTHON_COMPILING_IN_LIMITED_API
-        Py_END_CRITICAL_SECTION();
-#endif
-        return result;
-    } else if (PyTuple_CheckExact(iter_obj)) {
-        Py_ssize_t pos = *ppos;
-        Py_ssize_t tuple_size = __Pyx_PyTuple_GET_SIZE(iter_obj);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely(tuple_size < 0)) return -1;
-        #endif
-        if (unlikely(pos >= tuple_size)) return 0;
-        *ppos = pos + 1;
-        #if CYTHON_ASSUME_SAFE_MACROS
-        next_item = PyTuple_GET_ITEM(iter_obj, pos);
-        #else
-        next_item = PyTuple_GetItem(iter_obj, pos);
-        if (unlikely(!next_item)) return -1;
-        #endif
-        Py_INCREF(next_item);
-    } else if (PyList_CheckExact(iter_obj)) {
-        Py_ssize_t pos = *ppos;
-        Py_ssize_t list_size = __Pyx_PyList_GET_SIZE(iter_obj);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely(list_size < 0)) return -1;
-        #endif
-        if (unlikely(pos >= list_size)) return 0;
-        *ppos = pos + 1;
-        #if CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
-        next_item = PyList_GetItemRef(iter_obj, pos);
-        if (unlikely(!next_item)) return -1;
-        #elif CYTHON_ASSUME_SAFE_MACROS
-        next_item = PyList_GET_ITEM(iter_obj, pos);
-        Py_INCREF(next_item);
-        #else
-        next_item = PyList_GetItem(iter_obj, pos);
-        if (unlikely(!next_item)) return -1;
-        Py_INCREF(next_item);
-        #endif
-    } else
-#endif
-    {
-        next_item = PyIter_Next(iter_obj);
-        if (unlikely(!next_item)) {
-            return __Pyx_IterFinish();
-        }
-    }
-    if (pitem) {
-        *pitem = next_item;
-    } else if (pkey && pvalue) {
-        if (__Pyx_unpack_tuple2(next_item, pkey, pvalue, source_is_dict, source_is_dict, 1))
-            return -1;
-    } else if (pkey) {
-        *pkey = next_item;
-    } else {
-        *pvalue = next_item;
-    }
-    return 1;
-}
-
-/* GetTopmostException */
-#if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
-static _PyErr_StackItem *
-__Pyx_PyErr_GetTopmostException(PyThreadState *tstate)
-{
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
-           exc_info->previous_item != NULL)
-    {
-        exc_info = exc_info->previous_item;
-    }
-    return exc_info;
-}
-#endif
-
-/* SaveResetException */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
-    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
-    PyObject *exc_value = exc_info->exc_value;
-    if (exc_value == NULL || exc_value == Py_None) {
-        *value = NULL;
-        *type = NULL;
-        *tb = NULL;
-    } else {
-        *value = exc_value;
-        Py_INCREF(*value);
-        *type = (PyObject*) Py_TYPE(exc_value);
-        Py_INCREF(*type);
-        *tb = PyException_GetTraceback(exc_value);
-    }
-  #elif CYTHON_USE_EXC_INFO_STACK
-    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
-    *type = exc_info->exc_type;
-    *value = exc_info->exc_value;
-    *tb = exc_info->exc_traceback;
-    Py_XINCREF(*type);
-    Py_XINCREF(*value);
-    Py_XINCREF(*tb);
-  #else
-    *type = tstate->exc_type;
-    *value = tstate->exc_value;
-    *tb = tstate->exc_traceback;
-    Py_XINCREF(*type);
-    Py_XINCREF(*value);
-    Py_XINCREF(*tb);
-  #endif
-}
-static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    PyObject *tmp_value = exc_info->exc_value;
-    exc_info->exc_value = value;
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(type);
-    Py_XDECREF(tb);
-  #else
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    #if CYTHON_USE_EXC_INFO_STACK
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    tmp_type = exc_info->exc_type;
-    tmp_value = exc_info->exc_value;
-    tmp_tb = exc_info->exc_traceback;
-    exc_info->exc_type = type;
-    exc_info->exc_value = value;
-    exc_info->exc_traceback = tb;
-    #else
-    tmp_type = tstate->exc_type;
-    tmp_value = tstate->exc_value;
-    tmp_tb = tstate->exc_traceback;
-    tstate->exc_type = type;
-    tstate->exc_value = value;
-    tstate->exc_traceback = tb;
-    #endif
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-  #endif
-}
-#endif
-
-/* GetException */
-#if CYTHON_FAST_THREAD_STATE
-static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb)
-#else
-static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb)
-#endif
-{
-    PyObject *local_type = NULL, *local_value, *local_tb = NULL;
-#if CYTHON_FAST_THREAD_STATE
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-  #if PY_VERSION_HEX >= 0x030C0000
-    local_value = tstate->current_exception;
-    tstate->current_exception = 0;
-  #else
-    local_type = tstate->curexc_type;
-    local_value = tstate->curexc_value;
-    local_tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-  #endif
-#elif __PYX_LIMITED_VERSION_HEX > 0x030C0000
-    local_value = PyErr_GetRaisedException();
-#else
-    PyErr_Fetch(&local_type, &local_value, &local_tb);
-#endif
-#if __PYX_LIMITED_VERSION_HEX > 0x030C0000
-    if (likely(local_value)) {
-        local_type = (PyObject*) Py_TYPE(local_value);
-        Py_INCREF(local_type);
-        local_tb = PyException_GetTraceback(local_value);
-    }
-#else
-    PyErr_NormalizeException(&local_type, &local_value, &local_tb);
-#if CYTHON_FAST_THREAD_STATE
-    if (unlikely(tstate->curexc_type))
-#else
-    if (unlikely(PyErr_Occurred()))
-#endif
-        goto bad;
-    if (local_tb) {
-        if (unlikely(PyException_SetTraceback(local_value, local_tb) < 0))
-            goto bad;
-    }
-#endif // __PYX_LIMITED_VERSION_HEX > 0x030C0000
-    Py_XINCREF(local_tb);
-    Py_XINCREF(local_type);
-    Py_XINCREF(local_value);
-    *type = local_type;
-    *value = local_value;
-    *tb = local_tb;
-#if CYTHON_FAST_THREAD_STATE
-    #if CYTHON_USE_EXC_INFO_STACK
-    {
-        _PyErr_StackItem *exc_info = tstate->exc_info;
-      #if PY_VERSION_HEX >= 0x030B00a4
-        tmp_value = exc_info->exc_value;
-        exc_info->exc_value = local_value;
-        tmp_type = NULL;
-        tmp_tb = NULL;
-        Py_XDECREF(local_type);
-        Py_XDECREF(local_tb);
-      #else
-        tmp_type = exc_info->exc_type;
-        tmp_value = exc_info->exc_value;
-        tmp_tb = exc_info->exc_traceback;
-        exc_info->exc_type = local_type;
-        exc_info->exc_value = local_value;
-        exc_info->exc_traceback = local_tb;
-      #endif
-    }
-    #else
-    tmp_type = tstate->exc_type;
-    tmp_value = tstate->exc_value;
-    tmp_tb = tstate->exc_traceback;
-    tstate->exc_type = local_type;
-    tstate->exc_value = local_value;
-    tstate->exc_traceback = local_tb;
-    #endif
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-#elif __PYX_LIMITED_VERSION_HEX >= 0x030b0000
-    PyErr_SetHandledException(local_value);
-    Py_XDECREF(local_value);
-    Py_XDECREF(local_type);
-    Py_XDECREF(local_tb);
-#else
-    PyErr_SetExcInfo(local_type, local_value, local_tb);
-#endif
-    return 0;
-#if __PYX_LIMITED_VERSION_HEX <= 0x030C0000
-bad:
-    *type = 0;
-    *value = 0;
-    *tb = 0;
-    Py_XDECREF(local_type);
-    Py_XDECREF(local_value);
-    Py_XDECREF(local_tb);
-    return -1;
-#endif
 }
 
 /* RaiseException */
@@ -12113,182 +18091,26 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
-/* RaiseUnexpectedTypeError */
-static int
-__Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
-{
-    __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-    PyErr_Format(PyExc_TypeError, "Expected %s, got " __Pyx_FMT_TYPENAME,
-                 expected, obj_type_name);
-    __Pyx_DECREF_TypeName(obj_type_name);
-    return 0;
-}
-
-/* GetItemInt */
-static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
-    PyObject *r;
-    if (unlikely(!j)) return NULL;
-    r = PyObject_GetItem(o, j);
-    Py_DECREF(j);
-    return r;
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
-                                                              CYTHON_NCP_UNUSED int wraparound,
-                                                              CYTHON_NCP_UNUSED int boundscheck) {
-#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && !CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
-    Py_ssize_t wrapped_i = i;
-    if (wraparound & unlikely(i < 0)) {
-        wrapped_i += PyList_GET_SIZE(o);
-    }
-    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyList_GET_SIZE(o)))) {
-        PyObject *r = PyList_GET_ITEM(o, wrapped_i);
-        Py_INCREF(r);
-        return r;
-    }
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-#else
-    return PySequence_GetItem(o, i);
-#endif
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
-                                                              CYTHON_NCP_UNUSED int wraparound,
-                                                              CYTHON_NCP_UNUSED int boundscheck) {
-#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS
-    Py_ssize_t wrapped_i = i;
-    if (wraparound & unlikely(i < 0)) {
-        wrapped_i += PyTuple_GET_SIZE(o);
-    }
-    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyTuple_GET_SIZE(o)))) {
-        PyObject *r = PyTuple_GET_ITEM(o, wrapped_i);
-        Py_INCREF(r);
-        return r;
-    }
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-#else
-    return PySequence_GetItem(o, i);
-#endif
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i, int is_list,
-                                                     CYTHON_NCP_UNUSED int wraparound,
-                                                     CYTHON_NCP_UNUSED int boundscheck) {
-#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && CYTHON_USE_TYPE_SLOTS
-    if (is_list || PyList_CheckExact(o)) {
-        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyList_GET_SIZE(o);
-        if ((!boundscheck) || (likely(__Pyx_is_valid_index(n, PyList_GET_SIZE(o))))) {
-            return __Pyx_PyList_GetItemRef(o, n);
-        }
-    }
-    else if (PyTuple_CheckExact(o)) {
-        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyTuple_GET_SIZE(o);
-        if ((!boundscheck) || likely(__Pyx_is_valid_index(n, PyTuple_GET_SIZE(o)))) {
-            PyObject *r = PyTuple_GET_ITEM(o, n);
-            Py_INCREF(r);
-            return r;
-        }
+/* RejectKeywords */
+static void __Pyx_RejectKeywords(const char* function_name, PyObject *kwds) {
+    PyObject *key = NULL;
+    if (CYTHON_METH_FASTCALL && likely(PyTuple_Check(kwds))) {
+        key = __Pyx_PySequence_ITEM(kwds, 0);
     } else {
-        PyMappingMethods *mm = Py_TYPE(o)->tp_as_mapping;
-        PySequenceMethods *sm = Py_TYPE(o)->tp_as_sequence;
-        if (mm && mm->mp_subscript) {
-            PyObject *r, *key = PyLong_FromSsize_t(i);
-            if (unlikely(!key)) return NULL;
-            r = mm->mp_subscript(o, key);
-            Py_DECREF(key);
-            return r;
-        }
-        if (likely(sm && sm->sq_item)) {
-            if (wraparound && unlikely(i < 0) && likely(sm->sq_length)) {
-                Py_ssize_t l = sm->sq_length(o);
-                if (likely(l >= 0)) {
-                    i += l;
-                } else {
-                    if (!PyErr_ExceptionMatches(PyExc_OverflowError))
-                        return NULL;
-                    PyErr_Clear();
-                }
-            }
-            return sm->sq_item(o, i);
-        }
-    }
-#else
-    if (is_list || !PyMapping_Check(o)) {
-        return PySequence_GetItem(o, i);
-    }
+        Py_ssize_t pos = 0;
+#if !CYTHON_COMPILING_IN_PYPY || defined(PyArg_ValidateKeywordArguments)
+        if (unlikely(!PyArg_ValidateKeywordArguments(kwds))) return;
 #endif
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-}
-
-/* DictGetItem */
-#if !CYTHON_COMPILING_IN_PYPY
-static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
-    PyObject *value;
-    if (unlikely(__Pyx_PyDict_GetItemRef(d, key, &value) == 0)) { // no value, no error
-        if (unlikely(PyTuple_Check(key))) {
-            PyObject* args = PyTuple_Pack(1, key);
-            if (likely(args)) {
-                PyErr_SetObject(PyExc_KeyError, args);
-                Py_DECREF(args);
-            }
-        } else {
-            PyErr_SetObject(PyExc_KeyError, key);
-        }
+        PyDict_Next(kwds, &pos, &key, NULL);
+        Py_INCREF(key);
     }
-    return value;
-}
-#endif
-
-/* SwapException */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    tmp_value = exc_info->exc_value;
-    exc_info->exc_value = *value;
-    if (tmp_value == NULL || tmp_value == Py_None) {
-        Py_XDECREF(tmp_value);
-        tmp_value = NULL;
-        tmp_type = NULL;
-        tmp_tb = NULL;
-    } else {
-        tmp_type = (PyObject*) Py_TYPE(tmp_value);
-        Py_INCREF(tmp_type);
-        #if CYTHON_COMPILING_IN_CPYTHON
-        tmp_tb = ((PyBaseExceptionObject*) tmp_value)->traceback;
-        Py_XINCREF(tmp_tb);
-        #else
-        tmp_tb = PyException_GetTraceback(tmp_value);
-        #endif
+    if (likely(key)) {
+        PyErr_Format(PyExc_TypeError,
+            "%s() got an unexpected keyword argument '%U'",
+            function_name, key);
+        Py_DECREF(key);
     }
-  #elif CYTHON_USE_EXC_INFO_STACK
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    tmp_type = exc_info->exc_type;
-    tmp_value = exc_info->exc_value;
-    tmp_tb = exc_info->exc_traceback;
-    exc_info->exc_type = *type;
-    exc_info->exc_value = *value;
-    exc_info->exc_traceback = *tb;
-  #else
-    tmp_type = tstate->exc_type;
-    tmp_value = tstate->exc_value;
-    tmp_tb = tstate->exc_traceback;
-    tstate->exc_type = *type;
-    tstate->exc_value = *value;
-    tstate->exc_traceback = *tb;
-  #endif
-    *type = tmp_type;
-    *value = tmp_value;
-    *tb = tmp_tb;
 }
-#else
-static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    PyErr_GetExcInfo(&tmp_type, &tmp_value, &tmp_tb);
-    PyErr_SetExcInfo(*type, *value, *tb);
-    *type = tmp_type;
-    *value = tmp_value;
-    *tb = tmp_tb;
-}
-#endif
 
 /* ArgTypeTest */
 static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
@@ -12335,6 +18157,133 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
 #endif
     __Pyx_DECREF_TypeName(type_name);
     __Pyx_DECREF_TypeName(obj_type_name);
+    return 0;
+}
+
+/* PyObjectFastCallMethod */
+#if !CYTHON_VECTORCALL || PY_VERSION_HEX < 0x03090000
+static PyObject *__Pyx_PyObject_FastCallMethod(PyObject *name, PyObject *const *args, size_t nargsf) {
+    PyObject *result;
+    PyObject *attr = PyObject_GetAttr(args[0], name);
+    if (unlikely(!attr))
+        return NULL;
+    result = __Pyx_PyObject_FastCall(attr, args+1, nargsf - 1);
+    Py_DECREF(attr);
+    return result;
+}
+#endif
+
+/* PyDictVersioning */
+#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
+}
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
+    PyObject **dictptr = NULL;
+    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
+    if (offset) {
+#if CYTHON_COMPILING_IN_CPYTHON
+        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
+#else
+        dictptr = _PyObject_GetDictPtr(obj);
+#endif
+    }
+    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
+}
+static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
+        return 0;
+    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+}
+#endif
+
+/* GetModuleGlobalName */
+#if CYTHON_USE_DICT_VERSIONS
+static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
+#else
+static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
+#endif
+{
+    PyObject *result;
+#if CYTHON_COMPILING_IN_LIMITED_API
+    if (unlikely(!__pyx_m)) {
+        if (!PyErr_Occurred())
+            PyErr_SetNone(PyExc_NameError);
+        return NULL;
+    }
+    result = PyObject_GetAttr(__pyx_m, name);
+    if (likely(result)) {
+        return result;
+    }
+    PyErr_Clear();
+#elif CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
+    if (unlikely(__Pyx_PyDict_GetItemRef(__pyx_mstate_global->__pyx_d, name, &result) == -1)) PyErr_Clear();
+    __PYX_UPDATE_DICT_CACHE(__pyx_mstate_global->__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return result;
+    }
+#else
+    result = _PyDict_GetItem_KnownHash(__pyx_mstate_global->__pyx_d, name, ((PyASCIIObject *) name)->hash);
+    __PYX_UPDATE_DICT_CACHE(__pyx_mstate_global->__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+    PyErr_Clear();
+#endif
+    return __Pyx_GetBuiltinName(name);
+}
+
+/* PyObjectVectorCallKwBuilder */
+#if CYTHON_VECTORCALL
+static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    (void)__Pyx_PyObject_FastCallDict;
+    if (__Pyx_PyTuple_SET_ITEM(builder, n, key) != (0)) return -1;
+    Py_INCREF(key);
+    args[n] = value;
+    return 0;
+}
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    (void)__Pyx_VectorcallBuilder_AddArgStr;
+    if (unlikely(!PyUnicode_Check(key))) {
+        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+        return -1;
+    }
+    return __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n);
+}
+static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    PyObject *pyKey = PyUnicode_FromString(key);
+    if (!pyKey) return -1;
+    return __Pyx_VectorcallBuilder_AddArg(pyKey, value, builder, args, n);
+}
+#else // CYTHON_VECTORCALL
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, CYTHON_UNUSED PyObject **args, CYTHON_UNUSED int n) {
+    if (unlikely(!PyUnicode_Check(key))) {
+        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+        return -1;
+    }
+    return PyDict_SetItem(builder, key, value);
+}
+#endif
+
+/* ExtTypeTest */
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
+    __Pyx_TypeName obj_type_name;
+    __Pyx_TypeName type_name;
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    if (likely(__Pyx_TypeCheck(obj, type)))
+        return 1;
+    obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+    type_name = __Pyx_PyType_GetFullyQualifiedName(type);
+    PyErr_Format(PyExc_TypeError,
+                 "Cannot convert " __Pyx_FMT_TYPENAME " to " __Pyx_FMT_TYPENAME,
+                 obj_type_name, type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    __Pyx_DECREF_TypeName(type_name);
     return 0;
 }
 
@@ -12912,140 +18861,201 @@ fail:;
      "Out of bounds on buffer access (axis %d)", axis);
 }
 
-/* PyDictVersioning */
-  #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
-}
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
-    PyObject **dictptr = NULL;
-    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
-    if (offset) {
-#if CYTHON_COMPILING_IN_CPYTHON
-        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
-#else
-        dictptr = _PyObject_GetDictPtr(obj);
-#endif
+/* DictGetItem */
+  #if !CYTHON_COMPILING_IN_PYPY
+static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
+    PyObject *value;
+    if (unlikely(__Pyx_PyDict_GetItemRef(d, key, &value) == 0)) { // no value, no error
+        if (unlikely(PyTuple_Check(key))) {
+            PyObject* args = PyTuple_Pack(1, key);
+            if (likely(args)) {
+                PyErr_SetObject(PyExc_KeyError, args);
+                Py_DECREF(args);
+            }
+        } else {
+            PyErr_SetObject(PyExc_KeyError, key);
+        }
     }
-    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
-}
-static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
-        return 0;
-    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+    return value;
 }
 #endif
 
-/* GetModuleGlobalName */
-  #if CYTHON_USE_DICT_VERSIONS
-static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
-#else
-static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
-#endif
+/* RaiseUnexpectedTypeError */
+  static int
+__Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
 {
-    PyObject *result;
-#if CYTHON_COMPILING_IN_LIMITED_API
-    if (unlikely(!__pyx_m)) {
-        if (!PyErr_Occurred())
-            PyErr_SetNone(PyExc_NameError);
-        return NULL;
+    __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+    PyErr_Format(PyExc_TypeError, "Expected %s, got " __Pyx_FMT_TYPENAME,
+                 expected, obj_type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    return 0;
+}
+
+/* GetItemInt */
+  static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
+    PyObject *r;
+    if (unlikely(!j)) return NULL;
+    r = PyObject_GetItem(o, j);
+    Py_DECREF(j);
+    return r;
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              CYTHON_NCP_UNUSED int wraparound,
+                                                              CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && !CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyList_GET_SIZE(o);
     }
-    result = PyObject_GetAttr(__pyx_m, name);
-    if (likely(result)) {
-        return result;
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyList_GET_SIZE(o)))) {
+        PyObject *r = PyList_GET_ITEM(o, wrapped_i);
+        Py_INCREF(r);
+        return r;
     }
-    PyErr_Clear();
-#elif CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
-    if (unlikely(__Pyx_PyDict_GetItemRef(__pyx_mstate_global->__pyx_d, name, &result) == -1)) PyErr_Clear();
-    __PYX_UPDATE_DICT_CACHE(__pyx_mstate_global->__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return result;
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              CYTHON_NCP_UNUSED int wraparound,
+                                                              CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyTuple_GET_SIZE(o);
+    }
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyTuple_GET_SIZE(o)))) {
+        PyObject *r = PyTuple_GET_ITEM(o, wrapped_i);
+        Py_INCREF(r);
+        return r;
+    }
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i, int is_list,
+                                                     CYTHON_NCP_UNUSED int wraparound,
+                                                     CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && CYTHON_USE_TYPE_SLOTS
+    if (is_list || PyList_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyList_GET_SIZE(o);
+        if ((!boundscheck) || (likely(__Pyx_is_valid_index(n, PyList_GET_SIZE(o))))) {
+            return __Pyx_PyList_GetItemRef(o, n);
+        }
+    }
+    else if (PyTuple_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyTuple_GET_SIZE(o);
+        if ((!boundscheck) || likely(__Pyx_is_valid_index(n, PyTuple_GET_SIZE(o)))) {
+            PyObject *r = PyTuple_GET_ITEM(o, n);
+            Py_INCREF(r);
+            return r;
+        }
+    } else {
+        PyMappingMethods *mm = Py_TYPE(o)->tp_as_mapping;
+        PySequenceMethods *sm = Py_TYPE(o)->tp_as_sequence;
+        if (mm && mm->mp_subscript) {
+            PyObject *r, *key = PyLong_FromSsize_t(i);
+            if (unlikely(!key)) return NULL;
+            r = mm->mp_subscript(o, key);
+            Py_DECREF(key);
+            return r;
+        }
+        if (likely(sm && sm->sq_item)) {
+            if (wraparound && unlikely(i < 0) && likely(sm->sq_length)) {
+                Py_ssize_t l = sm->sq_length(o);
+                if (likely(l >= 0)) {
+                    i += l;
+                } else {
+                    if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+                        return NULL;
+                    PyErr_Clear();
+                }
+            }
+            return sm->sq_item(o, i);
+        }
     }
 #else
-    result = _PyDict_GetItem_KnownHash(__pyx_mstate_global->__pyx_d, name, ((PyASCIIObject *) name)->hash);
-    __PYX_UPDATE_DICT_CACHE(__pyx_mstate_global->__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
+    if (is_list || !PyMapping_Check(o)) {
+        return PySequence_GetItem(o, i);
     }
-    PyErr_Clear();
 #endif
-    return __Pyx_GetBuiltinName(name);
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
 }
 
-/* PyObjectVectorCallKwBuilder */
-  #if CYTHON_VECTORCALL
-static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    (void)__Pyx_PyObject_FastCallDict;
-    if (__Pyx_PyTuple_SET_ITEM(builder, n, key) != (0)) return -1;
-    Py_INCREF(key);
-    args[n] = value;
-    return 0;
-}
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    (void)__Pyx_VectorcallBuilder_AddArgStr;
-    if (unlikely(!PyUnicode_Check(key))) {
-        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-        return -1;
-    }
-    return __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n);
-}
-static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    PyObject *pyKey = PyUnicode_FromString(key);
-    if (!pyKey) return -1;
-    return __Pyx_VectorcallBuilder_AddArg(pyKey, value, builder, args, n);
-}
-#else // CYTHON_VECTORCALL
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, CYTHON_UNUSED PyObject **args, CYTHON_UNUSED int n) {
-    if (unlikely(!PyUnicode_Check(key))) {
-        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-        return -1;
-    }
-    return PyDict_SetItem(builder, key, value);
-}
-#endif
-
-/* ExtTypeTest */
-  static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
-    __Pyx_TypeName obj_type_name;
-    __Pyx_TypeName type_name;
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    if (likely(__Pyx_TypeCheck(obj, type)))
-        return 1;
-    obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-    type_name = __Pyx_PyType_GetFullyQualifiedName(type);
-    PyErr_Format(PyExc_TypeError,
-                 "Cannot convert " __Pyx_FMT_TYPENAME " to " __Pyx_FMT_TYPENAME,
-                 obj_type_name, type_name);
-    __Pyx_DECREF_TypeName(obj_type_name);
-    __Pyx_DECREF_TypeName(type_name);
-    return 0;
-}
-
-/* RejectKeywords */
-  static void __Pyx_RejectKeywords(const char* function_name, PyObject *kwds) {
-    PyObject *key = NULL;
-    if (CYTHON_METH_FASTCALL && likely(PyTuple_Check(kwds))) {
-        key = __Pyx_PySequence_ITEM(kwds, 0);
+/* SwapException */
+  #if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx__ExceptionSwap(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+  #if CYTHON_USE_EXC_INFO_STACK && PY_VERSION_HEX >= 0x030B00a4
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_value = exc_info->exc_value;
+    exc_info->exc_value = *value;
+    if (tmp_value == NULL || tmp_value == Py_None) {
+        Py_XDECREF(tmp_value);
+        tmp_value = NULL;
+        tmp_type = NULL;
+        tmp_tb = NULL;
     } else {
-        Py_ssize_t pos = 0;
-#if !CYTHON_COMPILING_IN_PYPY || defined(PyArg_ValidateKeywordArguments)
-        if (unlikely(!PyArg_ValidateKeywordArguments(kwds))) return;
-#endif
-        PyDict_Next(kwds, &pos, &key, NULL);
-        Py_INCREF(key);
+        tmp_type = (PyObject*) Py_TYPE(tmp_value);
+        Py_INCREF(tmp_type);
+        #if CYTHON_COMPILING_IN_CPYTHON
+        tmp_tb = ((PyBaseExceptionObject*) tmp_value)->traceback;
+        Py_XINCREF(tmp_tb);
+        #else
+        tmp_tb = PyException_GetTraceback(tmp_value);
+        #endif
     }
-    if (likely(key)) {
-        PyErr_Format(PyExc_TypeError,
-            "%s() got an unexpected keyword argument '%U'",
-            function_name, key);
-        Py_DECREF(key);
-    }
+  #elif CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_type = exc_info->exc_type;
+    tmp_value = exc_info->exc_value;
+    tmp_tb = exc_info->exc_traceback;
+    exc_info->exc_type = *type;
+    exc_info->exc_value = *value;
+    exc_info->exc_traceback = *tb;
+  #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = *type;
+    tstate->exc_value = *value;
+    tstate->exc_traceback = *tb;
+  #endif
+    *type = tmp_type;
+    *value = tmp_value;
+    *tb = tmp_tb;
 }
+#else
+static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value, PyObject **tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    PyErr_GetExcInfo(&tmp_type, &tmp_value, &tmp_tb);
+    PyErr_SetExcInfo(*type, *value, *tb);
+    *type = tmp_type;
+    *value = tmp_value;
+    *tb = tmp_tb;
+}
+#endif
+
+/* CallTypeTraverse */
+  #if !CYTHON_USE_TYPE_SPECS || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x03090000)
+#else
+static int __Pyx_call_type_traverse(PyObject *o, int always_call, visitproc visit, void *arg) {
+    #if CYTHON_COMPILING_IN_LIMITED_API && __PYX_LIMITED_VERSION_HEX < 0x03090000
+    if (__Pyx_get_runtime_version() < 0x03090000) return 0;
+    #endif
+    if (!always_call) {
+        PyTypeObject *base = __Pyx_PyObject_GetSlot(o, tp_base, PyTypeObject*);
+        unsigned long flags = PyType_GetFlags(base);
+        if (flags & Py_TPFLAGS_HEAPTYPE) {
+            return 0;
+        }
+    }
+    Py_VISIT((PyObject*)Py_TYPE(o));
+    return 0;
+}
+#endif
 
 /* FixUpExtensionType */
   static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject *type) {
@@ -13116,6 +19126,124 @@ CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyO
     }
 #endif
     return 0;
+}
+
+/* PyObjectCallNoArg */
+  static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
+    PyObject *arg[2] = {NULL, NULL};
+    return __Pyx_PyObject_FastCall(func, arg + 1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
+}
+
+/* PyObjectCallOneArg */
+  static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject *args[2] = {NULL, arg};
+    return __Pyx_PyObject_FastCall(func, args+1, 1 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
+}
+
+/* PyObjectGetMethod */
+  static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
+    PyObject *attr;
+#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
+    __Pyx_TypeName type_name;
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyObject *descr;
+    descrgetfunc f = NULL;
+    PyObject **dictptr, *dict;
+    int meth_found = 0;
+    assert (*method == NULL);
+    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
+        attr = __Pyx_PyObject_GetAttrStr(obj, name);
+        goto try_unpack;
+    }
+    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
+        return 0;
+    }
+    descr = _PyType_Lookup(tp, name);
+    if (likely(descr != NULL)) {
+        Py_INCREF(descr);
+#if defined(Py_TPFLAGS_METHOD_DESCRIPTOR) && Py_TPFLAGS_METHOD_DESCRIPTOR
+        if (__Pyx_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
+#else
+        #ifdef __Pyx_CyFunction_USED
+        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
+        #else
+        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type)))
+        #endif
+#endif
+        {
+            meth_found = 1;
+        } else {
+            f = Py_TYPE(descr)->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(descr)) {
+                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+                Py_DECREF(descr);
+                goto try_unpack;
+            }
+        }
+    }
+    dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr != NULL && (dict = *dictptr) != NULL) {
+        Py_INCREF(dict);
+        attr = __Pyx_PyDict_GetItemStr(dict, name);
+        if (attr != NULL) {
+            Py_INCREF(attr);
+            Py_DECREF(dict);
+            Py_XDECREF(descr);
+            goto try_unpack;
+        }
+        Py_DECREF(dict);
+    }
+    if (meth_found) {
+        *method = descr;
+        return 1;
+    }
+    if (f != NULL) {
+        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        Py_DECREF(descr);
+        goto try_unpack;
+    }
+    if (likely(descr != NULL)) {
+        *method = descr;
+        return 0;
+    }
+    type_name = __Pyx_PyType_GetFullyQualifiedName(tp);
+    PyErr_Format(PyExc_AttributeError,
+                 "'" __Pyx_FMT_TYPENAME "' object has no attribute '%U'",
+                 type_name, name);
+    __Pyx_DECREF_TypeName(type_name);
+    return 0;
+#else
+    attr = __Pyx_PyObject_GetAttrStr(obj, name);
+    goto try_unpack;
+#endif
+try_unpack:
+#if CYTHON_UNPACK_METHODS
+    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
+        PyObject *function = PyMethod_GET_FUNCTION(attr);
+        Py_INCREF(function);
+        Py_DECREF(attr);
+        *method = function;
+        return 1;
+    }
+#endif
+    *method = attr;
+    return 0;
+}
+
+/* PyObjectCallMethod0 */
+  static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name) {
+    PyObject *method = NULL, *result = NULL;
+    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
+    if (likely(is_method)) {
+        result = __Pyx_PyObject_CallOneArg(method, obj);
+        Py_DECREF(method);
+        return result;
+    }
+    if (unlikely(!method)) goto bad;
+    result = __Pyx_PyObject_CallNoArg(method);
+    Py_DECREF(method);
+bad:
+    return result;
 }
 
 /* ValidateBasesTuple */
@@ -13698,25 +19826,6 @@ static PyObject *__Pyx_ImportDottedModule(PyObject *name, PyObject *parts_tuple)
     return __Pyx__ImportDottedModule(name, parts_tuple);
 }
 
-/* ListPack */
-  static PyObject *__Pyx_PyList_Pack(Py_ssize_t n, ...) {
-    va_list va;
-    PyObject *l = PyList_New(n);
-    va_start(va, n);
-    if (unlikely(!l)) goto end;
-    for (Py_ssize_t i=0; i<n; ++i) {
-        PyObject *arg = va_arg(va, PyObject*);
-        Py_INCREF(arg);
-        if (__Pyx_PyList_SET_ITEM(l, i, arg) != (0)) {
-            Py_CLEAR(l);
-            goto end;
-        }
-    }
-    end:
-    va_end(va);
-    return l;
-}
-
 /* FetchSharedCythonModule */
   static PyObject *__Pyx_FetchSharedCythonABIModule(void) {
     return __Pyx_PyImport_AddModuleRef(__PYX_ABI_MODULE_NAME);
@@ -13820,25 +19929,6 @@ bad:
     cached_type = NULL;
     goto done;
 }
-
-/* CallTypeTraverse */
-  #if !CYTHON_USE_TYPE_SPECS || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x03090000)
-#else
-static int __Pyx_call_type_traverse(PyObject *o, int always_call, visitproc visit, void *arg) {
-    #if CYTHON_COMPILING_IN_LIMITED_API && __PYX_LIMITED_VERSION_HEX < 0x03090000
-    if (__Pyx_get_runtime_version() < 0x03090000) return 0;
-    #endif
-    if (!always_call) {
-        PyTypeObject *base = __Pyx_PyObject_GetSlot(o, tp_base, PyTypeObject*);
-        unsigned long flags = PyType_GetFlags(base);
-        if (flags & Py_TPFLAGS_HEAPTYPE) {
-            return 0;
-        }
-    }
-    Py_VISIT((PyObject*)Py_TYPE(o));
-    return 0;
-}
-#endif
 
 /* PyMethodNew */
   #if CYTHON_COMPILING_IN_LIMITED_API
@@ -14979,6 +21069,25 @@ static CYTHON_INLINE void __Pyx_CyFunction_SetAnnotationsDict(PyObject *func, Py
     return op;
 }
 
+/* ListPack */
+  static PyObject *__Pyx_PyList_Pack(Py_ssize_t n, ...) {
+    va_list va;
+    PyObject *l = PyList_New(n);
+    va_start(va, n);
+    if (unlikely(!l)) goto end;
+    for (Py_ssize_t i=0; i<n; ++i) {
+        PyObject *arg = va_arg(va, PyObject*);
+        Py_INCREF(arg);
+        if (__Pyx_PyList_SET_ITEM(l, i, arg) != (0)) {
+            Py_CLEAR(l);
+            goto end;
+        }
+    }
+    end:
+    va_end(va);
+    return l;
+}
+
 /* CLineInTraceback */
   #if CYTHON_CLINE_IN_TRACEBACK && CYTHON_CLINE_IN_TRACEBACK_RUNTIME
 static int __Pyx_CLineForTraceback(PyThreadState *tstate, int c_line) {
@@ -16020,77 +22129,6 @@ raise_neg_overflow:
 }
 
 /* CIntToPy */
-  static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value) {
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-    const long neg_one = (long) -1, const_zero = (long) 0;
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic pop
-#endif
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(long) < sizeof(long)) {
-            return PyLong_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-#if defined(HAVE_LONG_LONG) && !CYTHON_COMPILING_IN_PYPY
-        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
-            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
-#endif
-        }
-    } else {
-        if (sizeof(long) <= sizeof(long)) {
-            return PyLong_FromLong((long) value);
-#ifdef HAVE_LONG_LONG
-        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
-            return PyLong_FromLongLong((PY_LONG_LONG) value);
-#endif
-        }
-    }
-    {
-        unsigned char *bytes = (unsigned char *)&value;
-#if !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x030d00A4
-        if (is_unsigned) {
-            return PyLong_FromUnsignedNativeBytes(bytes, sizeof(value), -1);
-        } else {
-            return PyLong_FromNativeBytes(bytes, sizeof(value), -1);
-        }
-#elif !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x030d0000
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        return _PyLong_FromByteArray(bytes, sizeof(long),
-                                     little, !is_unsigned);
-#else
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        PyObject *from_bytes, *result = NULL, *kwds = NULL;
-        PyObject *py_bytes = NULL, *order_str = NULL;
-        from_bytes = PyObject_GetAttrString((PyObject*)&PyLong_Type, "from_bytes");
-        if (!from_bytes) return NULL;
-        py_bytes = PyBytes_FromStringAndSize((char*)bytes, sizeof(long));
-        if (!py_bytes) goto limited_bad;
-        order_str = PyUnicode_FromString(little ? "little" : "big");
-        if (!order_str) goto limited_bad;
-        {
-            PyObject *args[3+(CYTHON_VECTORCALL ? 1 : 0)] = { NULL, py_bytes, order_str };
-            if (!is_unsigned) {
-                kwds = __Pyx_MakeVectorcallBuilderKwds(1);
-                if (!kwds) goto limited_bad;
-                if (__Pyx_VectorcallBuilder_AddArgStr("signed", __Pyx_NewRef(Py_True), kwds, args+3, 0) < 0) goto limited_bad;
-            }
-            result = __Pyx_Object_Vectorcall_CallFromBuilder(from_bytes, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET, kwds);
-        }
-        limited_bad:
-        Py_XDECREF(kwds);
-        Py_XDECREF(order_str);
-        Py_XDECREF(py_bytes);
-        Py_XDECREF(from_bytes);
-        return result;
-#endif
-    }
-}
-
-/* CIntToPy */
   static CYTHON_INLINE PyObject* __Pyx_PyLong_From_int(int value) {
 #ifdef __Pyx_HAS_GCC_DIAGNOSTIC
 #pragma GCC diagnostic push
@@ -16139,6 +22177,77 @@ raise_neg_overflow:
         from_bytes = PyObject_GetAttrString((PyObject*)&PyLong_Type, "from_bytes");
         if (!from_bytes) return NULL;
         py_bytes = PyBytes_FromStringAndSize((char*)bytes, sizeof(int));
+        if (!py_bytes) goto limited_bad;
+        order_str = PyUnicode_FromString(little ? "little" : "big");
+        if (!order_str) goto limited_bad;
+        {
+            PyObject *args[3+(CYTHON_VECTORCALL ? 1 : 0)] = { NULL, py_bytes, order_str };
+            if (!is_unsigned) {
+                kwds = __Pyx_MakeVectorcallBuilderKwds(1);
+                if (!kwds) goto limited_bad;
+                if (__Pyx_VectorcallBuilder_AddArgStr("signed", __Pyx_NewRef(Py_True), kwds, args+3, 0) < 0) goto limited_bad;
+            }
+            result = __Pyx_Object_Vectorcall_CallFromBuilder(from_bytes, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET, kwds);
+        }
+        limited_bad:
+        Py_XDECREF(kwds);
+        Py_XDECREF(order_str);
+        Py_XDECREF(py_bytes);
+        Py_XDECREF(from_bytes);
+        return result;
+#endif
+    }
+}
+
+/* CIntToPy */
+  static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+    const long neg_one = (long) -1, const_zero = (long) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(long) < sizeof(long)) {
+            return PyLong_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+#if defined(HAVE_LONG_LONG) && !CYTHON_COMPILING_IN_PYPY
+        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
+            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
+#endif
+        }
+    } else {
+        if (sizeof(long) <= sizeof(long)) {
+            return PyLong_FromLong((long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
+            return PyLong_FromLongLong((PY_LONG_LONG) value);
+#endif
+        }
+    }
+    {
+        unsigned char *bytes = (unsigned char *)&value;
+#if !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x030d00A4
+        if (is_unsigned) {
+            return PyLong_FromUnsignedNativeBytes(bytes, sizeof(value), -1);
+        } else {
+            return PyLong_FromNativeBytes(bytes, sizeof(value), -1);
+        }
+#elif !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x030d0000
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        return _PyLong_FromByteArray(bytes, sizeof(long),
+                                     little, !is_unsigned);
+#else
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        PyObject *from_bytes, *result = NULL, *kwds = NULL;
+        PyObject *py_bytes = NULL, *order_str = NULL;
+        from_bytes = PyObject_GetAttrString((PyObject*)&PyLong_Type, "from_bytes");
+        if (!from_bytes) return NULL;
+        py_bytes = PyBytes_FromStringAndSize((char*)bytes, sizeof(long));
         if (!py_bytes) goto limited_bad;
         order_str = PyUnicode_FromString(little ? "little" : "big");
         if (!order_str) goto limited_bad;

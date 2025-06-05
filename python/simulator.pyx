@@ -14,39 +14,278 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
-cdef extern from "device.hpp" namespace "simulator":
-    cppclass Device:
-        Device(double, double) except +
-        Device(double, double, vector[map[string, double]]) except +
-        double get_epsilon_at(double x, double y)
-        vector[double] get_extents()
-        bool is_valid()
-
-# Use C interface to avoid enum class issues
-cdef extern from "driftdiffusion.hpp":
+# Complete C interface declarations
+cdef extern from "device.hpp":
     ctypedef struct simulator_Device "simulator::Device"
-    ctypedef struct simulator_DriftDiffusion "simulator::DriftDiffusion"
-    ctypedef struct simulator_Poisson "simulator::Poisson"
 
-    # C interface functions
+    # Device C interface
+    simulator_Device* create_device(double Lx, double Ly)
+    void destroy_device(simulator_Device* device)
+    double device_get_epsilon_at(simulator_Device* device, double x, double y)
+    void device_get_extents(simulator_Device* device, double* extents)
+
+cdef extern from "driftdiffusion.hpp":
+    ctypedef struct simulator_DriftDiffusion "simulator::DriftDiffusion"
+
+    # DriftDiffusion C interface
     simulator_DriftDiffusion* create_drift_diffusion(simulator_Device* device, int method, int mesh_type, int order)
     void destroy_drift_diffusion(simulator_DriftDiffusion* dd)
+    int drift_diffusion_is_valid(simulator_DriftDiffusion* dd)
     int drift_diffusion_set_doping(simulator_DriftDiffusion* dd, double* Nd, double* Na, int size)
     int drift_diffusion_set_trap_level(simulator_DriftDiffusion* dd, double* Et, int size)
     int drift_diffusion_solve(simulator_DriftDiffusion* dd, double* bc, int bc_size, double Vg,
                              int max_steps, int use_amr, int poisson_max_iter, double poisson_tol,
                              double* V, double* n, double* p, double* Jn, double* Jp, int size)
+    size_t drift_diffusion_get_dof_count(simulator_DriftDiffusion* dd)
+    double drift_diffusion_get_convergence_residual(simulator_DriftDiffusion* dd)
+    int drift_diffusion_get_order(simulator_DriftDiffusion* dd)
 
 cdef extern from "poisson.hpp":
+    ctypedef struct simulator_Poisson "simulator::Poisson"
+
+    # Poisson C interface
     simulator_Poisson* create_poisson(simulator_Device* device, int method, int mesh_type)
     void destroy_poisson(simulator_Poisson* poisson)
+    int poisson_is_valid(simulator_Poisson* poisson)
+    void poisson_set_charge_density(simulator_Poisson* poisson, double* rho, int size)
     int poisson_solve_2d(simulator_Poisson* poisson, double* bc, int bc_size, double* V, int V_size)
-    int poisson_set_charge_density(simulator_Poisson* poisson, double* rho, int size)
+    int poisson_solve_2d_self_consistent(simulator_Poisson* poisson, double* bc, int bc_size,
+                                        double* n, double* p, double* Nd, double* Na, int size,
+                                        int max_iter, double tol, double* V, int V_size)
+    size_t poisson_get_dof_count(simulator_Poisson* poisson)
+    double poisson_get_residual_norm(simulator_Poisson* poisson)
 
+cdef extern from "mesh.hpp":
+    ctypedef struct simulator_Mesh "simulator::Mesh"
+
+    # Mesh C interface
+    simulator_Mesh* create_mesh(simulator_Device* device, int mesh_type)
+    void destroy_mesh(simulator_Mesh* mesh)
+    void mesh_generate_gmsh(simulator_Mesh* mesh, const char* filename)
+    int mesh_get_num_nodes(simulator_Mesh* mesh)
+    int mesh_get_num_elements(simulator_Mesh* mesh)
+    void mesh_get_grid_points_x(simulator_Mesh* mesh, double* points, int size)
+    void mesh_get_grid_points_y(simulator_Mesh* mesh, double* points, int size)
+    void mesh_get_elements(simulator_Mesh* mesh, int* elements, int num_elements, int nodes_per_element)
+
+# Device wrapper class
+cdef class Device:
+    cdef simulator_Device* _device
+    cdef double _Lx, _Ly
+
+    def __cinit__(self, double Lx, double Ly):
+        self._device = create_device(Lx, Ly)
+        if self._device == NULL:
+            raise RuntimeError("Failed to create Device")
+        self._Lx = Lx
+        self._Ly = Ly
+
+    def __dealloc__(self):
+        if self._device:
+            destroy_device(self._device)
+
+    def get_epsilon_at(self, double x, double y):
+        """Get permittivity at given coordinates."""
+        return device_get_epsilon_at(self._device, x, y)
+
+    def get_extents(self):
+        """Get device extents [Lx, Ly]."""
+        cdef double extents[2]
+        device_get_extents(self._device, extents)
+        return [extents[0], extents[1]]
+
+    @property
+    def length(self):
+        return self._Lx
+
+    @property
+    def width(self):
+        return self._Ly
+
+# Mesh wrapper class
+cdef class Mesh:
+    cdef simulator_Mesh* _mesh
+    cdef Device _device
+
+    def __cinit__(self, Device device, str mesh_type="Structured"):
+        self._device = device
+        mesh_enum = 0 if mesh_type == "Structured" else 1
+        self._mesh = create_mesh(device._device, mesh_enum)
+        if self._mesh == NULL:
+            raise RuntimeError("Failed to create Mesh")
+
+    def __dealloc__(self):
+        if self._mesh:
+            destroy_mesh(self._mesh)
+
+    def generate_gmsh(self, str filename):
+        """Generate GMSH mesh file."""
+        mesh_generate_gmsh(self._mesh, filename.encode('utf-8'))
+
+    def get_num_nodes(self):
+        """Get number of mesh nodes."""
+        return mesh_get_num_nodes(self._mesh)
+
+    def get_num_elements(self):
+        """Get number of mesh elements."""
+        return mesh_get_num_elements(self._mesh)
+
+    def get_grid_points(self):
+        """Get mesh grid points."""
+        num_nodes = self.get_num_nodes()
+        cdef np.ndarray[double, ndim=1] x_points = np.zeros(num_nodes, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] y_points = np.zeros(num_nodes, dtype=np.float64)
+
+        mesh_get_grid_points_x(self._mesh, &x_points[0], num_nodes)
+        mesh_get_grid_points_y(self._mesh, &y_points[0], num_nodes)
+
+        return x_points, y_points
+
+# Poisson solver wrapper class
+cdef class PoissonSolver:
+    cdef simulator_Poisson* _poisson
+    cdef Device _device
+
+    def __cinit__(self, Device device, str method="DG", str mesh_type="Structured"):
+        self._device = device
+        method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+        mesh_enum = 0 if mesh_type == "Structured" else 1
+
+        self._poisson = create_poisson(device._device, method_enum, mesh_enum)
+        if self._poisson == NULL:
+            raise RuntimeError("Failed to create Poisson solver")
+
+    def __dealloc__(self):
+        if self._poisson:
+            destroy_poisson(self._poisson)
+
+    def is_valid(self):
+        """Check if solver is valid."""
+        return poisson_is_valid(self._poisson) != 0
+
+    def set_charge_density(self, np.ndarray[double, ndim=1] rho):
+        """Set charge density."""
+        poisson_set_charge_density(self._poisson, &rho[0], rho.size)
+
+    def solve(self, bc):
+        """Solve Poisson equation."""
+        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+        cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+        cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+
+        cdef int result = poisson_solve_2d(self._poisson, &bc_array[0], bc_array.size, &V[0], V.size)
+        if result != 0:
+            raise RuntimeError("Poisson solve failed")
+        return V
+
+    def solve_self_consistent(self, bc, np.ndarray[double, ndim=1] n, np.ndarray[double, ndim=1] p,
+                             np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na,
+                             int max_iter=100, double tol=1e-6):
+        """Solve self-consistent Poisson equation."""
+        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+        cdef int dof_count = <int>poisson_get_dof_count(self._poisson)
+        cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+
+        cdef int result = poisson_solve_2d_self_consistent(
+            self._poisson, &bc_array[0], bc_array.size,
+            &n[0], &p[0], &Nd[0], &Na[0], n.size,
+            max_iter, tol, &V[0], V.size)
+
+        if result != 0:
+            raise RuntimeError("Self-consistent Poisson solve failed")
+        return V
+
+    def get_dof_count(self):
+        """Get degrees of freedom count."""
+        return poisson_get_dof_count(self._poisson)
+
+    def get_residual_norm(self):
+        """Get residual norm."""
+        return poisson_get_residual_norm(self._poisson)
+
+# DriftDiffusion solver wrapper class
+cdef class DriftDiffusionSolver:
+    cdef simulator_DriftDiffusion* _dd
+    cdef Device _device
+
+    def __cinit__(self, Device device, str method="DG", str mesh_type="Structured", int order=3):
+        self._device = device
+        method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
+        mesh_enum = 0 if mesh_type == "Structured" else 1
+
+        self._dd = create_drift_diffusion(device._device, method_enum, mesh_enum, order)
+        if self._dd == NULL:
+            raise RuntimeError("Failed to create DriftDiffusion solver")
+
+    def __dealloc__(self):
+        if self._dd:
+            destroy_drift_diffusion(self._dd)
+
+    def is_valid(self):
+        """Check if solver is valid."""
+        return drift_diffusion_is_valid(self._dd) != 0
+
+    def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
+        """Set doping concentrations."""
+        if Nd.size != Na.size:
+            raise ValueError("Nd and Na arrays must have the same size")
+        cdef int result = drift_diffusion_set_doping(self._dd, &Nd[0], &Na[0], Nd.size)
+        if result != 0:
+            raise RuntimeError("Failed to set doping")
+
+    def set_trap_level(self, np.ndarray[double, ndim=1] Et):
+        """Set trap energy levels."""
+        cdef int result = drift_diffusion_set_trap_level(self._dd, &Et[0], Et.size)
+        if result != 0:
+            raise RuntimeError("Failed to set trap level")
+
+    def solve(self, bc, double Vg=0.0, int max_steps=100, bool use_amr=False,
+              int poisson_max_iter=50, double poisson_tol=1e-6):
+        """Solve drift-diffusion equations."""
+        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
+        cdef int dof_count = <int>drift_diffusion_get_dof_count(self._dd)
+
+        # Prepare output arrays
+        cdef np.ndarray[double, ndim=1] V = np.zeros(dof_count, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] n = np.zeros(dof_count, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] p = np.zeros(dof_count, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] Jn = np.zeros(dof_count, dtype=np.float64)
+        cdef np.ndarray[double, ndim=1] Jp = np.zeros(dof_count, dtype=np.float64)
+
+        cdef int use_amr_int = 1 if use_amr else 0
+        cdef int result = drift_diffusion_solve(
+            self._dd, &bc_array[0], bc_array.size, Vg,
+            max_steps, use_amr_int, poisson_max_iter, poisson_tol,
+            &V[0], &n[0], &p[0], &Jn[0], &Jp[0], dof_count)
+
+        if result != 0:
+            raise RuntimeError("Drift-diffusion solve failed")
+
+        return {
+            "potential": V,
+            "n": n,
+            "p": p,
+            "Jn": Jn,
+            "Jp": Jp
+        }
+
+    def get_dof_count(self):
+        """Get degrees of freedom count."""
+        return drift_diffusion_get_dof_count(self._dd)
+
+    def get_convergence_residual(self):
+        """Get convergence residual."""
+        return drift_diffusion_get_convergence_residual(self._dd)
+
+    def get_order(self):
+        """Get polynomial order."""
+        return drift_diffusion_get_order(self._dd)
+
+# Legacy Simulator class for backward compatibility
 cdef class Simulator:
-    cdef Device* device
-    cdef simulator_Poisson* poisson
-    cdef simulator_DriftDiffusion* dd
+    cdef Device _device
+    cdef PoissonSolver _poisson
+    cdef DriftDiffusionSolver _dd
     cdef int num_points_x, num_points_y
     cdef str mesh_type, method
 
@@ -58,14 +297,6 @@ cdef class Simulator:
 
     def __cinit__(self, dimension="TwoD", extents=[1e-6, 0.5e-6], num_points_x=50, num_points_y=25,
                   method="DG", mesh_type="Structured", regions=None):
-        # Declare variables at the beginning
-        cdef vector[map[string, double]] c_regions
-        cdef int mesh_enum, method_enum
-
-        # Initialize pointers to NULL for safety
-        self.device = NULL
-        self.poisson = NULL
-        self.dd = NULL
 
         self.num_points_x = num_points_x
         self.num_points_y = num_points_y
@@ -78,100 +309,50 @@ cdef class Simulator:
         self._method = method
         self._mesh_type = mesh_type
 
-        regions = regions or []
-        for r in regions:
-            c_regions.push_back(r)
-
         try:
-            # Create C++ objects with error checking
-            if len(regions) > 0:
-                self.device = new Device(extents[0], extents[1], c_regions)
-            else:
-                self.device = new Device(extents[0], extents[1])
+            # Create device using new wrapper
+            self._device = Device(extents[0], extents[1])
 
-            if self.device == NULL:
-                raise RuntimeError("Failed to create Device")
-
-            # Use integer constants for enums
-            mesh_enum = 0 if mesh_type == "Structured" else 1  # 0=Structured, 1=Unstructured
-            method_enum = {"FDM": 0, "FEM": 1, "FVM": 2, "SEM": 3, "MC": 4, "DG": 5}[method]
-
-            # Create using C interface with error checking
-            self.poisson = create_poisson(<simulator_Device*>self.device, method_enum, mesh_enum)
-            if self.poisson == NULL:
-                raise RuntimeError("Failed to create Poisson solver")
-
-            self.dd = create_drift_diffusion(<simulator_Device*>self.device, method_enum, mesh_enum, 3)
-            if self.dd == NULL:
-                raise RuntimeError("Failed to create DriftDiffusion solver")
+            # Create solvers using new wrappers
+            self._poisson = PoissonSolver(self._device, method, mesh_type)
+            self._dd = DriftDiffusionSolver(self._device, method, mesh_type, 3)
 
         except Exception as e:
-            # Clean up on error
-            if self.dd:
-                destroy_drift_diffusion(self.dd)
-                self.dd = NULL
-            if self.poisson:
-                destroy_poisson(self.poisson)
-                self.poisson = NULL
-            if self.device:
-                del self.device
-                self.device = NULL
-            raise
+            raise RuntimeError(f"Failed to create Simulator: {e}")
 
     def __dealloc__(self):
-        if self.dd:
-            destroy_drift_diffusion(self.dd)
-        if self.poisson:
-            destroy_poisson(self.poisson)
-        del self.device
+        # Cleanup handled by individual wrapper classes
+        pass
 
     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
-        if Nd.size != Na.size:
-            raise ValueError("Nd and Na arrays must have the same size")
-        cdef int result = drift_diffusion_set_doping(self.dd, &Nd[0], &Na[0], Nd.size)
-        if result != 0:
-            raise RuntimeError("Failed to set doping")
+        """Set doping concentrations."""
+        self._dd.set_doping(Nd, Na)
 
     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
-        cdef int result = drift_diffusion_set_trap_level(self.dd, &Et[0], Et.size)
-        if result != 0:
-            raise RuntimeError("Failed to set trap level")
+        """Set trap energy levels."""
+        self._dd.set_trap_level(Et)
 
     def solve_poisson(self, bc):
-        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
-        cdef np.ndarray[double, ndim=1] V = np.zeros(self.num_points_x * self.num_points_y, dtype=np.float64)
-        cdef int result = poisson_solve_2d(self.poisson, &bc_array[0], bc_array.size, &V[0], V.size)
-        if result != 0:
-            raise RuntimeError("Poisson solve failed")
-        return V
+        """Solve Poisson equation."""
+        return self._poisson.solve(bc)
 
     def solve_drift_diffusion(self, bc, Vg=0.0, max_steps=100, use_amr=False,
                               poisson_max_iter=50, poisson_tol=1e-6):
-        cdef np.ndarray[double, ndim=1] bc_array = np.array(bc, dtype=np.float64)
-        cdef int size = self.num_points_x * self.num_points_y
+        """Solve drift-diffusion equations."""
+        return self._dd.solve(bc, Vg, max_steps, use_amr, poisson_max_iter, poisson_tol)
 
-        # Prepare output arrays
-        cdef np.ndarray[double, ndim=1] V = np.zeros(size, dtype=np.float64)
-        cdef np.ndarray[double, ndim=1] n = np.zeros(size, dtype=np.float64)
-        cdef np.ndarray[double, ndim=1] p = np.zeros(size, dtype=np.float64)
-        cdef np.ndarray[double, ndim=1] Jn = np.zeros(size, dtype=np.float64)
-        cdef np.ndarray[double, ndim=1] Jp = np.zeros(size, dtype=np.float64)
+    # Additional convenience methods
+    def get_device(self):
+        """Get the device object."""
+        return self._device
 
-        cdef int use_amr_int = 1 if use_amr else 0
-        cdef int result = drift_diffusion_solve(self.dd, &bc_array[0], bc_array.size, Vg,
-                                               max_steps, use_amr_int, poisson_max_iter, poisson_tol,
-                                               &V[0], &n[0], &p[0], &Jn[0], &Jp[0], size)
+    def get_poisson_solver(self):
+        """Get the Poisson solver object."""
+        return self._poisson
 
-        if result != 0:
-            raise RuntimeError("Drift-diffusion solve failed")
-
-        return {
-            "potential": V,
-            "n": n,
-            "p": p,
-            "Jn": Jn,
-            "Jp": Jp
-        }
+    def get_drift_diffusion_solver(self):
+        """Get the drift-diffusion solver object."""
+        return self._dd
 
     # Python properties to access C attributes
     @property
