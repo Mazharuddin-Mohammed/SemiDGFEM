@@ -10,6 +10,7 @@
 #include "../include/dg_assembly.hpp"
 #include "../include/dg_basis_functions.hpp"
 #include "../src/physics/advanced_physics.hpp"
+#include "../src/dg_math/dg_basis_functions_complete.hpp"
 #include <vector>
 #include <cmath>
 #include <stdexcept>
@@ -177,17 +178,17 @@ private:
         };
         std::vector<double> quad_weights = {0.225, 0.125, 0.125, 0.125, 0.1, 0.1, 0.1};
         
-        // DG basis functions (P3 triangular elements)
+        // DG basis functions using complete implementation
         auto phi = [&](double xi, double eta, int j) -> double {
-            return evaluate_basis_function(xi, eta, j, order_);
+            return SemiDGFEM::DG::TriangularBasisFunctions::evaluate_basis_function(xi, eta, j, order_);
         };
-        
-        auto dphi_dx = [&](double xi, double eta, int j, double b1, double b2, double b3) -> double {
-            return evaluate_basis_gradient_x(xi, eta, j, order_, b1, b2, b3);
+
+        auto dphi_ref = [&](double xi, double eta, int j) -> std::vector<double> {
+            return SemiDGFEM::DG::TriangularBasisFunctions::evaluate_basis_gradient_ref(xi, eta, j, order_);
         };
-        
-        auto dphi_dy = [&](double xi, double eta, int j, double c1, double c2, double c3) -> double {
-            return evaluate_basis_gradient_y(xi, eta, j, order_, c1, c2, c3);
+
+        auto dphi_physical = [&](const std::vector<double>& grad_ref, double b1, double b2, double b3, double c1, double c2, double c3) -> std::vector<double> {
+            return SemiDGFEM::DG::TriangularBasisFunctions::transform_gradient_to_physical(grad_ref, b1, b2, b3, c1, c2, c3);
         };
         
         // Element-wise assembly
@@ -222,8 +223,17 @@ private:
                 double p_q = interpolate_at_quad_point(p, elements[e], xi, eta, phi);
                 double Jn_q = interpolate_at_quad_point(Jn, elements[e], xi, eta, phi);
                 double Jp_q = interpolate_at_quad_point(Jp, elements[e], xi, eta, phi);
-                double grad_phi_x = interpolate_gradient_x(potential, elements[e], xi, eta, dphi_dx, b1, b2, b3);
-                double grad_phi_y = interpolate_gradient_y(potential, elements[e], xi, eta, dphi_dy, c1, c2, c3);
+
+                // Calculate potential gradients using complete basis functions
+                double grad_phi_x = 0.0, grad_phi_y = 0.0;
+                for (int k = 0; k < 3; ++k) { // Linear interpolation for potential
+                    if (elements[e][k] < static_cast<int>(potential.size())) {
+                        auto grad_ref = dphi_ref(xi, eta, k);
+                        auto grad_phys = dphi_physical(grad_ref, b1, b2, b3, c1, c2, c3);
+                        grad_phi_x += potential[elements[e][k]] * grad_phys[0];
+                        grad_phi_y += potential[elements[e][k]] * grad_phys[1];
+                    }
+                }
                 
                 // Energy transport coefficients
                 double kappa_n = calculate_energy_diffusivity(n_q, true);  // Electron energy diffusivity
@@ -236,10 +246,17 @@ private:
                     for (int j = 0; j < dofs_per_element_; ++j) {
                         double phi_i = phi(xi, eta, i);
                         double phi_j = phi(xi, eta, j);
-                        double dphi_i_dx = dphi_dx(xi, eta, i, b1, b2, b3);
-                        double dphi_i_dy = dphi_dy(xi, eta, i, c1, c2, c3);
-                        double dphi_j_dx = dphi_dx(xi, eta, j, b1, b2, b3);
-                        double dphi_j_dy = dphi_dy(xi, eta, j, c1, c2, c3);
+
+                        // Calculate gradients using complete basis functions
+                        auto grad_i_ref = dphi_ref(xi, eta, i);
+                        auto grad_j_ref = dphi_ref(xi, eta, j);
+                        auto grad_i_phys = dphi_physical(grad_i_ref, b1, b2, b3, c1, c2, c3);
+                        auto grad_j_phys = dphi_physical(grad_j_ref, b1, b2, b3, c1, c2, c3);
+
+                        double dphi_i_dx = grad_i_phys[0];
+                        double dphi_i_dy = grad_i_phys[1];
+                        double dphi_j_dx = grad_j_phys[0];
+                        double dphi_j_dy = grad_j_phys[1];
                         
                         // Mass matrix (time derivative term)
                         M[i][j] += w * phi_i * phi_j;
