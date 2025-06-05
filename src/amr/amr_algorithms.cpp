@@ -97,12 +97,34 @@ std::vector<double> AMRController::compute_gradient_based_error(
         if (e > 0 && e < elements.size() - 1) {
             // Approximate second derivative using neighboring elements
             double curvature = 0.0;
-            // Simplified curvature estimation
-            if (e > 0) {
-                auto grad_prev = utils::compute_element_gradient(solution, elements[e-1], vertices);
-                curvature += std::abs(gradient[0] - grad_prev[0]) + std::abs(gradient[1] - grad_prev[1]);
+
+            // Find neighboring elements that share vertices
+            std::vector<size_t> neighbors;
+            for (size_t other = 0; other < elements.size(); ++other) {
+                if (other == e) continue;
+
+                // Check if elements share at least one vertex
+                int shared_vertices = 0;
+                for (int v1 : elements[e]) {
+                    for (int v2 : elements[other]) {
+                        if (v1 == v2) shared_vertices++;
+                    }
+                }
+                if (shared_vertices >= 2) { // Share an edge
+                    neighbors.push_back(other);
+                }
             }
-            error_indicators[e] += h * h * curvature;
+
+            // Compute curvature using neighboring gradients
+            for (size_t neighbor_idx : neighbors) {
+                auto grad_neighbor = utils::compute_element_gradient(solution, elements[neighbor_idx], vertices);
+                curvature += std::abs(gradient[0] - grad_neighbor[0]) + std::abs(gradient[1] - grad_neighbor[1]);
+            }
+
+            if (!neighbors.empty()) {
+                curvature /= neighbors.size(); // Average curvature
+                error_indicators[e] += h * h * curvature;
+            }
         }
     }
     
@@ -160,9 +182,38 @@ std::vector<double> AMRController::compute_kelly_error(
                         auto grad_e = utils::compute_element_gradient(solution, element, vertices);
                         auto grad_n = utils::compute_element_gradient(solution, neighbor, vertices);
                         
-                        // Face normal (simplified)
-                        double nx = -(vertices[v2][1] - vertices[v1][1]) / face_length;
-                        double ny = (vertices[v2][0] - vertices[v1][0]) / face_length;
+                        // Face normal (outward pointing from element e)
+                        // For 2D, normal to edge (v1->v2) is perpendicular vector
+                        double edge_x = vertices[v2][0] - vertices[v1][0];
+                        double edge_y = vertices[v2][1] - vertices[v1][1];
+
+                        // Perpendicular vector (rotated 90 degrees)
+                        double nx = -edge_y / face_length;
+                        double ny = edge_x / face_length;
+
+                        // Ensure normal points outward from element e
+                        // Check orientation using third vertex of element
+                        int third_vertex = -1;
+                        for (int v : element) {
+                            if (v != v1 && v != v2) {
+                                third_vertex = v;
+                                break;
+                            }
+                        }
+
+                        if (third_vertex >= 0) {
+                            // Vector from edge midpoint to third vertex
+                            double mid_x = (vertices[v1][0] + vertices[v2][0]) / 2.0;
+                            double mid_y = (vertices[v1][1] + vertices[v2][1]) / 2.0;
+                            double to_third_x = vertices[third_vertex][0] - mid_x;
+                            double to_third_y = vertices[third_vertex][1] - mid_y;
+
+                            // If normal points toward third vertex, flip it
+                            if (nx * to_third_x + ny * to_third_y > 0) {
+                                nx = -nx;
+                                ny = -ny;
+                            }
+                        }
                         
                         // Normal derivatives
                         double dn_e = grad_e[0] * nx + grad_e[1] * ny;
@@ -676,12 +727,31 @@ std::array<double, 2> AMRController::detect_anisotropy_direction(
     double hxx = 0.0, hxy = 0.0, hyy = 0.0;
     int neighbor_count = 0;
 
-    // Find neighboring elements (simplified approach)
+    // Find neighboring elements (improved approach using vertex connectivity)
+    std::vector<size_t> neighbor_elements;
+
     for (size_t other_id = 0; other_id < elements.size(); ++other_id) {
         if (other_id == static_cast<size_t>(element_id)) continue;
 
         const auto& other_element = elements[other_id];
         if (other_element.size() < 3) continue;
+
+        // Check if elements share at least 2 vertices (i.e., share an edge)
+        int shared_vertices = 0;
+        for (int v1 : element) {
+            for (int v2 : other_element) {
+                if (v1 == v2) shared_vertices++;
+            }
+        }
+
+        if (shared_vertices >= 2) {
+            neighbor_elements.push_back(other_id);
+        }
+    }
+
+    // Process neighboring elements for Hessian computation
+    for (size_t other_id : neighbor_elements) {
+        const auto& other_element = elements[other_id];
 
         // Check if elements share an edge (have 2 common vertices)
         int common_vertices = 0;
@@ -778,10 +848,85 @@ std::unordered_map<int, std::vector<int>> AMRController::perform_refinement(
     std::vector<std::array<double, 2>>& vertices,
     std::vector<double>& solution) {
 
-    // Simple stub implementation - no actual refinement
-    // In a real implementation, this would subdivide elements and interpolate solution
-    (void)refinement_decisions; (void)elements; (void)vertices; (void)solution; // Suppress warnings
-    return std::unordered_map<int, std::vector<int>>();
+    std::unordered_map<int, std::vector<int>> parent_to_children;
+
+    // Track new vertices and elements
+    std::vector<std::array<double, 2>> new_vertices;
+    std::vector<std::vector<int>> new_elements;
+    std::vector<double> new_solution;
+
+    // Copy existing vertices and solution
+    new_vertices = vertices;
+    new_solution = solution;
+
+    // Process each element for refinement
+    for (size_t elem_idx = 0; elem_idx < elements.size(); ++elem_idx) {
+        const auto& decision = refinement_decisions[elem_idx];
+
+        if (decision.refine && elements[elem_idx].size() == 3) {
+            // Refine triangular element by subdividing into 4 triangles
+            const auto& element = elements[elem_idx];
+
+            // Get vertex coordinates
+            auto v0 = vertices[element[0]];
+            auto v1 = vertices[element[1]];
+            auto v2 = vertices[element[2]];
+
+            // Create midpoint vertices
+            std::array<double, 2> m01 = {(v0[0] + v1[0]) / 2.0, (v0[1] + v1[1]) / 2.0};
+            std::array<double, 2> m12 = {(v1[0] + v2[0]) / 2.0, (v1[1] + v2[1]) / 2.0};
+            std::array<double, 2> m20 = {(v2[0] + v0[0]) / 2.0, (v2[1] + v0[1]) / 2.0};
+
+            // Add new vertices
+            int idx_m01 = new_vertices.size();
+            new_vertices.push_back(m01);
+            int idx_m12 = new_vertices.size();
+            new_vertices.push_back(m12);
+            int idx_m20 = new_vertices.size();
+            new_vertices.push_back(m20);
+
+            // Create 4 child elements
+            std::vector<int> child_indices;
+
+            // Child 0: corner at v0
+            new_elements.push_back({element[0], idx_m01, idx_m20});
+            child_indices.push_back(new_elements.size() - 1);
+
+            // Child 1: corner at v1
+            new_elements.push_back({element[1], idx_m12, idx_m01});
+            child_indices.push_back(new_elements.size() - 1);
+
+            // Child 2: corner at v2
+            new_elements.push_back({element[2], idx_m20, idx_m12});
+            child_indices.push_back(new_elements.size() - 1);
+
+            // Child 3: central triangle
+            new_elements.push_back({idx_m01, idx_m12, idx_m20});
+            child_indices.push_back(new_elements.size() - 1);
+
+            // Store parent-child relationship
+            parent_to_children[elem_idx] = child_indices;
+
+            // Interpolate solution to new vertices (simple averaging)
+            if (elem_idx < solution.size()) {
+                double parent_value = solution[elem_idx];
+                // Extend solution for new elements
+                for (int i = 0; i < 4; ++i) {
+                    new_solution.push_back(parent_value);
+                }
+            }
+        } else {
+            // Keep element unchanged
+            new_elements.push_back(elements[elem_idx]);
+        }
+    }
+
+    // Update mesh data
+    vertices = std::move(new_vertices);
+    elements = std::move(new_elements);
+    solution = std::move(new_solution);
+
+    return parent_to_children;
 }
 
 } // namespace amr
