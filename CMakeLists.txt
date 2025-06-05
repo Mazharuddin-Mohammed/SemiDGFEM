@@ -61,7 +61,10 @@ set(SIMULATOR_SOURCES
     src/amr/amr_algorithms.cpp
     src/performance/simd_kernels.cpp
     src/performance/parallel_computing.cpp
+    src/performance/advanced_profiler.cpp
     src/gpu/gpu_context.cpp
+    src/physics/advanced_physics.cpp
+    src/physics/advanced_transport.cpp
 )
 
 # Add CUDA sources if enabled

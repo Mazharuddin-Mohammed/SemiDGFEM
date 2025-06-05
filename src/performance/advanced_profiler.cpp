@@ -3,6 +3,12 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <iostream>
+#include <mutex>
+#include <cmath>
+#include <unordered_map>
+#include <chrono>
+#include <limits>
 
 namespace simulator {
 namespace performance {

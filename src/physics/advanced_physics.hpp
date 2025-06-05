@@ -11,6 +11,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <array>
 
 namespace SemiDGFEM {
 namespace Physics {
@@ -185,56 +186,163 @@ public:
 class EffectiveMassModel {
 private:
     SiliconProperties props_;
-    
+
 public:
     EffectiveMassModel(const SiliconProperties& props = SiliconProperties{})
         : props_(props) {}
-    
+
     /**
      * @brief Calculate density of states effective mass for electrons
      */
     double get_electron_dos_mass() const {
         return props_.m_eff_n_dos * PhysicalConstants::m0;
     }
-    
+
     /**
      * @brief Calculate density of states effective mass for holes
      */
     double get_hole_dos_mass() const {
         return props_.m_eff_p_dos * PhysicalConstants::m0;
     }
-    
+
     /**
      * @brief Calculate conductivity effective mass for electrons
      */
     double get_electron_conductivity_mass() const {
         return props_.m_eff_n_cond * PhysicalConstants::m0;
     }
-    
+
     /**
      * @brief Calculate conductivity effective mass for holes
      */
     double get_hole_conductivity_mass() const {
         return props_.m_eff_p_cond * PhysicalConstants::m0;
     }
-    
+
     /**
      * @brief Calculate effective density of states in conduction band
      */
     double calculate_Nc(double T = 300.0) const {
         double m_eff = get_electron_dos_mass();
-        return 2.0 * std::pow(2.0 * M_PI * m_eff * PhysicalConstants::k * T / 
+        return 2.0 * std::pow(2.0 * M_PI * m_eff * PhysicalConstants::k * T /
                              (PhysicalConstants::h * PhysicalConstants::h), 1.5);
     }
-    
+
     /**
      * @brief Calculate effective density of states in valence band
      */
     double calculate_Nv(double T = 300.0) const {
         double m_eff = get_hole_dos_mass();
-        return 2.0 * std::pow(2.0 * M_PI * m_eff * PhysicalConstants::k * T / 
+        return 2.0 * std::pow(2.0 * M_PI * m_eff * PhysicalConstants::k * T /
                              (PhysicalConstants::h * PhysicalConstants::h), 1.5);
     }
+};
+
+/**
+ * @brief Non-equilibrium carrier statistics model
+ */
+class NonEquilibriumStatistics {
+private:
+    SiliconProperties props_;
+    std::unique_ptr<EffectiveMassModel> effective_mass_model_;
+
+public:
+    NonEquilibriumStatistics(const SiliconProperties& props = SiliconProperties{})
+        : props_(props) {
+        effective_mass_model_ = std::make_unique<EffectiveMassModel>(props);
+    }
+
+    /**
+     * @brief Calculate carrier densities using Fermi-Dirac statistics
+     */
+    void calculate_fermi_dirac_densities(
+        const std::vector<double>& potential,
+        const std::vector<double>& quasi_fermi_n,
+        const std::vector<double>& quasi_fermi_p,
+        const std::vector<double>& Nd,
+        const std::vector<double>& Na,
+        std::vector<double>& n,
+        std::vector<double>& p,
+        double T = 300.0) const;
+
+    /**
+     * @brief Calculate bandgap narrowing in heavily doped regions
+     */
+    double calculate_bandgap_narrowing(double N_total) const {
+        // Slotboom model for bandgap narrowing
+        double bandgap_narrowing_factor = 1e-3; // eV⋅m^(1/3)
+        double delta_Eg = bandgap_narrowing_factor * std::pow(N_total, 1.0/3.0);
+        return std::min(delta_Eg, 0.1); // Limit to 100 meV
+    }
+
+    /**
+     * @brief Calculate incomplete ionization effects
+     */
+    double calculate_ionization_fraction(double N_doping, double T = 300.0) const {
+        // Simplified incomplete ionization model
+        double E_ionization = 0.045; // eV for phosphorus in silicon
+        double Vt = PhysicalConstants::k * T / PhysicalConstants::q;
+
+        return 1.0 / (1.0 + 2.0 * std::exp(E_ionization / Vt));
+    }
+
+    /**
+     * @brief Calculate degeneracy factor for statistics
+     */
+    double calculate_degeneracy_factor(double n, double Nc, double T = 300.0) const {
+        double eta = n / Nc;
+        if (eta < 0.1) return 1.0; // Non-degenerate case
+
+        // Joyce-Dixon approximation for Fermi-Dirac integral
+        return 1.0 + eta / (2.0 + eta);
+    }
+};
+
+/**
+ * @brief Transport model types for advanced physics
+ */
+enum class TransportModel {
+    DRIFT_DIFFUSION,           // Classical drift-diffusion
+    ENERGY_TRANSPORT,          // Energy transport model
+    HYDRODYNAMIC,             // Hydrodynamic model
+    NON_EQUILIBRIUM_STATISTICS // Non-equilibrium carrier statistics
+};
+
+/**
+ * @brief Non-equilibrium statistics configuration
+ */
+struct NonEquilibriumConfig {
+    bool enable_fermi_dirac = true;           // Use Fermi-Dirac statistics
+    bool enable_degeneracy_effects = true;    // Include degeneracy effects
+    bool enable_bandgap_narrowing = true;     // Bandgap narrowing in heavily doped regions
+    bool enable_incomplete_ionization = false; // Incomplete dopant ionization
+    double degeneracy_factor = 2.0;           // Degeneracy factor for statistics
+    double bandgap_narrowing_factor = 1e-3;   // Bandgap narrowing coefficient (eV⋅m^(1/3))
+};
+
+/**
+ * @brief Energy transport model configuration
+ */
+struct EnergyTransportConfig {
+    bool enable_energy_relaxation = true;     // Energy relaxation effects
+    bool enable_velocity_overshoot = true;    // Velocity overshoot effects
+    double energy_relaxation_time_n = 0.1e-12; // Electron energy relaxation time (s)
+    double energy_relaxation_time_p = 0.1e-12; // Hole energy relaxation time (s)
+    double saturation_velocity_n = 1e5;       // Electron saturation velocity (m/s)
+    double saturation_velocity_p = 8e4;       // Hole saturation velocity (m/s)
+};
+
+/**
+ * @brief Hydrodynamic model configuration
+ */
+struct HydrodynamicConfig {
+    bool enable_momentum_relaxation = true;   // Momentum relaxation effects
+    bool enable_pressure_gradient = true;     // Pressure gradient effects
+    bool enable_heat_flow = true;             // Heat flow effects
+    double momentum_relaxation_time_n = 0.1e-12; // Electron momentum relaxation time (s)
+    double momentum_relaxation_time_p = 0.1e-12; // Hole momentum relaxation time (s)
+    double thermal_conductivity = 150.0;      // Thermal conductivity (W/m⋅K)
+    double specific_heat = 700.0;             // Specific heat capacity (J/kg⋅K)
 };
 
 /**
@@ -243,28 +351,148 @@ public:
 struct PhysicsConfig {
     // Temperature
     double temperature = 300.0;  // K
-    
+
     // Material properties
     SiliconProperties silicon_props;
-    
+
+    // Transport model selection
+    TransportModel transport_model = TransportModel::DRIFT_DIFFUSION;
+
     // Mobility model selection
     std::string mobility_model = "CaugheyThomas";
-    
+
     // SRH parameters
     double tau_n0 = 1e-6;        // s
     double tau_p0 = 1e-6;        // s
     double Et_Ei = 0.0;          // eV
-    
+
+    // Advanced transport configurations
+    NonEquilibriumConfig non_equilibrium_config;
+    EnergyTransportConfig energy_transport_config;
+    HydrodynamicConfig hydrodynamic_config;
+
     // Numerical parameters
     double poisson_tolerance = 1e-12;
     double dd_tolerance = 1e-10;
+    double energy_tolerance = 1e-10;
+    double momentum_tolerance = 1e-10;
     int max_iterations = 100;
-    
+
     // Enable/disable physics models
     bool enable_srh_recombination = true;
     bool enable_field_dependent_mobility = true;
     bool enable_temperature_dependence = true;
     bool enable_quantum_effects = false;
+    bool enable_impact_ionization = false;
+    bool enable_tunneling = false;
+};
+
+/**
+ * @brief Energy transport model for hot carrier effects
+ */
+class EnergyTransportModel {
+private:
+    EnergyTransportConfig config_;
+    SiliconProperties props_;
+
+public:
+    EnergyTransportModel(const EnergyTransportConfig& config = EnergyTransportConfig{},
+                        const SiliconProperties& props = SiliconProperties{})
+        : config_(config), props_(props) {}
+
+    /**
+     * @brief Calculate carrier temperatures from energy densities
+     */
+    void calculate_carrier_temperatures(
+        const std::vector<double>& energy_density_n,
+        const std::vector<double>& energy_density_p,
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        std::vector<double>& T_n,
+        std::vector<double>& T_p,
+        double lattice_T = 300.0) const;
+
+    /**
+     * @brief Calculate energy relaxation rates
+     */
+    void calculate_energy_relaxation(
+        const std::vector<double>& T_n,
+        const std::vector<double>& T_p,
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        std::vector<double>& energy_relaxation_n,
+        std::vector<double>& energy_relaxation_p,
+        double lattice_T = 300.0) const;
+
+    /**
+     * @brief Calculate velocity overshoot effects
+     */
+    double calculate_velocity_overshoot(double E_field, double carrier_temp,
+                                      bool is_electron = true) const {
+        if (!config_.enable_velocity_overshoot) return 1.0;
+
+        double v_sat = is_electron ? config_.saturation_velocity_n : config_.saturation_velocity_p;
+        double tau_energy = is_electron ? config_.energy_relaxation_time_n : config_.energy_relaxation_time_p;
+
+        // Simplified overshoot model
+        double overshoot_factor = 1.0 + (carrier_temp - 300.0) / 300.0 * 0.5;
+        return std::min(overshoot_factor, 2.0); // Limit overshoot
+    }
+};
+
+/**
+ * @brief Hydrodynamic transport model
+ */
+class HydrodynamicModel {
+private:
+    HydrodynamicConfig config_;
+    SiliconProperties props_;
+
+public:
+    HydrodynamicModel(const HydrodynamicConfig& config = HydrodynamicConfig{},
+                     const SiliconProperties& props = SiliconProperties{})
+        : config_(config), props_(props) {}
+
+    /**
+     * @brief Calculate momentum relaxation rates
+     */
+    void calculate_momentum_relaxation(
+        const std::vector<double>& velocity_n,
+        const std::vector<double>& velocity_p,
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        std::vector<double>& momentum_relaxation_n,
+        std::vector<double>& momentum_relaxation_p) const;
+
+    /**
+     * @brief Calculate pressure gradient effects
+     */
+    void calculate_pressure_gradients(
+        const std::vector<double>& n,
+        const std::vector<double>& p,
+        const std::vector<double>& T_n,
+        const std::vector<double>& T_p,
+        std::vector<double>& pressure_grad_n,
+        std::vector<double>& pressure_grad_p) const;
+
+    /**
+     * @brief Calculate heat flow effects
+     */
+    void calculate_heat_flow(
+        const std::vector<double>& T_n,
+        const std::vector<double>& T_p,
+        const std::vector<double>& lattice_temp,
+        std::vector<double>& heat_flow_n,
+        std::vector<double>& heat_flow_p) const;
+
+    /**
+     * @brief Calculate thermal conductivity tensor
+     */
+    std::array<std::array<double, 2>, 2> calculate_thermal_conductivity(
+        double carrier_density, double carrier_temp) const {
+        double kappa = config_.thermal_conductivity * (carrier_density / 1e16);
+        return {{{{kappa, 0.0}}, {{0.0, kappa}}}};
+    }
 };
 
 } // namespace Physics

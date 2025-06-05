@@ -277,5 +277,223 @@ private:
     }
 };
 
+// Implementation of NonEquilibriumStatistics methods
+void NonEquilibriumStatistics::calculate_fermi_dirac_densities(
+    const std::vector<double>& potential,
+    const std::vector<double>& quasi_fermi_n,
+    const std::vector<double>& quasi_fermi_p,
+    const std::vector<double>& Nd,
+    const std::vector<double>& Na,
+    std::vector<double>& n,
+    std::vector<double>& p,
+    double T) const {
+
+    double ni = props_.calculate_ni(T);
+    double Vt = PhysicalConstants::k * T / PhysicalConstants::q;
+
+    size_t num_points = potential.size();
+    n.resize(num_points);
+    p.resize(num_points);
+
+    for (size_t i = 0; i < num_points; ++i) {
+        double Nc = effective_mass_model_->calculate_Nc(T);
+        double Nv = effective_mass_model_->calculate_Nv(T);
+
+        // Calculate bandgap narrowing
+        double N_total = Nd[i] + Na[i];
+        double delta_Eg = calculate_bandgap_narrowing(N_total);
+
+        // Calculate ionization fractions
+        double ionization_n = calculate_ionization_fraction(Nd[i], T);
+        double ionization_p = calculate_ionization_fraction(Na[i], T);
+
+        // Effective doping concentrations
+        double Nd_eff = Nd[i] * ionization_n;
+        double Na_eff = Na[i] * ionization_p;
+
+        // Use Fermi-Dirac statistics in non-equilibrium model
+        // Fermi-Dirac statistics
+        double eta_n = (quasi_fermi_n[i] - potential[i] + delta_Eg/2.0) / Vt;
+        double eta_p = -(quasi_fermi_p[i] - potential[i] - delta_Eg/2.0) / Vt;
+
+        // Joyce-Dixon approximation for F_{1/2}
+        auto fermi_half = [](double eta) -> double {
+            if (eta < -5.0) return std::exp(eta);
+            if (eta > 5.0) return (2.0/3.0) * std::pow(eta, 1.5);
+
+            // Rational approximation
+            double eta2 = eta * eta;
+            double num = eta + 0.24 * eta2 + 0.056 * eta2 * eta;
+            double den = 1.0 + 0.43 * eta + 0.18 * eta2;
+            return std::exp(eta) / (1.0 + std::exp(-eta)) * num / den;
+        };
+
+        n[i] = Nc * fermi_half(eta_n);
+        p[i] = Nv * fermi_half(eta_p);
+
+        // Apply degeneracy corrections
+        {
+            double deg_factor_n = calculate_degeneracy_factor(n[i], Nc, T);
+            double deg_factor_p = calculate_degeneracy_factor(p[i], Nv, T);
+
+            n[i] *= deg_factor_n;
+            p[i] *= deg_factor_p;
+        }
+
+        // Ensure minimum concentrations
+        n[i] = std::max(n[i], ni / 1000.0);
+        p[i] = std::max(p[i], ni / 1000.0);
+    }
+}
+
+// Implementation of EnergyTransportModel methods
+void EnergyTransportModel::calculate_carrier_temperatures(
+    const std::vector<double>& energy_density_n,
+    const std::vector<double>& energy_density_p,
+    const std::vector<double>& n,
+    const std::vector<double>& p,
+    std::vector<double>& T_n,
+    std::vector<double>& T_p,
+    double lattice_T) const {
+
+    size_t num_points = energy_density_n.size();
+    T_n.resize(num_points);
+    T_p.resize(num_points);
+
+    for (size_t i = 0; i < num_points; ++i) {
+        // Calculate carrier temperatures from energy densities
+        // W_n = (3/2) * k * T_n * n  =>  T_n = (2/3) * W_n / (k * n)
+
+        if (n[i] > 1e10) {
+            T_n[i] = (2.0/3.0) * energy_density_n[i] / (PhysicalConstants::k * n[i]);
+        } else {
+            T_n[i] = lattice_T;
+        }
+
+        if (p[i] > 1e10) {
+            T_p[i] = (2.0/3.0) * energy_density_p[i] / (PhysicalConstants::k * p[i]);
+        } else {
+            T_p[i] = lattice_T;
+        }
+
+        // Ensure reasonable temperature bounds
+        T_n[i] = std::max(lattice_T, std::min(T_n[i], 2000.0));
+        T_p[i] = std::max(lattice_T, std::min(T_p[i], 2000.0));
+    }
+}
+
+void EnergyTransportModel::calculate_energy_relaxation(
+    const std::vector<double>& T_n,
+    const std::vector<double>& T_p,
+    const std::vector<double>& n,
+    const std::vector<double>& p,
+    std::vector<double>& energy_relaxation_n,
+    std::vector<double>& energy_relaxation_p,
+    double lattice_T) const {
+
+    size_t num_points = T_n.size();
+    energy_relaxation_n.resize(num_points);
+    energy_relaxation_p.resize(num_points);
+
+    for (size_t i = 0; i < num_points; ++i) {
+        // Energy relaxation: R_W = (3/2) * k * n * (T_carrier - T_lattice) / tau_energy
+
+        double tau_energy_n = 0.1e-12; // Default energy relaxation time
+        double tau_energy_p = 0.1e-12;
+
+        energy_relaxation_n[i] = (3.0/2.0) * PhysicalConstants::k * n[i] *
+                                 (T_n[i] - lattice_T) / tau_energy_n;
+
+        energy_relaxation_p[i] = (3.0/2.0) * PhysicalConstants::k * p[i] *
+                                 (T_p[i] - lattice_T) / tau_energy_p;
+    }
+}
+
+// Implementation of HydrodynamicModel methods
+void HydrodynamicModel::calculate_momentum_relaxation(
+    const std::vector<double>& velocity_n,
+    const std::vector<double>& velocity_p,
+    const std::vector<double>& n,
+    const std::vector<double>& p,
+    std::vector<double>& momentum_relaxation_n,
+    std::vector<double>& momentum_relaxation_p) const {
+
+    size_t num_points = velocity_n.size();
+    momentum_relaxation_n.resize(num_points);
+    momentum_relaxation_p.resize(num_points);
+
+    for (size_t i = 0; i < num_points; ++i) {
+        // Momentum relaxation: R_momentum = m_eff * n * v / tau_momentum
+
+        double m_eff_n = 0.26 * PhysicalConstants::m0; // Electron effective mass
+        double m_eff_p = 0.39 * PhysicalConstants::m0; // Hole effective mass
+
+        double tau_momentum_n = 0.1e-12; // Default momentum relaxation time
+        double tau_momentum_p = 0.1e-12;
+
+        momentum_relaxation_n[i] = m_eff_n * n[i] * velocity_n[i] / tau_momentum_n;
+        momentum_relaxation_p[i] = m_eff_p * p[i] * velocity_p[i] / tau_momentum_p;
+    }
+}
+
+void HydrodynamicModel::calculate_pressure_gradients(
+    const std::vector<double>& n,
+    const std::vector<double>& p,
+    const std::vector<double>& T_n,
+    const std::vector<double>& T_p,
+    std::vector<double>& pressure_grad_n,
+    std::vector<double>& pressure_grad_p) const {
+
+    size_t num_points = n.size();
+    pressure_grad_n.resize(num_points);
+    pressure_grad_p.resize(num_points);
+
+    // Simplified finite difference for pressure gradients
+    for (size_t i = 0; i < num_points; ++i) {
+        if (i > 0 && i < num_points - 1) {
+            // Pressure = n * k * T
+            double P_n_left = n[i-1] * PhysicalConstants::k * T_n[i-1];
+            double P_n_right = n[i+1] * PhysicalConstants::k * T_n[i+1];
+            double P_p_left = p[i-1] * PhysicalConstants::k * T_p[i-1];
+            double P_p_right = p[i+1] * PhysicalConstants::k * T_p[i+1];
+
+            // Gradient (simplified, assuming unit spacing)
+            pressure_grad_n[i] = -(P_n_right - P_n_left) / 2.0;
+            pressure_grad_p[i] = -(P_p_right - P_p_left) / 2.0;
+        } else {
+            pressure_grad_n[i] = 0.0;
+            pressure_grad_p[i] = 0.0;
+        }
+    }
+}
+
+void HydrodynamicModel::calculate_heat_flow(
+    const std::vector<double>& T_n,
+    const std::vector<double>& T_p,
+    const std::vector<double>& lattice_temp,
+    std::vector<double>& heat_flow_n,
+    std::vector<double>& heat_flow_p) const {
+
+    size_t num_points = T_n.size();
+    heat_flow_n.resize(num_points);
+    heat_flow_p.resize(num_points);
+
+    // Simplified finite difference for heat flow
+    for (size_t i = 0; i < num_points; ++i) {
+        if (i > 0 && i < num_points - 1) {
+            // Heat flow: q = -kappa * grad(T)
+            double grad_T_n = (T_n[i+1] - T_n[i-1]) / 2.0;
+            double grad_T_p = (T_p[i+1] - T_p[i-1]) / 2.0;
+
+            double thermal_conductivity = 150.0; // Default thermal conductivity
+            heat_flow_n[i] = -thermal_conductivity * grad_T_n;
+            heat_flow_p[i] = -thermal_conductivity * grad_T_p;
+        } else {
+            heat_flow_n[i] = 0.0;
+            heat_flow_p[i] = 0.0;
+        }
+    }
+}
+
 } // namespace Physics
 } // namespace SemiDGFEM

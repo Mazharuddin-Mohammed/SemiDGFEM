@@ -23,6 +23,16 @@ ext_modules = [
         language="c++",
         extra_compile_args=["-std=c++17"],
         extra_link_args=["-Wl,-rpath," + build_dir],
+    ),
+    Extension(
+        "advanced_transport",
+        sources=["advanced_transport.pyx"],
+        include_dirs=[include_dir, np.get_include()],
+        libraries=["simulator"],
+        library_dirs=[build_dir],
+        language="c++",
+        extra_compile_args=["-std=c++17"],
+        extra_link_args=["-Wl,-rpath," + build_dir],
     )
 ]
 
