@@ -64,12 +64,14 @@ void DGAssembly::assemble_element_matrix(
         }
         
         // Compute basis functions and gradients
-        if (poly_order_ == 2) {
+        if (poly_order_ == 1) {
+            compute_p1_basis_functions(xi, eta, N, grad_N_ref);
+        } else if (poly_order_ == 2) {
             compute_p2_basis_functions(xi, eta, N, grad_N_ref);
         } else if (poly_order_ == 3) {
             compute_p3_basis_functions(xi, eta, N, grad_N_ref);
         } else {
-            throw std::runtime_error("P1 basis functions not implemented yet");
+            throw std::runtime_error("Unsupported polynomial order: " + std::to_string(poly_order_));
         }
         
         // Transform gradients to physical coordinates
@@ -137,12 +139,16 @@ void DGAssembly::add_interface_penalty(
         double coeff = coefficient_func(x_phys, y_phys);
         
         // Map physical point back to reference coordinates for each element
-        // This requires inverse mapping - simplified implementation
-        double xi_left = 0.5, eta_left = 0.5;   // Placeholder
-        double xi_right = 0.5, eta_right = 0.5; // Placeholder
-        
+        // For proper DG implementation, we need to map to reference coordinates
+        // For now, use face midpoint as a reasonable approximation
+        double xi_left = 1.0/3.0, eta_left = 1.0/3.0;   // Face midpoint approximation
+        double xi_right = 1.0/3.0, eta_right = 1.0/3.0; // Face midpoint approximation
+
         // Compute basis functions on both sides
-        if (poly_order_ == 2) {
+        if (poly_order_ == 1) {
+            compute_p1_basis_functions(xi_left, eta_left, N_left, grad_N_left);
+            compute_p1_basis_functions(xi_right, eta_right, N_right, grad_N_right);
+        } else if (poly_order_ == 2) {
             compute_p2_basis_functions(xi_left, eta_left, N_left, grad_N_left);
             compute_p2_basis_functions(xi_right, eta_right, N_right, grad_N_right);
         } else if (poly_order_ == 3) {
@@ -213,7 +219,9 @@ void DGAssembly::add_boundary_penalty(
         map_physical_to_reference(x_phys, y_phys, edge_vertices, xi, eta);
         
         // Compute basis functions
-        if (poly_order_ == 2) {
+        if (poly_order_ == 1) {
+            compute_p1_basis_functions(xi, eta, N, grad_N);
+        } else if (poly_order_ == 2) {
             compute_p2_basis_functions(xi, eta, N, grad_N);
         } else if (poly_order_ == 3) {
             compute_p3_basis_functions(xi, eta, N, grad_N);

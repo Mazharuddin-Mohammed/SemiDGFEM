@@ -48,6 +48,21 @@ void compute_p2_basis_functions(double xi, double eta,
                                std::vector<std::array<double, 2>>& grad_N);
 
 /**
+ * @brief Compute P1 Linear basis functions and their gradients on reference triangle
+ *
+ * P1 elements have 3 degrees of freedom:
+ * - 3 vertex nodes (0, 1, 2)
+ *
+ * @param xi Reference coordinate xi
+ * @param eta Reference coordinate eta
+ * @param N Output: basis function values (size 3)
+ * @param grad_N Output: basis function gradients in reference coordinates (size 3)
+ */
+void compute_p1_basis_functions(double xi, double eta,
+                               std::vector<double>& N,
+                               std::vector<std::array<double, 2>>& grad_N);
+
+/**
  * @brief Get Gauss quadrature points and weights for triangular elements
  * 
  * @param order Polynomial order to integrate exactly

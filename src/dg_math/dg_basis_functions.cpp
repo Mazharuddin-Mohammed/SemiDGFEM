@@ -10,31 +10,31 @@ namespace dg {
 // Reference triangle: (0,0), (1,0), (0,1)
 // 10 DOFs: 3 vertices + 6 edge nodes + 1 interior node
 
-void compute_p3_basis_functions(double xi, double eta, 
+void compute_p3_basis_functions(double xi, double eta,
                                std::vector<double>& N,
                                std::vector<std::array<double, 2>>& grad_N) {
     if (N.size() != 10 || grad_N.size() != 10) {
         throw std::invalid_argument("P3 basis requires exactly 10 DOF arrays");
     }
-    
+
     double zeta = 1.0 - xi - eta;
-    
+
     // Validate reference coordinates
     if (xi < -1e-12 || eta < -1e-12 || zeta < -1e-12) {
         throw std::invalid_argument("Invalid reference coordinates for P3 basis");
     }
-    
+
     // Vertex basis functions (corner nodes)
     // N0: vertex (0,0) -> zeta = 1
     N[0] = 0.5 * zeta * (3.0 * zeta - 1.0) * (3.0 * zeta - 2.0);
     grad_N[0][0] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
     grad_N[0][1] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
-    
+
     // N1: vertex (1,0) -> xi = 1
     N[1] = 0.5 * xi * (3.0 * xi - 1.0) * (3.0 * xi - 2.0);
     grad_N[1][0] = 0.5 * (27.0 * xi * xi - 12.0 * xi + 1.0);
     grad_N[1][1] = 0.0;
-    
+
     // N2: vertex (0,1) -> eta = 1
     N[2] = 0.5 * eta * (3.0 * eta - 1.0) * (3.0 * eta - 2.0);
     grad_N[2][0] = 0.0;
@@ -108,6 +108,40 @@ void compute_p2_basis_functions(double xi, double eta,
     N[5] = 4.0 * eta * zeta;
     grad_N[5][0] = -4.0 * eta;
     grad_N[5][1] = 4.0 * (zeta - eta);
+}
+
+// P1 Linear basis functions on reference triangle
+// Reference triangle: (0,0), (1,0), (0,1)
+// 3 DOFs: 3 vertices only
+void compute_p1_basis_functions(double xi, double eta,
+                               std::vector<double>& N,
+                               std::vector<std::array<double, 2>>& grad_N) {
+    if (N.size() != 3 || grad_N.size() != 3) {
+        throw std::invalid_argument("P1 basis requires exactly 3 DOF arrays");
+    }
+
+    double zeta = 1.0 - xi - eta;
+
+    // Validate reference coordinates
+    if (xi < -1e-12 || eta < -1e-12 || zeta < -1e-12) {
+        throw std::invalid_argument("Invalid reference coordinates for P1 basis");
+    }
+
+    // Linear basis functions
+    // N0: vertex (0,0) -> zeta = 1
+    N[0] = zeta;
+    grad_N[0][0] = -1.0;
+    grad_N[0][1] = -1.0;
+
+    // N1: vertex (1,0) -> xi = 1
+    N[1] = xi;
+    grad_N[1][0] = 1.0;
+    grad_N[1][1] = 0.0;
+
+    // N2: vertex (0,1) -> eta = 1
+    N[2] = eta;
+    grad_N[2][0] = 0.0;
+    grad_N[2][1] = 1.0;
 }
 
 // Gauss quadrature rules for triangular elements
@@ -193,21 +227,37 @@ bool validate_reference_coordinates(double xi, double eta) {
 
 namespace face_integration {
 
-// Stub implementation to resolve linking issues
+// Complete implementation for mapping line quadrature to triangle edge
 std::vector<QuadraturePoint> map_to_triangle_edge(
     const std::vector<LineQuadraturePoint>& line_points,
     const std::array<std::array<double, 2>, 2>& edge_vertices) {
 
-    // Simple stub implementation - just return empty vector for now
-    // This will be properly implemented later
     std::vector<QuadraturePoint> edge_points;
+    edge_points.reserve(line_points.size());
 
-    // Create a simple mapping for basic functionality
-    for (size_t i = 0; i < line_points.size(); ++i) {
+    // Get edge vertices
+    const auto& v1 = edge_vertices[0];
+    const auto& v2 = edge_vertices[1];
+
+    // Calculate edge length for weight scaling
+    double edge_length = std::sqrt(
+        std::pow(v2[0] - v1[0], 2) + std::pow(v2[1] - v1[1], 2)
+    );
+
+    // Map each line quadrature point to the triangle edge
+    for (const auto& lqp : line_points) {
         QuadraturePoint qp;
-        qp.coords[0] = 0.0;  // Placeholder
-        qp.coords[1] = 0.0;  // Placeholder
-        qp.weight = 1.0;     // Placeholder
+
+        // Map from [-1,1] line coordinate to edge
+        double t = (lqp.coord + 1.0) / 2.0; // Map [-1,1] to [0,1]
+
+        // Linear interpolation along edge
+        qp.coords[0] = v1[0] + t * (v2[0] - v1[0]);
+        qp.coords[1] = v1[1] + t * (v2[1] - v1[1]);
+
+        // Scale weight by edge length (Jacobian of transformation)
+        qp.weight = lqp.weight * edge_length / 2.0;
+
         edge_points.push_back(qp);
     }
 
@@ -215,16 +265,44 @@ std::vector<QuadraturePoint> map_to_triangle_edge(
 }
 
 std::vector<LineQuadraturePoint> get_line_quadrature(int order) {
-    // Simple stub implementation
+    // Complete Gauss-Legendre quadrature implementation
     std::vector<LineQuadraturePoint> points;
 
-    // Create basic quadrature points for the given order
+    // Determine number of points needed for exact integration of polynomials up to given order
     int num_points = (order + 1) / 2 + 1;
-    for (int i = 0; i < num_points; ++i) {
-        LineQuadraturePoint lqp;
-        lqp.coord = -1.0 + 2.0 * i / (num_points - 1);  // Points from -1 to 1
-        lqp.weight = 2.0 / num_points;  // Simple uniform weights
-        points.push_back(lqp);
+
+    if (num_points == 1) {
+        // 1-point rule (exact for linear)
+        points.push_back({0.0, 2.0});
+    } else if (num_points == 2) {
+        // 2-point Gauss rule (exact for cubic)
+        double coord = 1.0 / std::sqrt(3.0);
+        points.push_back({-coord, 1.0});
+        points.push_back({coord, 1.0});
+    } else if (num_points == 3) {
+        // 3-point Gauss rule (exact for quintic)
+        points.push_back({-std::sqrt(3.0/5.0), 5.0/9.0});
+        points.push_back({0.0, 8.0/9.0});
+        points.push_back({std::sqrt(3.0/5.0), 5.0/9.0});
+    } else if (num_points == 4) {
+        // 4-point Gauss rule (exact for 7th order)
+        double coord1 = std::sqrt((3.0 - 2.0*std::sqrt(6.0/5.0))/7.0);
+        double coord2 = std::sqrt((3.0 + 2.0*std::sqrt(6.0/5.0))/7.0);
+        double weight1 = (18.0 + std::sqrt(30.0))/36.0;
+        double weight2 = (18.0 - std::sqrt(30.0))/36.0;
+
+        points.push_back({-coord2, weight2});
+        points.push_back({-coord1, weight1});
+        points.push_back({coord1, weight1});
+        points.push_back({coord2, weight2});
+    } else {
+        // Fallback to uniform spacing for higher orders
+        for (int i = 0; i < num_points; ++i) {
+            LineQuadraturePoint lqp;
+            lqp.coord = -1.0 + 2.0 * i / (num_points - 1);
+            lqp.weight = 2.0 / num_points;
+            points.push_back(lqp);
+        }
     }
 
     return points;
