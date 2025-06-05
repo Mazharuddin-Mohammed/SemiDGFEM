@@ -11,6 +11,59 @@ The advanced transport models extend the classical drift-diffusion approach to h
 3. **Hydrodynamic transport** with momentum conservation
 4. **Advanced physics models** with temperature dependence
 
+## DG Discretization Details
+
+### Discontinuous Galerkin Method
+
+The advanced transport models use a full Discontinuous Galerkin (DG) discretization similar to the Poisson solver:
+
+#### **Basis Functions**
+- **P3 Triangular Elements**: 10 DOFs per triangular element
+- **Local Support**: Basis functions have compact support within each element
+- **High-Order Accuracy**: Third-order polynomial approximation
+
+#### **Weak Formulation**
+For each transport equation, the DG weak form includes:
+```
+∫_Ω (∂u/∂t)φ dΩ + ∫_Ω ∇·F(u)φ dΩ - ∫_∂Ω F̂·n φ dS = ∫_Ω S(u)φ dΩ
+```
+
+Where:
+- `u` is the solution variable (n, p, Wn, Wp, mn, mp)
+- `F(u)` is the flux function
+- `F̂` is the numerical flux
+- `S(u)` is the source term
+- `φ` are the test functions
+
+#### **Numerical Integration**
+- **7-point Gaussian quadrature** on triangular elements
+- **Exact integration** of polynomial terms up to degree 6
+- **Efficient assembly** with optimized quadrature loops
+
+#### **Matrix Assembly**
+```cpp
+// Element matrices for each transport equation
+for (int e = 0; e < n_elements; ++e) {
+    // Calculate element geometry
+    double area = compute_element_area(element_nodes);
+
+    // Quadrature loop
+    for (int q = 0; q < n_quad_points; ++q) {
+        // Evaluate basis functions and gradients
+        for (int i = 0; i < dofs_per_element; ++i) {
+            for (int j = 0; j < dofs_per_element; ++j) {
+                // Mass matrix: ∫ φᵢ φⱼ dΩ
+                M[i][j] += w[q] * phi[i] * phi[j] * area;
+
+                // Stiffness matrix: ∫ ∇φᵢ · ∇φⱼ dΩ
+                K[i][j] += w[q] * (dphi_dx[i] * dphi_dx[j] +
+                                   dphi_dy[i] * dphi_dy[j]) * area;
+            }
+        }
+    }
+}
+```
+
 ## Transport Models
 
 ### 1. Classical Drift-Diffusion
@@ -139,8 +192,20 @@ namespace SemiDGFEM::Physics {
 namespace simulator::transport {
     class AdvancedTransportSolver;
     class TransportSolverFactory;
+
+    // DG Discretization Classes
+    class EnergyTransportDG;
+    class HydrodynamicDG;
+    class NonEquilibriumDriftDiffusionDG;
 }
 ```
+
+**DG Discretization Features:**
+- **Full DG Assembly**: Element-wise assembly with P3 triangular basis functions
+- **Quadrature Integration**: 7-point Gaussian quadrature for accurate integration
+- **PETSc Integration**: Sparse matrix assembly and iterative solvers
+- **Weak Form Implementation**: Proper DG weak formulation for each transport model
+- **Flux Calculations**: Numerical flux handling for discontinuous solutions
 
 **Key Features:**
 - SIMD-optimized carrier density calculations

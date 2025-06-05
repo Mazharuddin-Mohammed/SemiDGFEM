@@ -54,6 +54,9 @@ set(SIMULATOR_SOURCES
     src/mesh.cpp
     src/structured/poisson_struct_2d.cpp
     src/structured/driftdiffusion_struct_2d.cpp
+    src/structured/energy_transport_struct_2d.cpp
+    src/structured/hydrodynamic_struct_2d.cpp
+    src/structured/non_equilibrium_dd_struct_2d.cpp
     src/unstructured/poisson_unstruct_2d.cpp
     src/unstructured/driftdiffusion_unstruct_2d.cpp
     src/dg_math/dg_basis_functions.cpp

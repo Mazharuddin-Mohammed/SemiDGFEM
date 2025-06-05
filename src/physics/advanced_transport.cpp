@@ -7,6 +7,9 @@
 
 #include "advanced_transport.hpp"
 #include "performance_optimization.hpp"
+#include "../structured/energy_transport_struct_2d.cpp"
+#include "../structured/hydrodynamic_struct_2d.cpp"
+#include "../structured/non_equilibrium_dd_struct_2d.cpp"
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
@@ -258,6 +261,9 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_energy
     performance::PROFILE_FUNCTION();
 
     try {
+        // Create DG energy transport solver
+        transport::EnergyTransportDG energy_dg_solver(device_, *energy_transport_, order_);
+
         size_t dof_count = get_dof_count();
 
         // Initialize solution vectors
@@ -310,25 +316,10 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_energy
             poisson_->set_charge_density(rho);
             V = poisson_->solve_2d(bc);
 
-            // Update energy densities
-            compute_energy_densities(V, n, p, energy_n, energy_p);
-
-            // Calculate energy relaxation
-            std::vector<double> energy_relaxation_n, energy_relaxation_p;
-            energy_transport_->calculate_energy_relaxation(
-                T_n, T_p, n, p, energy_relaxation_n, energy_relaxation_p, physics_config_.temperature);
-
-            // Update energy densities with relaxation
-            for (size_t i = 0; i < dof_count; ++i) {
-                energy_n[i] -= energy_relaxation_n[i] * 1e-12; // Time step
-                energy_p[i] -= energy_relaxation_p[i] * 1e-12;
-
-                // Ensure minimum energy
-                double min_energy = (3.0/2.0) * SemiDGFEM::Physics::PhysicalConstants::k *
-                                   physics_config_.temperature * n[i];
-                energy_n[i] = std::max(energy_n[i], min_energy);
-                energy_p[i] = std::max(energy_p[i], min_energy);
-            }
+            // Solve energy transport equations using DG discretization
+            auto energy_results = energy_dg_solver.solve_energy_transport(V, n, p, Jn, Jp, 1e-12);
+            energy_n = energy_results.first;
+            energy_p = energy_results.second;
 
             // Check convergence
             bool converged = check_convergence(V_old, V, physics_config_.dd_tolerance) &&
@@ -378,6 +369,9 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_hydrod
     performance::PROFILE_FUNCTION();
 
     try {
+        // Create DG hydrodynamic transport solver
+        transport::HydrodynamicDG hydro_dg_solver(device_, *hydrodynamic_, order_);
+
         size_t dof_count = get_dof_count();
 
         // Initialize solution vectors for hydrodynamic model
@@ -408,45 +402,28 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_hydrod
             non_eq_stats_->calculate_fermi_dirac_densities(
                 V, quasi_fermi_n, quasi_fermi_p, Nd_, Na_, n, p, physics_config_.temperature);
 
-            // Calculate momentum densities
-            compute_momentum_densities(V, n, p, momentum_n, momentum_p);
+            // Solve hydrodynamic transport equations using DG discretization
+            auto momentum_results = hydro_dg_solver.solve_hydrodynamic_transport(V, n, p, T_n, T_p, 1e-12);
+            std::vector<double> momentum_nx = std::get<0>(momentum_results);
+            std::vector<double> momentum_ny = std::get<1>(momentum_results);
+            std::vector<double> momentum_px = std::get<2>(momentum_results);
+            std::vector<double> momentum_py = std::get<3>(momentum_results);
 
-            // Update velocities from momentum densities
+            // Calculate velocities from momentum densities
             const double m_eff_n = 0.26 * SemiDGFEM::Physics::PhysicalConstants::m0;
             const double m_eff_p = 0.39 * SemiDGFEM::Physics::PhysicalConstants::m0;
 
             for (size_t i = 0; i < dof_count; ++i) {
                 if (n[i] > 1e10) {
-                    velocity_n[i] = momentum_n[i] / (m_eff_n * n[i]);
+                    velocity_n[i] = std::sqrt(momentum_nx[i]*momentum_nx[i] + momentum_ny[i]*momentum_ny[i]) / (m_eff_n * n[i]);
                 }
                 if (p[i] > 1e10) {
-                    velocity_p[i] = momentum_p[i] / (m_eff_p * p[i]);
+                    velocity_p[i] = std::sqrt(momentum_px[i]*momentum_px[i] + momentum_py[i]*momentum_py[i]) / (m_eff_p * p[i]);
                 }
-            }
 
-            // Calculate momentum relaxation
-            std::vector<double> momentum_relaxation_n, momentum_relaxation_p;
-            hydrodynamic_->calculate_momentum_relaxation(
-                velocity_n, velocity_p, n, p, momentum_relaxation_n, momentum_relaxation_p);
-
-            // Calculate pressure gradients
-            std::vector<double> pressure_grad_n, pressure_grad_p;
-            hydrodynamic_->calculate_pressure_gradients(
-                n, p, T_n, T_p, pressure_grad_n, pressure_grad_p);
-
-            // Calculate heat flow
-            std::vector<double> lattice_temp(dof_count, physics_config_.temperature);
-            std::vector<double> heat_flow_n, heat_flow_p;
-            hydrodynamic_->calculate_heat_flow(T_n, T_p, lattice_temp, heat_flow_n, heat_flow_p);
-
-            // Update momentum densities with relaxation and pressure effects
-            for (size_t i = 0; i < dof_count; ++i) {
-                momentum_n[i] -= momentum_relaxation_n[i] * 1e-12; // Time step
-                momentum_p[i] -= momentum_relaxation_p[i] * 1e-12;
-
-                // Add pressure gradient effects
-                momentum_n[i] += pressure_grad_n[i] * 1e-12;
-                momentum_p[i] += pressure_grad_p[i] * 1e-12;
+                // Store total momentum magnitude
+                momentum_n[i] = std::sqrt(momentum_nx[i]*momentum_nx[i] + momentum_ny[i]*momentum_ny[i]);
+                momentum_p[i] = std::sqrt(momentum_px[i]*momentum_px[i] + momentum_py[i]*momentum_py[i]);
             }
 
             // Solve Poisson equation
@@ -511,6 +488,9 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_non_eq
     performance::PROFILE_FUNCTION();
 
     try {
+        // Create DG non-equilibrium drift-diffusion solver
+        transport::NonEquilibriumDriftDiffusionDG non_eq_dg_solver(device_, *non_eq_stats_, order_);
+
         size_t dof_count = get_dof_count();
 
         // Initialize solution vectors
@@ -529,10 +509,6 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_non_eq
 
         // Main iteration loop
         for (int step = 0; step < max_steps; ++step) {
-            // Update carrier densities using Fermi-Dirac statistics
-            non_eq_stats_->calculate_fermi_dirac_densities(
-                V, quasi_fermi_n, quasi_fermi_p, Nd_, Na_, n, p, physics_config_.temperature);
-
             // Solve Poisson equation
             std::vector<double> rho(dof_count);
             const double q = SemiDGFEM::Physics::PhysicalConstants::q;
@@ -545,21 +521,15 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_non_eq
             poisson_->set_charge_density(rho);
             V = poisson_->solve_2d(bc);
 
-            // Update quasi-Fermi levels (simplified approach)
-            const double Vt = SemiDGFEM::Physics::PhysicalConstants::k * physics_config_.temperature /
-                             SemiDGFEM::Physics::PhysicalConstants::q;
-
-            for (size_t i = 0; i < dof_count; ++i) {
-                // Simplified quasi-Fermi level calculation
-                double ni = 1e16; // Intrinsic concentration
-                quasi_fermi_n[i] = V[i] + Vt * std::log(n[i] / ni);
-                quasi_fermi_p[i] = V[i] - Vt * std::log(p[i] / ni);
-            }
+            // Solve non-equilibrium drift-diffusion using DG discretization
+            auto ne_results = non_eq_dg_solver.solve_non_equilibrium_dd(V, Nd_, Na_, 1e-12, physics_config_.temperature);
+            n = std::get<0>(ne_results);
+            p = std::get<1>(ne_results);
+            quasi_fermi_n = std::get<2>(ne_results);
+            quasi_fermi_p = std::get<3>(ne_results);
 
             // Check convergence
-            bool converged = check_convergence(V_old, V, physics_config_.dd_tolerance) &&
-                           check_convergence(quasi_fermi_n_old, quasi_fermi_n, physics_config_.dd_tolerance) &&
-                           check_convergence(quasi_fermi_p_old, quasi_fermi_p, physics_config_.dd_tolerance);
+            bool converged = check_convergence(V_old, V, physics_config_.dd_tolerance);
 
             if (converged) {
                 convergence_residual_ = 0.0;
@@ -572,8 +542,6 @@ std::map<std::string, std::vector<double>> AdvancedTransportSolver::solve_non_eq
 
             // Update old solutions
             V_old = V;
-            quasi_fermi_n_old = quasi_fermi_n;
-            quasi_fermi_p_old = quasi_fermi_p;
         }
 
         // Prepare results
