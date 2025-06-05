@@ -24,6 +24,8 @@ public:
 
     void set_charge_density(const std::vector<double>& rho);
     std::vector<double> solve_2d(const std::vector<double>& bc);
+    std::vector<double> solve_2d_simple(const std::vector<double>& bc, int max_iter = 100, double tol = 1e-6);
+    std::vector<double> solve_structured_2d_fallback(const std::vector<double>& bc);
 
     // Enhanced self-consistent solver with better error handling
     std::vector<double> solve_2d_self_consistent(const std::vector<double>& bc,
@@ -60,6 +62,9 @@ private:
     // PETSc objects with proper cleanup
     struct PETScObjects;
     std::unique_ptr<PETScObjects> petsc_objects_;
+
+    // State tracking
+    mutable double residual_norm_;
 
     // Helper methods
     void initialize_petsc();
