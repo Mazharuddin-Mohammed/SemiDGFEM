@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <iostream>
+#include <iomanip>
+#include <chrono>
 
 namespace simulator {
 namespace performance {
@@ -404,7 +407,47 @@ std::vector<Profiler::ProfileData> Profiler::get_profile_data() const {
 
 void Profiler::print_profile() const {
     auto data = get_profile_data();
-    // Simple stub - in real implementation would format and print nicely
+
+    if (data.empty()) {
+        std::cout << "No profiling data available." << std::endl;
+        return;
+    }
+
+    std::cout << "\n=== Performance Profile ===" << std::endl;
+    std::cout << std::setw(30) << "Function"
+              << std::setw(15) << "Time (ms)"
+              << std::setw(12) << "Percentage"
+              << std::setw(10) << "Calls" << std::endl;
+    std::cout << std::string(67, '-') << std::endl;
+
+    // Calculate total time
+    double total_time_sum = 0.0;
+    for (const auto& item : data) {
+        total_time_sum += item.total_time;
+    }
+
+    // Sort by time (descending)
+    auto sorted_data = data;
+    std::sort(sorted_data.begin(), sorted_data.end(),
+              [](const ProfileData& a, const ProfileData& b) {
+                  return a.total_time > b.total_time;
+              });
+
+    // Print sorted results
+    for (const auto& item : sorted_data) {
+        double percentage = (total_time_sum > 0.0) ? (item.total_time / total_time_sum * 100.0) : 0.0;
+        std::cout << std::setw(30) << item.name
+                  << std::setw(15) << std::fixed << std::setprecision(3) << item.total_time
+                  << std::setw(11) << std::fixed << std::setprecision(1) << percentage << "%"
+                  << std::setw(10) << item.call_count << std::endl;
+    }
+
+    std::cout << std::string(67, '-') << std::endl;
+    std::cout << std::setw(30) << "TOTAL"
+              << std::setw(15) << std::fixed << std::setprecision(3) << total_time_sum
+              << std::setw(11) << "100.0%"
+              << std::setw(10) << "" << std::endl;
+    std::cout << std::endl;
 }
 
 } // namespace performance

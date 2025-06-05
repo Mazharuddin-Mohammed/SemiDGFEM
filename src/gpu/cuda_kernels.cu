@@ -204,22 +204,39 @@ __global__ void evaluate_p3_basis_kernel(
         // Interior basis function
         basis_values[p * num_basis + 9] = 27.0 * zeta * xi_val * eta_val;
         
-        // Gradients (simplified - full implementation would include all derivatives)
-        // d/dxi gradients
+        // Complete gradient computations for all P3 basis functions
+        // Vertex gradients
         basis_gradients[p * num_basis * 2 + 0 * 2 + 0] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
-        basis_gradients[p * num_basis * 2 + 1 * 2 + 0] = 0.5 * (27.0 * xi_val * xi_val - 12.0 * xi_val + 1.0);
-        basis_gradients[p * num_basis * 2 + 2 * 2 + 0] = 0.0;
-        
-        // d/deta gradients
         basis_gradients[p * num_basis * 2 + 0 * 2 + 1] = -0.5 * (27.0 * zeta * zeta - 18.0 * zeta + 2.0);
+
+        basis_gradients[p * num_basis * 2 + 1 * 2 + 0] = 0.5 * (27.0 * xi_val * xi_val - 12.0 * xi_val + 1.0);
         basis_gradients[p * num_basis * 2 + 1 * 2 + 1] = 0.0;
+
+        basis_gradients[p * num_basis * 2 + 2 * 2 + 0] = 0.0;
         basis_gradients[p * num_basis * 2 + 2 * 2 + 1] = 0.5 * (27.0 * eta_val * eta_val - 12.0 * eta_val + 1.0);
-        
-        // Additional gradients for edge and interior functions...
-        for (int i = 3; i < num_basis; ++i) {
-            basis_gradients[p * num_basis * 2 + i * 2 + 0] = 0.0;  // Simplified
-            basis_gradients[p * num_basis * 2 + i * 2 + 1] = 0.0;
-        }
+
+        // Edge gradients (complete implementation)
+        basis_gradients[p * num_basis * 2 + 3 * 2 + 0] = 4.5 * (zeta * (3.0 * zeta - 1.0) - xi_val * (6.0 * zeta - 1.0));
+        basis_gradients[p * num_basis * 2 + 3 * 2 + 1] = -4.5 * xi_val * (6.0 * zeta - 1.0);
+
+        basis_gradients[p * num_basis * 2 + 4 * 2 + 0] = 4.5 * (zeta * (6.0 * xi_val - 1.0) + xi_val * (3.0 * xi_val - 1.0));
+        basis_gradients[p * num_basis * 2 + 4 * 2 + 1] = -4.5 * xi_val * (3.0 * xi_val - 1.0);
+
+        basis_gradients[p * num_basis * 2 + 5 * 2 + 0] = 4.5 * eta_val * (6.0 * xi_val - 1.0);
+        basis_gradients[p * num_basis * 2 + 5 * 2 + 1] = 4.5 * xi_val * (3.0 * xi_val - 1.0);
+
+        basis_gradients[p * num_basis * 2 + 6 * 2 + 0] = 4.5 * eta_val * (3.0 * eta_val - 1.0);
+        basis_gradients[p * num_basis * 2 + 6 * 2 + 1] = 4.5 * xi_val * (6.0 * eta_val - 1.0);
+
+        basis_gradients[p * num_basis * 2 + 7 * 2 + 0] = -4.5 * eta_val * (3.0 * eta_val - 1.0);
+        basis_gradients[p * num_basis * 2 + 7 * 2 + 1] = 4.5 * (zeta * (6.0 * eta_val - 1.0) + eta_val * (3.0 * eta_val - 1.0));
+
+        basis_gradients[p * num_basis * 2 + 8 * 2 + 0] = -4.5 * eta_val * (6.0 * zeta - 1.0);
+        basis_gradients[p * num_basis * 2 + 8 * 2 + 1] = 4.5 * (zeta * (3.0 * zeta - 1.0) - eta_val * (6.0 * zeta - 1.0));
+
+        // Interior gradient
+        basis_gradients[p * num_basis * 2 + 9 * 2 + 0] = 27.0 * (zeta * eta_val - xi_val * eta_val);
+        basis_gradients[p * num_basis * 2 + 9 * 2 + 1] = 27.0 * (zeta * xi_val - eta_val * xi_val);
     }
 }
 
