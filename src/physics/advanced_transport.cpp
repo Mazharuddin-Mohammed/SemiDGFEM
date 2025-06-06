@@ -755,3 +755,182 @@ extern "C" {
 }
 
 } // namespace simulator
+
+// Simplified C interface for Python bindings (global namespace)
+extern "C" {
+    void* create_advanced_transport_solver(
+        double device_width, double device_length, int method, int mesh_type, int transport_model, int order) {
+        try {
+            simulator::Device device(device_width, device_length);
+            simulator::Method cpp_method = static_cast<simulator::Method>(method);
+            simulator::MeshType cpp_mesh_type = static_cast<simulator::MeshType>(mesh_type);
+            SemiDGFEM::Physics::TransportModel cpp_transport_model =
+                static_cast<SemiDGFEM::Physics::TransportModel>(transport_model);
+
+            return new simulator::transport::AdvancedTransportSolver(
+                device, cpp_method, cpp_mesh_type, cpp_transport_model, order);
+        } catch (...) {
+            return nullptr;
+        }
+    }
+
+    void destroy_advanced_transport_solver(void* solver) {
+        if (solver) {
+            delete static_cast<simulator::transport::AdvancedTransportSolver*>(solver);
+        }
+    }
+
+    int advanced_transport_solver_is_valid(void* solver) {
+        if (!solver) return 0;
+        try {
+            return static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->is_valid() ? 1 : 0;
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    int advanced_transport_solver_set_doping(void* solver, double* Nd, double* Na, int size) {
+        if (!solver || !Nd || !Na || size <= 0) return -1;
+        try {
+            std::vector<double> Nd_vec(Nd, Nd + size);
+            std::vector<double> Na_vec(Na, Na + size);
+            static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->set_doping(Nd_vec, Na_vec);
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int advanced_transport_solver_set_trap_level(void* solver, double* Et, int size) {
+        if (!solver || !Et || size <= 0) return -1;
+        try {
+            std::vector<double> Et_vec(Et, Et + size);
+            static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->set_trap_level(Et_vec);
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int advanced_transport_solver_solve(void* solver,
+                                       double* bc, int bc_size, double Vg,
+                                       int max_steps, int use_amr, int poisson_max_iter, double poisson_tol,
+                                       double* V, double* n, double* p, double* Jn, double* Jp,
+                                       double* energy_n, double* energy_p, double* T_n, double* T_p,
+                                       int size) {
+        if (!solver || !bc || !V || !n || !p || !Jn || !Jp) return -1;
+
+        try {
+            std::vector<double> bc_vec(bc, bc + bc_size);
+            bool use_amr_bool = (use_amr != 0);
+
+            auto results = static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->solve_transport(
+                bc_vec, Vg, max_steps, use_amr_bool, poisson_max_iter, poisson_tol);
+
+            // Copy results to output arrays
+            if (results.find("potential") != results.end()) {
+                const auto& potential = results["potential"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), potential.size()); ++i) {
+                    V[i] = potential[i];
+                }
+            }
+
+            if (results.find("n") != results.end()) {
+                const auto& n_vec = results["n"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), n_vec.size()); ++i) {
+                    n[i] = n_vec[i];
+                }
+            }
+
+            if (results.find("p") != results.end()) {
+                const auto& p_vec = results["p"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), p_vec.size()); ++i) {
+                    p[i] = p_vec[i];
+                }
+            }
+
+            if (results.find("Jn") != results.end()) {
+                const auto& Jn_vec = results["Jn"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), Jn_vec.size()); ++i) {
+                    Jn[i] = Jn_vec[i];
+                }
+            }
+
+            if (results.find("Jp") != results.end()) {
+                const auto& Jp_vec = results["Jp"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), Jp_vec.size()); ++i) {
+                    Jp[i] = Jp_vec[i];
+                }
+            }
+
+            // Copy energy transport results if available
+            if (energy_n && results.find("energy_n") != results.end()) {
+                const auto& energy_n_vec = results["energy_n"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), energy_n_vec.size()); ++i) {
+                    energy_n[i] = energy_n_vec[i];
+                }
+            }
+
+            if (energy_p && results.find("energy_p") != results.end()) {
+                const auto& energy_p_vec = results["energy_p"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), energy_p_vec.size()); ++i) {
+                    energy_p[i] = energy_p_vec[i];
+                }
+            }
+
+            if (T_n && results.find("T_n") != results.end()) {
+                const auto& T_n_vec = results["T_n"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), T_n_vec.size()); ++i) {
+                    T_n[i] = T_n_vec[i];
+                }
+            }
+
+            if (T_p && results.find("T_p") != results.end()) {
+                const auto& T_p_vec = results["T_p"];
+                for (size_t i = 0; i < std::min(static_cast<size_t>(size), T_p_vec.size()); ++i) {
+                    T_p[i] = T_p_vec[i];
+                }
+            }
+
+            return 0;
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int advanced_transport_solver_get_dof_count(void* solver) {
+        if (!solver) return 0;
+        try {
+            return static_cast<int>(static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->get_dof_count());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    double advanced_transport_solver_get_convergence_residual(void* solver) {
+        if (!solver) return -1.0;
+        try {
+            return static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->get_convergence_residual();
+        } catch (...) {
+            return -1.0;
+        }
+    }
+
+    int advanced_transport_solver_get_order(void* solver) {
+        if (!solver) return -1;
+        try {
+            return static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->get_order();
+        } catch (...) {
+            return -1;
+        }
+    }
+
+    int advanced_transport_solver_get_transport_model(void* solver) {
+        if (!solver) return -1;
+        try {
+            return static_cast<int>(static_cast<simulator::transport::AdvancedTransportSolver*>(solver)->get_transport_model());
+        } catch (...) {
+            return -1;
+        }
+    }
+}
