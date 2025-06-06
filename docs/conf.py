@@ -48,18 +48,9 @@ extensions = [
     'sphinx_rtd_theme',
 ]
 
-# Try to add myst_parser if available
-try:
-    import myst_parser
-    extensions.append('myst_parser')
-    # Configure MyST parser
-    source_suffix = {
-        '.rst': None,
-        '.md': 'myst_parser',
-    }
-except ImportError:
-    # If myst_parser is not available, only use .rst files
-    source_suffix = '.rst'
+# For now, disable markdown support to ensure RTD builds work
+# This can be re-enabled once myst_parser is properly configured
+source_suffix = '.rst'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -67,13 +58,18 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
-# Only exclude .md files if myst_parser is not available
-try:
-    import myst_parser
-except ImportError:
-    exclude_patterns.append('*.md')
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    # Exclude all markdown files for now to ensure RTD builds work
+    '*.md',
+    '**/*.md',
+    'setup/*.md',
+    'implementation/*.md',
+    'validation/*.md',
+    'generated/*.md'
+]
 
 # The suffix(es) of source filenames are configured above with myst_parser check
 
@@ -183,8 +179,8 @@ html_css_files = [
     'custom.css',
 ]
 
-# Logo
-html_logo = '_static/logo.svg'
+# Logo (commented out until logo file is created)
+# html_logo = '_static/logo.svg'
 
 # Favicon (optional)
 # html_favicon = '_static/favicon.ico'
