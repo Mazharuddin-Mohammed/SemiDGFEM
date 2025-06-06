@@ -13,43 +13,51 @@ from libcpp.map cimport map
 from libcpp.string cimport string
 from libcpp cimport bool
 
-# Import base classes
-from simulator cimport Device, Method, MeshType
+# C++ declarations for device and enums
+cdef extern from "device.hpp" namespace "simulator":
+    cdef cppclass Device:
+        Device(double Lx, double Ly) except +
+        bool is_valid() const
+        double get_width() const
+        double get_length() const
+
+    ctypedef enum Method:
+        DG = 0
+        FEM = 1
+
+    ctypedef enum MeshType:
+        Structured = 0
+        Unstructured = 1
+
+# Physics namespace declarations
+cdef extern from "src/physics/advanced_physics.hpp" namespace "SemiDGFEM::Physics":
+    ctypedef enum TransportModel:
+        DRIFT_DIFFUSION = 0
+        ENERGY_TRANSPORT = 1
+        HYDRODYNAMIC = 2
+        NON_EQUILIBRIUM_STATISTICS = 3
 
 # C++ declarations for advanced transport
 cdef extern from "advanced_transport.hpp" namespace "simulator::transport":
     cdef cppclass AdvancedTransportSolver:
-        AdvancedTransportSolver(const Device& device, Method method, MeshType mesh_type, 
-                               int transport_model, int order) except +
-        
+        AdvancedTransportSolver(const Device& device, Method method, MeshType mesh_type,
+                               TransportModel transport_model, int order) except +
+
         void set_doping(const vector[double]& Nd, const vector[double]& Na) except +
         void set_trap_level(const vector[double]& Et) except +
-        
+
         map[string, vector[double]] solve_transport(
             const vector[double]& bc, double Vg, int max_steps, bool use_amr,
             int poisson_max_iter, double poisson_tol) except +
-        
+
         bool is_valid() const
         void validate() except +
         size_t get_dof_count() const
         double get_convergence_residual() const
         int get_order() const
-        int get_transport_model() const
+        TransportModel get_transport_model() const
 
-# C interface declarations
-cdef extern from "advanced_transport.hpp":
-    AdvancedTransportSolver* create_advanced_transport_solver(
-        Device* device, int method, int mesh_type, int transport_model, int order)
-    void destroy_advanced_transport_solver(AdvancedTransportSolver* solver)
-    int advanced_transport_solver_is_valid(AdvancedTransportSolver* solver)
-    int advanced_transport_solver_set_doping(AdvancedTransportSolver* solver, 
-                                            double* Nd, double* Na, int size)
-    int advanced_transport_solver_set_trap_level(AdvancedTransportSolver* solver, 
-                                                double* Et, int size)
-    size_t advanced_transport_solver_get_dof_count(AdvancedTransportSolver* solver)
-    double advanced_transport_solver_get_convergence_residual(AdvancedTransportSolver* solver)
-    int advanced_transport_solver_get_order(AdvancedTransportSolver* solver)
-    int advanced_transport_solver_get_transport_model(AdvancedTransportSolver* solver)
+# No C interface needed - using C++ classes directly
 
 # Transport model enumeration
 class TransportModel:
@@ -61,49 +69,62 @@ class TransportModel:
 cdef class AdvancedTransport:
     """
     Advanced transport solver with multiple physics models.
-    
+
     Supports:
     - Classical drift-diffusion with Boltzmann statistics
     - Energy transport with hot carrier effects
     - Hydrodynamic transport with momentum conservation
     - Non-equilibrium transport with Fermi-Dirac statistics
     """
-    
+
     cdef AdvancedTransportSolver* _solver
     cdef Device* _device
-    
-    def __cinit__(self, Device device, method, mesh_type, transport_model, order=3):
+
+    def __cinit__(self, device_width, device_length, method, mesh_type, transport_model, order=3):
         """
         Initialize advanced transport solver.
-        
+
         Parameters:
         -----------
-        device : Device
-            Device geometry and material properties
-        method : Method
-            Numerical method (DG, FEM, etc.)
-        mesh_type : MeshType
-            Mesh type (Structured, Unstructured)
-        transport_model : TransportModel
-            Transport physics model
+        device_width : float
+            Device width (m)
+        device_length : float
+            Device length (m)
+        method : int
+            Numerical method (0=DG, 1=FEM)
+        mesh_type : int
+            Mesh type (0=Structured, 1=Unstructured)
+        transport_model : int
+            Transport physics model (0=DD, 1=Energy, 2=Hydro, 3=NonEq)
         order : int, optional
             Polynomial order (default: 3)
         """
-        self._device = &device._device
-        self._solver = create_advanced_transport_solver(
-            self._device, method, mesh_type, transport_model, order)
-        
+        # Create device and solver
+        cdef Method cpp_method = <Method>method
+        cdef MeshType cpp_mesh_type = <MeshType>mesh_type
+        cdef TransportModel cpp_transport_model = <TransportModel>transport_model
+
+        self._device = new Device(device_width, device_length)
+        if self._device == NULL:
+            raise RuntimeError("Failed to create device")
+
+        self._solver = new AdvancedTransportSolver(self._device[0], cpp_method, cpp_mesh_type,
+                                                  cpp_transport_model, order)
+
         if self._solver == NULL:
+            del self._device
             raise RuntimeError("Failed to create advanced transport solver")
     
     def __dealloc__(self):
         if self._solver != NULL:
-            destroy_advanced_transport_solver(self._solver)
-    
+            del self._solver
+        if self._device != NULL:
+            del self._device
+
     def set_doping(self, np.ndarray[double, ndim=1] Nd, np.ndarray[double, ndim=1] Na):
         """
         Set doping concentrations.
-        
+
         Parameters:
         -----------
         Nd : array_like
@@ -113,27 +134,31 @@ cdef class AdvancedTransport:
         """
         if Nd.size != Na.size:
             raise ValueError("Nd and Na arrays must have the same size")
-        
-        cdef int result = advanced_transport_solver_set_doping(
-            self._solver, &Nd[0], &Na[0], Nd.size)
-        
-        if result != 0:
-            raise RuntimeError("Failed to set doping concentrations")
+
+        cdef vector[double] Nd_vec
+        cdef vector[double] Na_vec
+
+        for i in range(Nd.size):
+            Nd_vec.push_back(Nd[i])
+            Na_vec.push_back(Na[i])
+
+        self._solver.set_doping(Nd_vec, Na_vec)
     
     def set_trap_level(self, np.ndarray[double, ndim=1] Et):
         """
         Set trap energy levels.
-        
+
         Parameters:
         -----------
         Et : array_like
             Trap energy levels (eV)
         """
-        cdef int result = advanced_transport_solver_set_trap_level(
-            self._solver, &Et[0], Et.size)
-        
-        if result != 0:
-            raise RuntimeError("Failed to set trap levels")
+        cdef vector[double] Et_vec
+
+        for i in range(Et.size):
+            Et_vec.push_back(Et[i])
+
+        self._solver.set_trap_level(Et_vec)
     
     def solve_transport(self, bc, Vg=0.0, max_steps=100, use_amr=False, 
                        poisson_max_iter=50, poisson_tol=1e-6):
@@ -194,23 +219,23 @@ cdef class AdvancedTransport:
     
     def is_valid(self):
         """Check if solver is in valid state."""
-        return advanced_transport_solver_is_valid(self._solver) == 1
-    
+        return self._solver.is_valid()
+
     def get_dof_count(self):
         """Get degrees of freedom count."""
-        return advanced_transport_solver_get_dof_count(self._solver)
-    
+        return self._solver.get_dof_count()
+
     def get_convergence_residual(self):
         """Get convergence residual."""
-        return advanced_transport_solver_get_convergence_residual(self._solver)
-    
+        return self._solver.get_convergence_residual()
+
     def get_order(self):
         """Get polynomial order."""
-        return advanced_transport_solver_get_order(self._solver)
-    
+        return self._solver.get_order()
+
     def get_transport_model(self):
         """Get current transport model."""
-        return advanced_transport_solver_get_transport_model(self._solver)
+        return <int>self._solver.get_transport_model()
     
     def get_transport_model_name(self):
         """Get transport model name as string."""
@@ -227,18 +252,18 @@ cdef class AdvancedTransport:
             return "UNKNOWN"
 
 # Convenience functions
-def create_drift_diffusion_solver(device, method, mesh_type, order=3):
+def create_drift_diffusion_solver(device_width, device_length, method=0, mesh_type=0, order=3):
     """Create drift-diffusion transport solver."""
-    return AdvancedTransport(device, method, mesh_type, TransportModel.DRIFT_DIFFUSION, order)
+    return AdvancedTransport(device_width, device_length, method, mesh_type, TransportModel.DRIFT_DIFFUSION, order)
 
-def create_energy_transport_solver(device, method, mesh_type, order=3):
+def create_energy_transport_solver(device_width, device_length, method=0, mesh_type=0, order=3):
     """Create energy transport solver."""
-    return AdvancedTransport(device, method, mesh_type, TransportModel.ENERGY_TRANSPORT, order)
+    return AdvancedTransport(device_width, device_length, method, mesh_type, TransportModel.ENERGY_TRANSPORT, order)
 
-def create_hydrodynamic_solver(device, method, mesh_type, order=3):
+def create_hydrodynamic_solver(device_width, device_length, method=0, mesh_type=0, order=3):
     """Create hydrodynamic transport solver."""
-    return AdvancedTransport(device, method, mesh_type, TransportModel.HYDRODYNAMIC, order)
+    return AdvancedTransport(device_width, device_length, method, mesh_type, TransportModel.HYDRODYNAMIC, order)
 
-def create_non_equilibrium_solver(device, method, mesh_type, order=3):
+def create_non_equilibrium_solver(device_width, device_length, method=0, mesh_type=0, order=3):
     """Create non-equilibrium statistics solver."""
-    return AdvancedTransport(device, method, mesh_type, TransportModel.NON_EQUILIBRIUM_STATISTICS, order)
+    return AdvancedTransport(device_width, device_length, method, mesh_type, TransportModel.NON_EQUILIBRIUM_STATISTICS, order)

@@ -12,27 +12,26 @@ from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp cimport bool
 
-# Import base classes
-from simulator cimport Device
+# No additional imports needed
 
 # C++ declarations for complete DG basis functions
-cdef extern from "src/dg_math/dg_basis_functions_complete.hpp" namespace "SemiDGFEM::DG":
+cdef extern from "dg_math/dg_basis_functions_complete.hpp" namespace "SemiDGFEM::DG":
     cdef cppclass TriangularBasisFunctions:
         @staticmethod
         double evaluate_basis_function(double xi, double eta, int j, int order) except +
-        
+
         @staticmethod
         vector[double] evaluate_basis_gradient_ref(double xi, double eta, int j, int order) except +
-        
+
         @staticmethod
         vector[double] transform_gradient_to_physical(
             const vector[double]& grad_ref,
             double b1, double b2, double b3,
             double c1, double c2, double c3) except +
-        
+
         @staticmethod
         int get_dofs_per_element(int order) except +
-    
+
     cdef cppclass TriangularQuadrature:
         @staticmethod
         pair[vector[vector[double]], vector[double]] get_quadrature_rule(int order) except +
@@ -50,7 +49,7 @@ cdef class DGBasisFunctions:
     def evaluate_basis_function(double xi, double eta, int j, int order):
         """
         Evaluate basis function at reference coordinates.
-        
+
         Parameters:
         -----------
         xi : float
@@ -61,7 +60,7 @@ cdef class DGBasisFunctions:
             Basis function index
         order : int
             Polynomial order (1, 2, or 3)
-            
+
         Returns:
         --------
         float
@@ -73,7 +72,7 @@ cdef class DGBasisFunctions:
     def evaluate_basis_gradient_ref(double xi, double eta, int j, int order):
         """
         Evaluate basis function gradient in reference coordinates.
-        
+
         Parameters:
         -----------
         xi : float
@@ -84,7 +83,7 @@ cdef class DGBasisFunctions:
             Basis function index
         order : int
             Polynomial order
-            
+
         Returns:
         --------
         numpy.ndarray
@@ -127,12 +126,12 @@ cdef class DGBasisFunctions:
     def get_dofs_per_element(int order):
         """
         Get number of DOFs for given polynomial order.
-        
+
         Parameters:
         -----------
         order : int
             Polynomial order
-            
+
         Returns:
         --------
         int
@@ -150,12 +149,12 @@ cdef class DGQuadrature:
     def get_quadrature_rule(int order):
         """
         Get quadrature points and weights for triangular elements.
-        
+
         Parameters:
         -----------
         order : int
             Desired accuracy order
-            
+
         Returns:
         --------
         tuple
@@ -163,15 +162,15 @@ cdef class DGQuadrature:
             and weights is array of quadrature weights
         """
         cdef pair[vector[vector[double]], vector[double]] quad_rule = TriangularQuadrature.get_quadrature_rule(order)
-        
+
         # Convert points
         points = []
         for i in range(quad_rule.first.size()):
             points.append([quad_rule.first[i][0], quad_rule.first[i][1]])
-        
+
         # Convert weights
         weights = np.array(quad_rule.second)
-        
+
         return np.array(points), weights
 
 # High-level DG assembly interface
@@ -209,7 +208,7 @@ cdef class DGAssembly:
         numpy.ndarray
             Element matrix (dofs_per_element x dofs_per_element)
         """
-        if vertices.shape != (3, 2):
+        if vertices.shape[0] != 3 or vertices.shape[1] != 2:
             raise ValueError("vertices must be 3x2 array")
         
         # Element geometry
@@ -282,7 +281,7 @@ cdef class DGAssembly:
         numpy.ndarray
             Element load vector (dofs_per_element,)
         """
-        if vertices.shape != (3, 2):
+        if vertices.shape[0] != 3 or vertices.shape[1] != 2:
             raise ValueError("vertices must be 3x2 array")
         
         # Element geometry

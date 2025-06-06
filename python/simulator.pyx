@@ -15,10 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Complete C interface declarations
-cdef extern from "device.hpp":
+cdef extern from "device.hpp" namespace "simulator":
     ctypedef struct simulator_Device "simulator::Device"
 
-    # Device C interface
+    # Device C interface (inside simulator namespace)
     simulator_Device* create_device(double Lx, double Ly)
     void destroy_device(simulator_Device* device)
     double device_get_epsilon_at(simulator_Device* device, double x, double y)
