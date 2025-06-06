@@ -120,24 +120,37 @@ Documentation Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started
+
+   installation
+   quickstart
+   tutorials
+
+.. toctree::
+   :maxdepth: 2
    :caption: User Guide
 
-   tutorials
+   usage
+   examples
+   visualization
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Theory & Implementation
+
+   theory
+   implementation
+   mathematical_formulation
+   numerical_methods
+   validation
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
    python_api
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Theory & Mathematics
-
-   theory
-   mathematical_formulation
-   numerical_methods
-   validation
+   modules
+   performance
 
 .. toctree::
    :maxdepth: 2
@@ -150,12 +163,12 @@ Documentation Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Examples & Tutorials
+   :caption: Device Examples
 
    basic_simulations
    mosfet_modeling
    heterostructure_devices
-   validation_studies
+   complex_examples
 
 .. toctree::
    :maxdepth: 2
@@ -164,6 +177,7 @@ Documentation Contents
    contributing
    architecture
    testing
+   extending
    release_notes
 
 Indices and tables

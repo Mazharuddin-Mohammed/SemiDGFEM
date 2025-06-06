@@ -360,3 +360,377 @@ Ensure proper boundary condition setup:
     # Validate boundary conditions
     assert len(bc) == 4, "Need exactly 4 boundary conditions"
     assert all(np.isfinite(v) for v in bc), "All BCs must be finite"
+
+Heterostructure Device Tutorial
+------------------------------
+
+GaAs/AlGaAs HEMT Simulation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This tutorial demonstrates simulation of a High Electron Mobility Transistor (HEMT) using GaAs/AlGaAs heterostructure:
+
+.. code-block:: python
+
+    from heterostructure_simulation import HeterostructureDevice, LayerStructure, SemiconductorMaterial
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    def simulate_gaas_algaas_hemt():
+        """Simulate GaAs/AlGaAs HEMT structure"""
+
+        # Define heterostructure layers
+        layers = [
+            # GaAs buffer layer
+            LayerStructure(
+                material=SemiconductorMaterial.GAAS,
+                thickness=500.0,  # nm
+                composition=0.0,
+                doping_type="intrinsic",
+                doping_concentration=1e14,
+                position=0.0
+            ),
+
+            # GaAs quantum well
+            LayerStructure(
+                material=SemiconductorMaterial.GAAS,
+                thickness=20.0,   # nm
+                composition=0.0,
+                doping_type="intrinsic",
+                doping_concentration=1e14,
+                position=500.0
+            ),
+
+            # AlGaAs spacer
+            LayerStructure(
+                material=SemiconductorMaterial.ALGAS,
+                thickness=5.0,    # nm
+                composition=0.3,  # Al₀.₃Ga₀.₇As
+                doping_type="intrinsic",
+                doping_concentration=1e14,
+                position=520.0
+            ),
+
+            # AlGaAs barrier (doped)
+            LayerStructure(
+                material=SemiconductorMaterial.ALGAS,
+                thickness=30.0,   # nm
+                composition=0.3,
+                doping_type="n",
+                doping_concentration=2e18,
+                position=525.0
+            ),
+
+            # GaAs cap layer
+            LayerStructure(
+                material=SemiconductorMaterial.GAAS,
+                thickness=10.0,   # nm
+                composition=0.0,
+                doping_type="n",
+                doping_concentration=1e19,
+                position=555.0
+            )
+        ]
+
+        # Create heterostructure device
+        hetero = HeterostructureDevice(layers, temperature=300.0)
+
+        print(f"Total thickness: {hetero.total_thickness:.1f} nm")
+        print(f"Number of layers: {len(hetero.layers)}")
+
+        # Create mesh and calculate band structure
+        hetero.create_mesh(nz=1000)
+        band_structure = hetero.calculate_band_structure()
+        carrier_densities = hetero.calculate_carrier_densities()
+
+        # Analyze quantum wells
+        quantum_wells = hetero.calculate_quantum_wells()
+
+        print(f"Quantum wells detected: {len(quantum_wells)}")
+        for i, qw in enumerate(quantum_wells):
+            print(f"  Well {i+1}: {qw['width']:.1f} nm, depth: {qw['depth']:.3f} eV")
+
+        # Calculate transport properties
+        transport = hetero.calculate_transport_properties()
+
+        # Plot results
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+
+        z = band_structure['z'] * 1e9  # Convert to nm
+
+        # Band structure
+        ax1.plot(z, band_structure['conduction_band'], 'b-', linewidth=2, label='Conduction Band')
+        ax1.plot(z, band_structure['valence_band'], 'r-', linewidth=2, label='Valence Band')
+        ax1.set_xlabel('Position (nm)')
+        ax1.set_ylabel('Energy (eV)')
+        ax1.set_title('Band Structure')
+        ax1.legend()
+        ax1.grid(True)
+
+        # Carrier densities
+        ax2.semilogy(z, carrier_densities['electron_density'], 'b-', linewidth=2, label='Electrons')
+        ax2.semilogy(z, carrier_densities['hole_density'], 'r-', linewidth=2, label='Holes')
+        ax2.set_xlabel('Position (nm)')
+        ax2.set_ylabel('Carrier Density (cm⁻³)')
+        ax2.set_title('Carrier Densities')
+        ax2.legend()
+        ax2.grid(True)
+
+        # Electric field
+        electric_field = -np.gradient(band_structure['potential'], z*1e-9)
+        ax3.plot(z, electric_field*1e-5, 'purple', linewidth=2)
+        ax3.set_xlabel('Position (nm)')
+        ax3.set_ylabel('Electric Field (V/cm)')
+        ax3.set_title('Electric Field')
+        ax3.grid(True)
+
+        # Mobility
+        mu_e = transport['electron_mobility'] * 1e4  # Convert to cm²/V·s
+        ax4.plot(z, mu_e, 'green', linewidth=2)
+        ax4.set_xlabel('Position (nm)')
+        ax4.set_ylabel('Electron Mobility (cm²/V·s)')
+        ax4.set_title('Electron Mobility')
+        ax4.grid(True)
+
+        plt.tight_layout()
+        plt.show()
+
+        return hetero, band_structure, carrier_densities, transport
+
+Performance Optimization Tutorial
+---------------------------------
+
+GPU Acceleration Setup
+~~~~~~~~~~~~~~~~~~~~~~
+
+Learn how to maximize performance using GPU acceleration:
+
+.. code-block:: python
+
+    from gpu_acceleration import GPUAcceleratedSolver
+    import numpy as np
+
+    def setup_gpu_acceleration():
+        """Setup and benchmark GPU acceleration"""
+
+        # Create GPU solver
+        gpu_solver = GPUAcceleratedSolver()
+
+        # Check GPU availability
+        if gpu_solver.is_gpu_available():
+            print("GPU acceleration available!")
+
+            # Get performance info
+            perf_info = gpu_solver.get_performance_info()
+            print(f"GPU backend: {perf_info['backend']}")
+            print(f"Device name: {perf_info['device_name']}")
+            print(f"Memory: {perf_info['memory_gb']:.1f} GB")
+
+            # Benchmark performance
+            benchmark = gpu_solver.benchmark_performance(size=50000)
+            print(f"GPU speedup: {benchmark['speedup']:.1f}x")
+
+            return gpu_solver
+        else:
+            print("GPU not available, using CPU")
+            return None
+
+    def gpu_accelerated_simulation():
+        """Run simulation with GPU acceleration"""
+
+        gpu_solver = setup_gpu_acceleration()
+
+        if gpu_solver:
+            # Large-scale simulation data
+            potential = np.linspace(0, 1.0, 100000)
+            doping_nd = np.full(100000, 1e17)
+            doping_na = np.full(100000, 1e16)
+
+            # GPU-accelerated transport solution
+            results = gpu_solver.solve_transport_gpu(potential, doping_nd, doping_na)
+
+            print(f"GPU solution fields: {list(results.keys())}")
+            print(f"Max electron density: {np.max(results['electron_density']):.2e} cm⁻³")
+
+SIMD Optimization Tutorial
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Optimize performance using SIMD vectorization:
+
+.. code-block:: python
+
+    from performance_bindings import PerformanceOptimizer
+    import numpy as np
+    import time
+
+    def simd_optimization_demo():
+        """Demonstrate SIMD optimization benefits"""
+
+        # Create performance optimizer
+        optimizer = PerformanceOptimizer()
+
+        # Print system capabilities
+        optimizer.print_performance_info()
+
+        # Large vector operations
+        size = 1000000
+        a = np.random.random(size)
+        b = np.random.random(size)
+
+        # Benchmark standard NumPy
+        start_time = time.time()
+        result_numpy = a + b
+        numpy_time = time.time() - start_time
+
+        # Benchmark SIMD-optimized
+        start_time = time.time()
+        result_simd = optimizer.optimize_computation('vector_add', a, b)
+        simd_time = time.time() - start_time
+
+        # Compare results
+        speedup = numpy_time / simd_time
+        print(f"NumPy time: {numpy_time:.4f}s")
+        print(f"SIMD time: {simd_time:.4f}s")
+        print(f"Speedup: {speedup:.1f}x")
+
+        # Verify correctness
+        max_error = np.max(np.abs(result_numpy - result_simd))
+        print(f"Maximum error: {max_error:.2e}")
+
+Advanced Analysis Tutorial
+--------------------------
+
+Parameter Extraction
+~~~~~~~~~~~~~~~~~~~~
+
+Extract device parameters from simulation results:
+
+.. code-block:: python
+
+    from mosfet_simulation import MOSFETDevice, MOSFETType, DeviceGeometry, DopingProfile
+    import numpy as np
+
+    def extract_mosfet_parameters():
+        """Extract MOSFET device parameters"""
+
+        # Create MOSFET device
+        geometry = DeviceGeometry(
+            length=0.18, width=10.0, tox=4.0, xj=0.15,
+            channel_length=0.18, source_length=0.5, drain_length=0.5
+        )
+
+        doping = DopingProfile(
+            substrate_doping=1e17, source_drain_doping=1e20,
+            channel_doping=5e16, gate_doping=1e20, profile_type="uniform"
+        )
+
+        nmos = MOSFETDevice(MOSFETType.NMOS, geometry, doping)
+
+        # Calculate I-V characteristics
+        vgs_range = np.linspace(0, 3.0, 16)
+        vds_range = np.linspace(0, 3.0, 21)
+
+        print("Calculating I-V characteristics...")
+        iv_data = nmos.calculate_iv_characteristics(vgs_range, vds_range)
+
+        # Extract device parameters
+        parameters = nmos.extract_device_parameters(iv_data)
+
+        print(f"\nExtracted Parameters:")
+        print(f"  Threshold Voltage: {parameters['threshold_voltage']:.3f} V")
+        print(f"  Transconductance: {parameters['transconductance']*1e6:.1f} μS")
+        print(f"  Output Conductance: {parameters['output_conductance']*1e6:.1f} μS")
+        print(f"  Intrinsic Gain: {parameters['intrinsic_gain']:.1f}")
+        print(f"  Mobility: {parameters['mobility']*1e4:.0f} cm²/V·s")
+        print(f"  Subthreshold Slope: {parameters['subthreshold_slope']:.1f} mV/decade")
+
+        # Plot device characteristics
+        nmos.plot_device_characteristics(iv_data, 'mosfet_iv.png')
+
+        return parameters
+
+Visualization Tutorial
+~~~~~~~~~~~~~~~~~~~~~
+
+Create professional plots and animations:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.animation import FuncAnimation
+
+    def create_professional_plots(results):
+        """Create publication-quality plots"""
+
+        # Set up matplotlib for publication
+        plt.rcParams.update({
+            'font.size': 12,
+            'font.family': 'serif',
+            'axes.linewidth': 1.5,
+            'axes.grid': True,
+            'grid.alpha': 0.3,
+            'lines.linewidth': 2,
+            'figure.dpi': 300
+        })
+
+        # Create multi-panel figure
+        fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+
+        # Potential distribution
+        im1 = axes[0,0].contourf(results.x*1e6, results.y*1e6, results.potential,
+                                levels=20, cmap='viridis')
+        axes[0,0].set_title('Electrostatic Potential (V)')
+        axes[0,0].set_xlabel('x (μm)')
+        axes[0,0].set_ylabel('y (μm)')
+        plt.colorbar(im1, ax=axes[0,0])
+
+        # Electron density (log scale)
+        im2 = axes[0,1].contourf(results.x*1e6, results.y*1e6,
+                                np.log10(results.electron_density),
+                                levels=20, cmap='plasma')
+        axes[0,1].set_title('log₁₀(Electron Density) [cm⁻³]')
+        axes[0,1].set_xlabel('x (μm)')
+        axes[0,1].set_ylabel('y (μm)')
+        plt.colorbar(im2, ax=axes[0,1])
+
+        # Electric field magnitude
+        E_mag = np.sqrt(results.electric_field_x**2 + results.electric_field_y**2)
+        im3 = axes[0,2].contourf(results.x*1e6, results.y*1e6, E_mag*1e-5,
+                                levels=20, cmap='hot')
+        axes[0,2].set_title('Electric Field Magnitude (V/cm)')
+        axes[0,2].set_xlabel('x (μm)')
+        axes[0,2].set_ylabel('y (μm)')
+        plt.colorbar(im3, ax=axes[0,2])
+
+        # Current density streamlines
+        axes[1,0].streamplot(results.x*1e6, results.y*1e6,
+                           results.current_density_x, results.current_density_y,
+                           density=2, color='blue', linewidth=1)
+        axes[1,0].set_title('Current Flow Lines')
+        axes[1,0].set_xlabel('x (μm)')
+        axes[1,0].set_ylabel('y (μm)')
+
+        # 1D cuts along channel
+        y_center = len(results.y) // 2
+        axes[1,1].plot(results.x*1e6, results.potential[y_center, :], 'b-',
+                      label='Potential')
+        axes[1,1].set_xlabel('x (μm)')
+        axes[1,1].set_ylabel('Potential (V)')
+        axes[1,1].set_title('Potential Along Channel')
+        axes[1,1].legend()
+
+        # Carrier densities along channel
+        axes[1,2].semilogy(results.x*1e6, results.electron_density[y_center, :],
+                          'b-', label='Electrons')
+        axes[1,2].semilogy(results.x*1e6, results.hole_density[y_center, :],
+                          'r-', label='Holes')
+        axes[1,2].set_xlabel('x (μm)')
+        axes[1,2].set_ylabel('Carrier Density (cm⁻³)')
+        axes[1,2].set_title('Carrier Densities Along Channel')
+        axes[1,2].legend()
+
+        plt.tight_layout()
+        plt.savefig('comprehensive_analysis.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
+This comprehensive tutorial collection provides hands-on experience with all major features of the SemiDGFEM framework, from basic device physics to advanced optimization techniques.
