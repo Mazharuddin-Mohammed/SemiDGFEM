@@ -46,8 +46,20 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.inheritance_diagram',
     'sphinx_rtd_theme',
-    'myst_parser',
 ]
+
+# Try to add myst_parser if available
+try:
+    import myst_parser
+    extensions.append('myst_parser')
+    # Configure MyST parser
+    source_suffix = {
+        '.rst': None,
+        '.md': 'myst_parser',
+    }
+except ImportError:
+    # If myst_parser is not available, only use .rst files
+    source_suffix = '.rst'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -55,13 +67,15 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '*.md']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-# The suffix(es) of source filenames.
-source_suffix = {
-    '.rst': None,
-    '.md': 'myst_parser',
-}
+# Only exclude .md files if myst_parser is not available
+try:
+    import myst_parser
+except ImportError:
+    exclude_patterns.append('*.md')
+
+# The suffix(es) of source filenames are configured above with myst_parser check
 
 # The master toctree document.
 master_doc = 'index'
