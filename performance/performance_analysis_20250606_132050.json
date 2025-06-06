@@ -1,0 +1,144 @@
+{
+  "timestamp": "2025-06-06T13:20:50.949324",
+  "available_backends": {
+    "numpy": true,
+    "simd": false,
+    "gpu": false,
+    "complete_dg": false,
+    "transport_models": false
+  },
+  "benchmark_results": {
+    "kernels_1000": {
+      "numpy": {
+        "vector_add": {
+          "mean_time": 3.457814455032349e-06,
+          "std_time": 4.5289814796920916e-06,
+          "throughput": 289.20001723766427
+        },
+        "vector_mul": {
+          "mean_time": 2.1532992832362653e-06,
+          "std_time": 1.7365551754972924e-06,
+          "throughput": 464.40362832289
+        },
+        "dot_product": {
+          "mean_time": 3.024574834853411e-06,
+          "std_time": 4.6060207940471334e-06,
+          "throughput": 330.62498189054264
+        }
+      }
+    },
+    "kernels_10000": {
+      "numpy": {
+        "vector_add": {
+          "mean_time": 9.988108649849891e-06,
+          "std_time": 1.0641303613080954e-05,
+          "throughput": 1001.1905507405836
+        },
+        "vector_mul": {
+          "mean_time": 6.355613004416228e-06,
+          "std_time": 8.981586074166192e-07,
+          "throughput": 1573.412351106251
+        },
+        "dot_product": {
+          "mean_time": 4.122219979763031e-06,
+          "std_time": 1.9947727844529414e-06,
+          "throughput": 2425.8773304414626
+        }
+      }
+    },
+    "kernels_100000": {
+      "numpy": {
+        "vector_add": {
+          "mean_time": 9.98837174847722e-05,
+          "std_time": 0.00013181947058680396,
+          "throughput": 1001.1641788887715
+        },
+        "vector_mul": {
+          "mean_time": 5.7040934916585687e-05,
+          "std_time": 7.86570771597826e-06,
+          "throughput": 1753.1269455214206
+        },
+        "dot_product": {
+          "mean_time": 0.0003352727857418358,
+          "std_time": 0.001025910304822164,
+          "throughput": 298.26459006726907
+        }
+      }
+    },
+    "kernels_1000000": {
+      "numpy": {
+        "vector_add": {
+          "mean_time": 0.0013392355875112116,
+          "std_time": 0.0004154954034971175,
+          "throughput": 746.6946139464267
+        },
+        "vector_mul": {
+          "mean_time": 0.001159661216661334,
+          "std_time": 6.960779013012242e-05,
+          "throughput": 862.3208102785408
+        },
+        "dot_product": {
+          "mean_time": 0.00036974010290578006,
+          "std_time": 0.00025349924602260655,
+          "throughput": 2704.6024819623835
+        }
+      }
+    }
+  },
+  "analysis": {
+    "best_performers": {
+      "vector_add_1000": {
+        "backend": "numpy",
+        "throughput": 289.20001723766427
+      },
+      "vector_mul_1000": {
+        "backend": "numpy",
+        "throughput": 464.40362832289
+      },
+      "dot_product_1000": {
+        "backend": "numpy",
+        "throughput": 330.62498189054264
+      },
+      "vector_add_10000": {
+        "backend": "numpy",
+        "throughput": 1001.1905507405836
+      },
+      "vector_mul_10000": {
+        "backend": "numpy",
+        "throughput": 1573.412351106251
+      },
+      "dot_product_10000": {
+        "backend": "numpy",
+        "throughput": 2425.8773304414626
+      },
+      "vector_add_100000": {
+        "backend": "numpy",
+        "throughput": 1001.1641788887715
+      },
+      "vector_mul_100000": {
+        "backend": "numpy",
+        "throughput": 1753.1269455214206
+      },
+      "dot_product_100000": {
+        "backend": "numpy",
+        "throughput": 298.26459006726907
+      },
+      "vector_add_1000000": {
+        "backend": "numpy",
+        "throughput": 746.6946139464267
+      },
+      "vector_mul_1000000": {
+        "backend": "numpy",
+        "throughput": 862.3208102785408
+      },
+      "dot_product_1000000": {
+        "backend": "numpy",
+        "throughput": 2704.6024819623835
+      }
+    },
+    "speedup_analysis": {},
+    "recommendations": [
+      "Consider installing GPU/SIMD backends for better performance"
+    ]
+  }
+}
