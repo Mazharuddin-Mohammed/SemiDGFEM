@@ -59,6 +59,9 @@ set(SIMULATOR_SOURCES
     src/structured/non_equilibrium_dd_struct_2d.cpp
     src/unstructured/poisson_unstruct_2d.cpp
     src/unstructured/driftdiffusion_unstruct_2d.cpp
+    src/unstructured/energy_transport_unstruct_2d.cpp
+    src/unstructured/hydrodynamic_unstruct_2d.cpp
+    src/unstructured/non_equilibrium_dd_unstruct_2d.cpp
     src/dg_math/dg_basis_functions.cpp
     src/dg_math/dg_assembly.cpp
     src/amr/amr_algorithms.cpp
