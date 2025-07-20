@@ -281,22 +281,28 @@ bool GPUContext::initialize_opencl() {
 #endif
 
 void GPUContext::start_timer(const std::string& name) {
-    // Simple timer implementation
-    (void)name; // Suppress unused parameter warning
-    // In a full implementation, this would store timing data
+    auto now = std::chrono::high_resolution_clock::now();
+    timer_start_times_[name] = now;
 }
 
 void GPUContext::end_timer(const std::string& name) {
-    // Simple timer implementation
-    (void)name; // Suppress unused parameter warning
-    // In a full implementation, this would calculate elapsed time
+    auto now = std::chrono::high_resolution_clock::now();
+    auto it = timer_start_times_.find(name);
+    if (it != timer_start_times_.end()) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - it->second);
+        double elapsed_ms = duration.count() / 1000.0;
+
+        timer_elapsed_times_[name] = elapsed_ms;
+        timer_start_times_.erase(it);
+    }
 }
 
 double GPUContext::get_elapsed_time(const std::string& name) const {
-    // Simple timer implementation
-    (void)name; // Suppress unused parameter warning
-    // In a full implementation, this would return stored timing data
-    return 0.0; // Default return value
+    auto it = timer_elapsed_times_.find(name);
+    if (it != timer_elapsed_times_.end()) {
+        return it->second;
+    }
+    return 0.0;
 }
 
 // GPU Memory Implementation

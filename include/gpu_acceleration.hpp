@@ -5,6 +5,8 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <chrono>
+#include <unordered_map>
 
 // Forward declarations for CUDA/OpenCL
 #ifdef ENABLE_CUDA
@@ -127,7 +129,11 @@ private:
     cl_command_queue cl_queue_ = nullptr;
     cl_device_id cl_device_ = nullptr;
 #endif
-    
+
+    // Timer data
+    std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> timer_start_times_;
+    std::unordered_map<std::string, double> timer_elapsed_times_;
+
     bool initialize_cuda();
     bool initialize_opencl();
 };

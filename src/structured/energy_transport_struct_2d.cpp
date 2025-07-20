@@ -9,8 +9,10 @@
 #include "../include/mesh.hpp"
 #include "../include/dg_assembly.hpp"
 #include "../include/dg_basis_functions.hpp"
+#include "../include/simple_dg.hpp"
 #include "../src/physics/advanced_physics.hpp"
 #include "../src/dg_math/dg_basis_functions_complete.hpp"
+#include <petscksp.h>
 #include <vector>
 #include <cmath>
 #include <stdexcept>
@@ -18,52 +20,7 @@
 #include <iostream>
 #include <memory>
 
-// Simplified linear algebra for DG assembly (without PETSc dependency)
-namespace SimpleDG {
-    class Matrix {
-    public:
-        std::vector<std::vector<double>> data;
-        int rows, cols;
 
-        Matrix(int r, int c) : rows(r), cols(c) {
-            data.resize(rows, std::vector<double>(cols, 0.0));
-        }
-
-        void set_value(int i, int j, double val) { data[i][j] = val; }
-        void add_value(int i, int j, double val) { data[i][j] += val; }
-        double get_value(int i, int j) const { return data[i][j]; }
-    };
-
-    class Vector {
-    public:
-        std::vector<double> data;
-        int size;
-
-        Vector(int s) : size(s) { data.resize(size, 0.0); }
-        void set_value(int i, double val) { data[i] = val; }
-        void add_value(int i, double val) { data[i] += val; }
-        double get_value(int i) const { return data[i]; }
-    };
-
-    std::vector<double> solve_system(const Matrix& A, const Vector& b) {
-        // Simplified Gauss-Seidel solver for demonstration
-        std::vector<double> x(b.size, 0.0);
-
-        for (int iter = 0; iter < 100; ++iter) {
-            for (int i = 0; i < A.rows; ++i) {
-                double sum = 0.0;
-                for (int j = 0; j < A.cols; ++j) {
-                    if (i != j) sum += A.data[i][j] * x[j];
-                }
-                if (std::abs(A.data[i][i]) > 1e-12) {
-                    x[i] = (b.data[i] - sum) / A.data[i][i];
-                }
-            }
-        }
-
-        return x;
-    }
-}
 
 namespace simulator {
 namespace transport {
@@ -88,9 +45,11 @@ private:
     int order_;
     int dofs_per_element_;
     
-    // Simplified linear algebra objects
-    std::unique_ptr<SimpleDG::Matrix> A_energy_n_, A_energy_p_;
-    std::unique_ptr<SimpleDG::Vector> b_energy_n_, b_energy_p_;
+    // PETSc objects for energy transport
+    Mat A_energy_n_, A_energy_p_;
+    Vec b_energy_n_, b_energy_p_;
+    Vec x_energy_n_, x_energy_p_;
+    KSP ksp_energy_n_, ksp_energy_p_;
     
 public:
     EnergyTransportDG(const Device& device, 

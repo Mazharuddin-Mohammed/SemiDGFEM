@@ -279,7 +279,7 @@ private:
                 double m_eff_p = 0.39 * SemiDGFEM::Physics::PhysicalConstants::m0;
                 double tau_momentum_n = 0.1e-12;
                 double tau_momentum_p = 0.1e-12;
-                double q = SemiDGFEM::Physics::PhysicalConstants::q;
+                double q_charge = SemiDGFEM::Physics::PhysicalConstants::q;
                 
                 // Assembly of element matrices (same pattern as Poisson)
                 for (int i = 0; i < dofs_per_element_; ++i) {
@@ -315,10 +315,10 @@ private:
                         grad_i_ref, b1, b2, b3, c1, c2, c3);
                     
                     // Electric field force: -qn∇φ (electrons), +qp∇φ (holes)
-                    f_nx[i] += w * phi_i * (-q * n_q * grad_phi_x);
-                    f_ny[i] += w * phi_i * (-q * n_q * grad_phi_y);
-                    f_px[i] += w * phi_i * (q * p_q * grad_phi_x);
-                    f_py[i] += w * phi_i * (q * p_q * grad_phi_y);
+                    f_nx[i] += w * phi_i * (-q_charge * n_q * grad_phi_x);
+                    f_ny[i] += w * phi_i * (-q_charge * n_q * grad_phi_y);
+                    f_px[i] += w * phi_i * (q_charge * p_q * grad_phi_x);
+                    f_py[i] += w * phi_i * (q_charge * p_q * grad_phi_y);
                     
                     // Pressure gradient force: -∇P
                     f_nx[i] += w * phi_i * (-grad_i_phys[0] * P_n);
