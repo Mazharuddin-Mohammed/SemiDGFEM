@@ -64,6 +64,8 @@ set(SIMULATOR_SOURCES
     src/unstructured/non_equilibrium_dd_unstruct_2d.cpp
     src/dg_math/dg_basis_functions.cpp
     src/dg_math/dg_assembly.cpp
+    src/dg_math/simple_dg.cpp
+    src/dg_math/simple_dg.cpp
     src/amr/amr_algorithms.cpp
     src/performance/simd_kernels.cpp
     src/performance/parallel_computing.cpp
@@ -71,6 +73,7 @@ set(SIMULATOR_SOURCES
     src/gpu/gpu_context.cpp
     src/physics/advanced_physics.cpp
     src/physics/advanced_transport.cpp
+    src/transient/transient_solver.cpp
 )
 
 # Add CUDA sources if enabled
