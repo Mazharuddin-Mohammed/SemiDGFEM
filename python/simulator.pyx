@@ -14,6 +14,13 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
+# Import self-consistent solver if available
+try:
+    import self_consistent_solver as scs
+    SELF_CONSISTENT_AVAILABLE = True
+except ImportError:
+    SELF_CONSISTENT_AVAILABLE = False
+
 # Complete C interface declarations
 cdef extern from "device.hpp" namespace "simulator":
     ctypedef struct simulator_Device "simulator::Device"
@@ -374,3 +381,213 @@ cdef class Simulator:
     def num_points_y(self):
         """Get number of grid points in y direction"""
         return self._num_points_y
+
+
+class SelfConsistentSolver:
+    """
+    Self-consistent solver for comprehensive semiconductor device simulation
+
+    Provides coupled solving of Poisson, drift-diffusion, and transport equations
+    with proper iterative solving and convergence criteria.
+    """
+    def __init__(self, device, method="DG", mesh_type="Structured", order=3):
+        """
+        Initialize self-consistent solver
+
+        Parameters:
+        -----------
+        device : Device
+            Device object
+        method : str
+            Numerical method ("DG", "FEM", "FVM")
+        mesh_type : str
+            Mesh type ("Structured", "Unstructured")
+        order : int
+            Polynomial order for DG methods
+        """
+        if not SELF_CONSISTENT_AVAILABLE:
+            raise ImportError("Self-consistent solver module not available. "
+                             "Please build the self_consistent_solver extension first.")
+
+        if isinstance(device, Device):
+            self.device = device
+            self.solver = scs.create_self_consistent_solver(
+                device.width, device.height, method, mesh_type, order)
+        else:
+            raise TypeError("device must be a Device object")
+
+        logger.info(f"Self-consistent solver created with {method} method")
+
+    def set_convergence_criteria(self, potential_tolerance=1e-6, density_tolerance=1e-3,
+                               current_tolerance=1e-3, max_iterations=100):
+        """
+        Set convergence criteria for self-consistent iterations
+
+        Parameters:
+        -----------
+        potential_tolerance : float
+            Potential convergence tolerance (V)
+        density_tolerance : float
+            Carrier density relative tolerance
+        current_tolerance : float
+            Current density relative tolerance
+        max_iterations : int
+            Maximum self-consistent iterations
+        """
+        self.solver.set_convergence_criteria(
+            potential_tolerance, density_tolerance, current_tolerance, max_iterations)
+
+        logger.debug(f"Convergence criteria set: pot_tol={potential_tolerance}, "
+                    f"dens_tol={density_tolerance}, max_iter={max_iterations}")
+
+    def set_doping(self, Nd, Na):
+        """
+        Set doping concentrations
+
+        Parameters:
+        -----------
+        Nd : array_like
+            Donor concentration (m^-3)
+        Na : array_like
+            Acceptor concentration (m^-3)
+        """
+        Nd = np.asarray(Nd, dtype=np.float64)
+        Na = np.asarray(Na, dtype=np.float64)
+
+        if Nd.shape != Na.shape:
+            raise ValueError("Nd and Na arrays must have the same shape")
+
+        self.solver.set_doping(Nd, Na)
+
+        logger.debug(f"Doping set successfully: {len(Nd)} points")
+        logger.debug(f"  Nd range: [{np.min(Nd)/1e6:.0e}, {np.max(Nd)/1e6:.0e}] cm⁻³")
+        logger.debug(f"  Na range: [{np.min(Na)/1e6:.0e}, {np.max(Na)/1e6:.0e}] cm⁻³")
+
+    def enable_energy_transport(self, enable=True):
+        """Enable energy transport equations"""
+        self.solver.enable_energy_transport(enable)
+        logger.info(f"Energy transport {'enabled' if enable else 'disabled'}")
+
+    def enable_hydrodynamic_transport(self, enable=True):
+        """Enable hydrodynamic transport equations"""
+        self.solver.enable_hydrodynamic_transport(enable)
+        logger.info(f"Hydrodynamic transport {'enabled' if enable else 'disabled'}")
+
+    def enable_quantum_corrections(self, enable=True):
+        """Enable quantum corrections"""
+        self.solver.enable_quantum_corrections(enable)
+        logger.info(f"Quantum corrections {'enabled' if enable else 'disabled'}")
+
+    def solve(self, boundary_conditions, initial_potential=None, initial_n=None, initial_p=None):
+        """
+        Solve self-consistent equations
+
+        Parameters:
+        -----------
+        boundary_conditions : list
+            Boundary conditions [left, right, bottom, top] in Volts
+        initial_potential : array_like, optional
+            Initial potential guess (V)
+        initial_n : array_like, optional
+            Initial electron density guess (m^-3)
+        initial_p : array_like, optional
+            Initial hole density guess (m^-3)
+
+        Returns:
+        --------
+        dict
+            Results with 'potential', 'n', 'p', 'iterations', 'residual'
+        """
+        if len(boundary_conditions) != 4:
+            raise ValueError("Boundary conditions must have 4 values")
+
+        dof_count = self.solver.get_dof_count()
+
+        # Create default initial conditions if not provided
+        if initial_potential is None:
+            initial_potential = np.zeros(dof_count, dtype=np.float64)
+        else:
+            initial_potential = np.asarray(initial_potential, dtype=np.float64)
+
+        if initial_n is None:
+            initial_n = np.full(dof_count, 1e10, dtype=np.float64)
+        else:
+            initial_n = np.asarray(initial_n, dtype=np.float64)
+
+        if initial_p is None:
+            initial_p = np.full(dof_count, 1e10, dtype=np.float64)
+        else:
+            initial_p = np.asarray(initial_p, dtype=np.float64)
+
+        # Validate array sizes
+        if (len(initial_potential) != dof_count or
+            len(initial_n) != dof_count or
+            len(initial_p) != dof_count):
+            raise ValueError(f"Initial arrays must have {dof_count} elements")
+
+        # Solve
+        logger.info(f"Solving self-consistent equations with boundary conditions: {boundary_conditions}")
+        results = self.solver.solve_steady_state(
+            boundary_conditions, initial_potential, initial_n, initial_p)
+
+        logger.info(f"Self-consistent solution converged in {results['iterations']} iterations")
+        logger.info(f"Final residual: {results['residual']:.2e}")
+
+        return results
+
+    def get_dof_count(self):
+        """Get degrees of freedom count"""
+        return self.solver.get_dof_count()
+
+    def is_valid(self):
+        """Check if solver is valid"""
+        return self.solver.is_valid()
+
+
+class MaterialDatabase:
+    """
+    Material properties database for semiconductor simulation
+    """
+    def __init__(self):
+        """Initialize material database"""
+        if not SELF_CONSISTENT_AVAILABLE:
+            raise ImportError("Material database module not available. "
+                             "Please build the self_consistent_solver extension first.")
+
+        self.database = scs.create_material_database()
+        logger.info("Material database initialized")
+
+    def get_bandgap(self, material_type, temperature=300.0):
+        """Get bandgap at specified temperature"""
+        return self.database.get_bandgap(material_type, temperature)
+
+    def get_intrinsic_concentration(self, material_type, temperature=300.0):
+        """Get intrinsic carrier concentration at specified temperature"""
+        return self.database.get_intrinsic_concentration(material_type, temperature)
+
+    def get_electron_mobility(self, material_type, temperature=300.0, doping=1e16):
+        """Get electron mobility at specified temperature and doping"""
+        return self.database.get_electron_mobility(material_type, temperature, doping)
+
+    def get_hole_mobility(self, material_type, temperature=300.0, doping=1e16):
+        """Get hole mobility at specified temperature and doping"""
+        return self.database.get_hole_mobility(material_type, temperature, doping)
+
+    def calculate_srh_recombination(self, n, p, ni, tau_n=1e-6, tau_p=1e-6):
+        """Calculate Shockley-Read-Hall recombination rate"""
+        return self.database.calculate_srh_recombination(n, p, ni, tau_n, tau_p)
+
+    def calculate_impact_ionization(self, E_field, a, b):
+        """Calculate impact ionization rate"""
+        return self.database.calculate_impact_ionization(E_field, a, b)
+
+
+# Material type constants
+class MaterialType:
+    SILICON = 0
+    GERMANIUM = 1
+    GALLIUM_ARSENIDE = 2
+    SILICON_CARBIDE = 3
+    GALLIUM_NITRIDE = 4
+    INDIUM_GALLIUM_ARSENIDE = 5
+    CUSTOM = 99
