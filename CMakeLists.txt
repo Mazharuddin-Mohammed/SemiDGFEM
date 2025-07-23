@@ -74,6 +74,8 @@ set(SIMULATOR_SOURCES
     src/physics/advanced_physics.cpp
     src/physics/advanced_transport.cpp
     src/transient/transient_solver.cpp
+    src/selfconsistent/self_consistent_solver.cpp
+    src/materials/material_properties.cpp
 )
 
 # Add CUDA sources if enabled
