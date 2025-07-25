@@ -364,5 +364,255 @@ void launch_evaluate_p3_basis(const double* xi, const double* eta, size_t n_poin
     CUDA_CHECK(cudaDeviceSynchronize());
 }
 
+// Advanced GPU-accelerated linear solvers
+__global__ void jacobi_iteration_kernel(const double* A_diag, const double* A_off_diag,
+                                       const int* col_indices, const int* row_ptr,
+                                       const double* b, const double* x_old, double* x_new,
+                                       size_t n, double omega) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i >= n) return;
+
+    double sum = 0.0;
+    int start = row_ptr[i];
+    int end = row_ptr[i + 1];
+
+    // Compute off-diagonal contribution
+    for (int j = start; j < end; ++j) {
+        int col = col_indices[j];
+        if (col != i) {
+            sum += A_off_diag[j] * x_old[col];
+        }
+    }
+
+    // Jacobi update with relaxation
+    x_new[i] = (1.0 - omega) * x_old[i] + omega * (b[i] - sum) / A_diag[i];
+}
+
+__global__ void gauss_seidel_kernel(const double* A_values, const int* col_indices,
+                                   const int* row_ptr, const double* b, double* x,
+                                   size_t n, int color_start, int color_end) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x + color_start;
+
+    if (i >= color_end || i >= n) return;
+
+    double sum = 0.0;
+    double diag = 0.0;
+    int start = row_ptr[i];
+    int end = row_ptr[i + 1];
+
+    for (int j = start; j < end; ++j) {
+        int col = col_indices[j];
+        if (col == i) {
+            diag = A_values[j];
+        } else {
+            sum += A_values[j] * x[col];
+        }
+    }
+
+    if (fabs(diag) > 1e-14) {
+        x[i] = (b[i] - sum) / diag;
+    }
+}
+
+__global__ void conjugate_gradient_axpy_kernel(const double* x, const double* p,
+                                              double alpha, double* result, size_t n) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    for (size_t idx = i; idx < n; idx += stride) {
+        result[idx] = x[idx] + alpha * p[idx];
+    }
+}
+
+__global__ void conjugate_gradient_update_kernel(const double* r, const double* Ap,
+                                                 double alpha, double* r_new, double* x,
+                                                 const double* p, size_t n) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    for (size_t idx = i; idx < n; idx += stride) {
+        r_new[idx] = r[idx] - alpha * Ap[idx];
+        x[idx] = x[idx] + alpha * p[idx];
+    }
+}
+
+// Memory optimization kernels
+__global__ void memory_coalescing_transpose_kernel(const double* input, double* output,
+                                                  size_t rows, size_t cols) {
+    __shared__ double tile[32][33];  // +1 to avoid bank conflicts
+
+    size_t x = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    // Load data into shared memory
+    if (x < cols && y < rows) {
+        tile[threadIdx.y][threadIdx.x] = input[y * cols + x];
+    }
+
+    __syncthreads();
+
+    // Write transposed data
+    x = blockIdx.y * blockDim.y + threadIdx.x;
+    y = blockIdx.x * blockDim.x + threadIdx.y;
+
+    if (x < rows && y < cols) {
+        output[y * rows + x] = tile[threadIdx.x][threadIdx.y];
+    }
+}
+
+__global__ void prefetch_kernel(const double* data, size_t n) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    // Prefetch data into L2 cache
+    for (size_t idx = i; idx < n; idx += stride) {
+        __ldg(&data[idx]);  // Read-only cache load
+    }
+}
+
+// Advanced physics kernels with optimizations
+__global__ void compute_mobility_temperature_kernel(const double* temperature,
+                                                   const double* doping_total,
+                                                   double* mobility_n, double* mobility_p,
+                                                   size_t n_points, int material_type) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    // Material-specific parameters (Silicon as example)
+    const double mu_n_min = 65.0;    // cm²/V·s
+    const double mu_n_max = 1350.0;
+    const double mu_p_min = 48.0;
+    const double mu_p_max = 480.0;
+    const double N_ref_n = 1.26e17;  // cm⁻³
+    const double N_ref_p = 2.35e17;
+    const double alpha_n = 0.88;
+    const double alpha_p = 0.88;
+    const double T_ref = 300.0;      // K
+
+    for (size_t idx = i; idx < n_points; idx += stride) {
+        double T = temperature[idx];
+        double N_total = doping_total[idx] * 1e-6;  // Convert to cm⁻³
+
+        // Temperature dependence
+        double T_ratio = T / T_ref;
+        double temp_factor = pow(T_ratio, -2.3);
+
+        // Caughey-Thomas model
+        double mu_n_lattice = (mu_n_max - mu_n_min) * temp_factor + mu_n_min;
+        double mu_p_lattice = (mu_p_max - mu_p_min) * temp_factor + mu_p_min;
+
+        // Doping dependence
+        double mu_n_doping = mu_n_lattice / (1.0 + pow(N_total / N_ref_n, alpha_n));
+        double mu_p_doping = mu_p_lattice / (1.0 + pow(N_total / N_ref_p, alpha_p));
+
+        mobility_n[idx] = mu_n_doping * 1e-4;  // Convert to m²/V·s
+        mobility_p[idx] = mu_p_doping * 1e-4;
+    }
+}
+
+__global__ void compute_generation_recombination_kernel(const double* n, const double* p,
+                                                       const double* ni, const double* temperature,
+                                                       double* generation, double* recombination,
+                                                       size_t n_points, double optical_power) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    const double tau_n0 = 1e-6;  // Electron lifetime (s)
+    const double tau_p0 = 1e-6;  // Hole lifetime (s)
+    const double B_rad = 1e-15;  // Radiative recombination coefficient
+    const double C_n = 1e-43;    // Auger coefficient for electrons
+    const double C_p = 1e-43;    // Auger coefficient for holes
+
+    for (size_t idx = i; idx < n_points; idx += stride) {
+        double n_val = n[idx];
+        double p_val = p[idx];
+        double ni_val = ni[idx];
+        double T = temperature[idx];
+
+        // SRH recombination
+        double np = n_val * p_val;
+        double ni_sq = ni_val * ni_val;
+        double R_srh = (np - ni_sq) / (tau_p0 * (n_val + ni_val) + tau_n0 * (p_val + ni_val));
+
+        // Radiative recombination
+        double R_rad = B_rad * (np - ni_sq);
+
+        // Auger recombination
+        double R_auger = (C_n * n_val + C_p * p_val) * (np - ni_sq);
+
+        // Optical generation (simplified)
+        double G_opt = optical_power * 1e21;  // Simplified generation rate
+
+        recombination[idx] = R_srh + R_rad + R_auger;
+        generation[idx] = G_opt;
+    }
+}
+
+// Host functions for advanced GPU operations
+void launch_jacobi_iteration(const double* A_diag, const double* A_off_diag,
+                           const int* col_indices, const int* row_ptr,
+                           const double* b, const double* x_old, double* x_new,
+                           size_t n, double omega) {
+    const int block_size = 256;
+    const int grid_size = (n + block_size - 1) / block_size;
+
+    jacobi_iteration_kernel<<<grid_size, block_size>>>(
+        A_diag, A_off_diag, col_indices, row_ptr, b, x_old, x_new, n, omega);
+    CUDA_CHECK(cudaDeviceSynchronize());
+}
+
+void launch_gauss_seidel_colored(const double* A_values, const int* col_indices,
+                               const int* row_ptr, const double* b, double* x,
+                               size_t n, const std::vector<std::pair<int, int>>& colors) {
+    const int block_size = 256;
+
+    for (const auto& color : colors) {
+        int color_size = color.second - color.first;
+        int grid_size = (color_size + block_size - 1) / block_size;
+
+        gauss_seidel_kernel<<<grid_size, block_size>>>(
+            A_values, col_indices, row_ptr, b, x, n, color.first, color.second);
+        CUDA_CHECK(cudaDeviceSynchronize());
+    }
+}
+
+void launch_memory_optimized_transpose(const double* input, double* output,
+                                     size_t rows, size_t cols) {
+    dim3 block_size(32, 32);
+    dim3 grid_size((cols + block_size.x - 1) / block_size.x,
+                   (rows + block_size.y - 1) / block_size.y);
+
+    memory_coalescing_transpose_kernel<<<grid_size, block_size>>>(
+        input, output, rows, cols);
+    CUDA_CHECK(cudaDeviceSynchronize());
+}
+
+void launch_advanced_physics_computation(const double* n, const double* p,
+                                       const double* temperature, const double* doping,
+                                       double* mobility_n, double* mobility_p,
+                                       double* generation, double* recombination,
+                                       size_t n_points, int material_type, double optical_power) {
+    const int block_size = 256;
+    const int grid_size = (n_points + block_size - 1) / block_size;
+
+    // Compute temperature-dependent mobility
+    compute_mobility_temperature_kernel<<<grid_size, block_size>>>(
+        temperature, doping, mobility_n, mobility_p, n_points, material_type);
+
+    // Compute generation and recombination
+    double* ni;
+    CUDA_CHECK(cudaMalloc(&ni, n_points * sizeof(double)));
+
+    // Initialize intrinsic concentration (simplified)
+    launch_vector_scale(temperature, 1e16, ni, n_points);  // Simplified ni calculation
+
+    compute_generation_recombination_kernel<<<grid_size, block_size>>>(
+        n, p, ni, temperature, generation, recombination, n_points, optical_power);
+
+    CUDA_CHECK(cudaFree(ni));
+    CUDA_CHECK(cudaDeviceSynchronize());
+}
+
 } // namespace gpu
 } // namespace simulator

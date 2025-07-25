@@ -341,6 +341,37 @@ private:
     bool should_use_gpu(size_t problem_size, const std::string& operation) const;
 };
 
+// Host functions for CUDA kernel launches
+void launch_vector_add(const double* a, const double* b, double* result, size_t n);
+void launch_vector_scale(const double* a, double scale, double* result, size_t n);
+double launch_dot_product(const double* a, const double* b, size_t n);
+
+void launch_compute_carrier_densities(const double* potential, const double* doping_nd,
+                                     const double* doping_na, double* n, double* p,
+                                     size_t n_points, double temperature);
+
+void launch_evaluate_p3_basis(const double* xi, const double* eta, size_t n_points,
+                              double* basis_values, double* basis_gradients);
+
+// Advanced GPU-accelerated linear solver functions
+void launch_jacobi_iteration(const double* A_diag, const double* A_off_diag,
+                           const int* col_indices, const int* row_ptr,
+                           const double* b, const double* x_old, double* x_new,
+                           size_t n, double omega);
+
+void launch_gauss_seidel_colored(const double* A_values, const int* col_indices,
+                               const int* row_ptr, const double* b, double* x,
+                               size_t n, const std::vector<std::pair<int, int>>& colors);
+
+void launch_memory_optimized_transpose(const double* input, double* output,
+                                     size_t rows, size_t cols);
+
+void launch_advanced_physics_computation(const double* n, const double* p,
+                                       const double* temperature, const double* doping,
+                                       double* mobility_n, double* mobility_p,
+                                       double* generation, double* recombination,
+                                       size_t n_points, int material_type, double optical_power);
+
 // Utility macros for GPU profiling
 #define GPU_PROFILE_START(name) gpu::GPUProfiler::instance().start_event(name)
 #define GPU_PROFILE_END(name) gpu::GPUProfiler::instance().end_event(name)
