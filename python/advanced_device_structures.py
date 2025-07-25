@@ -357,7 +357,7 @@ class AdvancedDeviceStructure:
         """Set thermal boundary conditions"""
         self.thermal_boundaries.update(temperatures)
     
-    def enable_self_heating(self, enable: bool):
+    def set_self_heating(self, enable: bool):
         """Enable/disable self-heating"""
         self.enable_self_heating = enable
     
@@ -867,9 +867,9 @@ class DeviceStructureFactory:
         """Create Gate-All-Around structure"""
         device = AdvancedDeviceStructure(DeviceStructureType.GATE_ALL_AROUND)
 
-        # Set dimensions
-        device.set_dimensions(channel_length, channel_diameter * 3.0, channel_diameter * 3.0)
+        # Configure GAA first, then set total channel length
         device.configure_gate_all_around(channel_diameter, gate_length)
+        device.set_dimensions(channel_length, channel_diameter * 3.0, channel_diameter * 3.0)
 
         # Add gate structure
         gate = GateStructure("TiN", gate_length, np.pi * channel_diameter, 10e-9)
@@ -1157,13 +1157,24 @@ def compare_device_structures(devices: List[AdvancedDeviceStructure]) -> Dict[st
     """Compare multiple device structures"""
     comparison = {}
 
+    # First pass: collect all metrics
+    all_metrics = set()
+    device_analyses = []
+
     for device in devices:
         analysis = analyze_device_performance(device)
-        device_name = f"{device.device_type.value}_{len(comparison)}"
+        device_analyses.append(analysis)
+        all_metrics.update(analysis.keys())
 
-        for metric, value in analysis.items():
-            if metric not in comparison:
-                comparison[metric] = []
-            comparison[metric].append(value)
+    # Second pass: create comparison with consistent structure
+    for metric in all_metrics:
+        comparison[metric] = []
+        for analysis in device_analyses:
+            # Use None or 0.0 for missing metrics
+            value = analysis.get(metric, None)
+            if value is not None:
+                comparison[metric].append(value)
+            else:
+                comparison[metric].append(0.0)
 
     return comparison
