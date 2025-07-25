@@ -1128,21 +1128,19 @@ def analyze_device_performance(device: AdvancedDeviceStructure) -> Dict[str, flo
     """Analyze device performance metrics"""
     analysis = device.analyze_geometry()
 
-    # Add device-specific performance metrics
+    # Add device-specific performance metrics (avoid duplicates)
     if device.device_type == DeviceStructureType.FINFET:
-        # FinFET specific metrics
+        # FinFET specific metrics (add only new ones)
         analysis["effective_channel_width"] = device.num_fins * (2 * device.fin_height + device.fin_width)
-        analysis["fin_aspect_ratio"] = device.fin_height / device.fin_width
         analysis["electrostatic_control"] = 1.0 / (device.fin_width / device.fin_height + 1.0)
 
     elif device.device_type == DeviceStructureType.GATE_ALL_AROUND:
-        # GAA specific metrics
-        analysis["channel_perimeter"] = np.pi * device.channel_diameter
+        # GAA specific metrics (add only new ones)
         analysis["volume_inversion"] = True
         analysis["electrostatic_control"] = 1.0  # Perfect control
 
     elif device.device_type == DeviceStructureType.NANOWIRE_TRANSISTOR:
-        # Nanowire specific metrics
+        # Nanowire specific metrics (use different names to avoid conflicts)
         if device.nanowire_cross_section == "circular":
             analysis["channel_perimeter"] = np.pi * device.nanowire_diameter
             analysis["channel_area"] = np.pi * (device.nanowire_diameter / 2.0)**2
