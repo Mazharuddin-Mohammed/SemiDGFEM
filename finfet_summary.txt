@@ -1,0 +1,31 @@
+Advanced Device Structure Summary
+=================================
+
+Device Type: finfet
+
+Dimensions:
+  Length: 20.00 nm
+  Width: 40.00 nm
+  Height: 60.00 nm
+
+Material Regions (3):
+  1. substrate (Si)
+  2. fin_1 (Si)
+  3. fin_2 (Si)
+
+Contacts (2):
+  1. source (ohmic)
+  2. drain (ohmic)
+
+Geometry Analysis:
+  total_volume: 4.8e-23
+  surface_area: 8.800000000000001e-15
+  length_width_ratio: 0.5
+  length_height_ratio: 0.33333333333333337
+  width_height_ratio: 0.6666666666666667
+  fin_aspect_ratio: 2.9999999999999996
+  total_fin_width: 2e-08
+  fin_density: 50000000.0
+  num_material_regions: 3
+  num_interfaces: 1
+  num_contacts: 2

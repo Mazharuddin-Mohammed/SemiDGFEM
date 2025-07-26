@@ -1,0 +1,30 @@
+Advanced Device Structure Summary
+=================================
+
+Device Type: heterojunction_bipolar
+
+Dimensions:
+  Length: 100.00 nm
+  Width: 100.00 nm
+  Height: 650.00 nm
+
+Material Regions (4):
+  1. layer_1 (GaAs)
+  2. layer_2 (AlGaAs)
+  3. layer_3 (GaAs)
+  4. layer_4 (InGaAs)
+
+Contacts (3):
+  1. emitter (ohmic)
+  2. base (ohmic)
+  3. collector (ohmic)
+
+Geometry Analysis:
+  total_volume: 6.499999999999998e-21
+  surface_area: 2.799999999999999e-13
+  length_width_ratio: 1.0
+  length_height_ratio: 0.15384615384615385
+  width_height_ratio: 0.15384615384615385
+  num_material_regions: 4
+  num_interfaces: 3
+  num_contacts: 3
