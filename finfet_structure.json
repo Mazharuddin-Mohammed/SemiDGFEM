@@ -1,0 +1,154 @@
+{
+  "device_type": "finfet",
+  "dimensions": {
+    "length": 2e-08,
+    "width": 4e-08,
+    "height": 6e-08
+  },
+  "substrate_material": "Si",
+  "material_regions": [
+    {
+      "material_name": "Si",
+      "region_name": "substrate",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 2e-08,
+          "y": 4e-08,
+          "z": 3e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "Si",
+      "region_name": "fin_1",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 1.6543612251060553e-24,
+          "z": 3e-08
+        },
+        "max": {
+          "x": 2e-08,
+          "y": 1.0000000000000002e-08,
+          "z": 6e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "Si",
+      "region_name": "fin_2",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 3e-08,
+          "z": 3e-08
+        },
+        "max": {
+          "x": 2e-08,
+          "y": 4e-08,
+          "z": 6e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    }
+  ],
+  "doping_profiles": [
+    {
+      "dopant_type": "n",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 6e-09,
+          "y": 4e-08,
+          "z": 6e-08
+        }
+      }
+    },
+    {
+      "dopant_type": "n",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 1.4e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 2e-08,
+          "y": 4e-08,
+          "z": 6e-08
+        }
+      }
+    },
+    {
+      "dopant_type": "p",
+      "concentration": 1e+17,
+      "region": {
+        "min": {
+          "x": 6e-09,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 1.4e-08,
+          "y": 4e-08,
+          "z": 6e-08
+        }
+      }
+    }
+  ],
+  "gate_structures": [
+    {
+      "gate_material": "PolySi",
+      "gate_length": 2e-08,
+      "gate_width": 2e-08,
+      "gate_thickness": 5e-08,
+      "oxide_thickness": 2e-09,
+      "oxide_material": "HfO2",
+      "configuration": "tri_gate"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "source",
+      "contact_type": "ohmic",
+      "work_function": 4.5,
+      "contact_resistance": 1e-08
+    },
+    {
+      "name": "drain",
+      "contact_type": "ohmic",
+      "work_function": 4.5,
+      "contact_resistance": 1e-08
+    }
+  ],
+  "mesh_parameters": {
+    "max_element_size": 5e-09,
+    "min_element_size": 1e-09,
+    "refinement_factor": 2.0,
+    "interface_refinement": 5e-10
+  },
+  "advanced_features": {
+    "enable_3d": false,
+    "enable_strain": true,
+    "enable_self_heating": true
+  }
+}

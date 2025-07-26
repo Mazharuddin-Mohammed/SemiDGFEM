@@ -1,0 +1,169 @@
+{
+  "device_type": "heterojunction_bipolar",
+  "dimensions": {
+    "length": 1e-07,
+    "width": 1e-07,
+    "height": 6.499999999999999e-07
+  },
+  "substrate_material": "Si",
+  "material_regions": [
+    {
+      "material_name": "GaAs",
+      "region_name": "layer_1",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 2e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "AlGaAs",
+      "region_name": "layer_2",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 2e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 2.5e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "GaAs",
+      "region_name": "layer_3",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 2.5e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 3.5e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "layer_4",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 3.5e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 6.499999999999999e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    }
+  ],
+  "doping_profiles": [
+    {
+      "dopant_type": "n",
+      "concentration": 1e+18,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 2.5e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 3.5e-07
+        }
+      }
+    },
+    {
+      "dopant_type": "p",
+      "concentration": 5e+17,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 2e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 2.5e-07
+        }
+      }
+    },
+    {
+      "dopant_type": "n",
+      "concentration": 1e+16,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 2e-07
+        }
+      }
+    }
+  ],
+  "gate_structures": [],
+  "contacts": [
+    {
+      "name": "emitter",
+      "contact_type": "ohmic",
+      "work_function": 4.2,
+      "contact_resistance": 1e-08
+    },
+    {
+      "name": "base",
+      "contact_type": "ohmic",
+      "work_function": 5.1,
+      "contact_resistance": 1e-08
+    },
+    {
+      "name": "collector",
+      "contact_type": "ohmic",
+      "work_function": 4.3,
+      "contact_resistance": 1e-08
+    }
+  ],
+  "mesh_parameters": {
+    "max_element_size": 5e-09,
+    "min_element_size": 1e-09,
+    "refinement_factor": 2.0,
+    "interface_refinement": 5e-10
+  },
+  "advanced_features": {
+    "enable_3d": false,
+    "enable_strain": false,
+    "enable_self_heating": false
+  }
+}

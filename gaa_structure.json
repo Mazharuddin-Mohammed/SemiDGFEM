@@ -1,0 +1,100 @@
+{
+  "device_type": "gate_all_around",
+  "dimensions": {
+    "length": 1e-07,
+    "width": 4.499999999999999e-08,
+    "height": 4.499999999999999e-08
+  },
+  "substrate_material": "Si",
+  "material_regions": [
+    {
+      "material_name": "Si",
+      "region_name": "channel",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 1.7499999999999998e-08,
+          "z": 1.7499999999999998e-08
+        },
+        "max": {
+          "x": 3e-08,
+          "y": 3.25e-08,
+          "z": 3.25e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    }
+  ],
+  "doping_profiles": [
+    {
+      "dopant_type": "n",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 3.4999999999999996e-08,
+          "y": 4.499999999999999e-08,
+          "z": 4.499999999999999e-08
+        }
+      }
+    },
+    {
+      "dopant_type": "n",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 6.499999999999999e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 4.499999999999999e-08,
+          "z": 4.499999999999999e-08
+        }
+      }
+    }
+  ],
+  "gate_structures": [
+    {
+      "gate_material": "TiN",
+      "gate_length": 3e-08,
+      "gate_width": 4.712388980384689e-08,
+      "gate_thickness": 1e-08,
+      "oxide_thickness": 1e-09,
+      "oxide_material": "HfO2",
+      "configuration": "gate_all_around"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "source",
+      "contact_type": "ohmic",
+      "work_function": 4.5,
+      "contact_resistance": 1e-08
+    },
+    {
+      "name": "drain",
+      "contact_type": "ohmic",
+      "work_function": 4.5,
+      "contact_resistance": 1e-08
+    }
+  ],
+  "mesh_parameters": {
+    "max_element_size": 5e-09,
+    "min_element_size": 1e-09,
+    "refinement_factor": 2.0,
+    "interface_refinement": 5e-10
+  },
+  "advanced_features": {
+    "enable_3d": true,
+    "enable_strain": false,
+    "enable_self_heating": false
+  }
+}

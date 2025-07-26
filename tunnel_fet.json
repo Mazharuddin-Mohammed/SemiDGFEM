@@ -1,0 +1,141 @@
+{
+  "device_type": "tunnel_fet",
+  "dimensions": {
+    "length": 8e-08,
+    "width": 5e-08,
+    "height": 5e-08
+  },
+  "substrate_material": "Si",
+  "material_regions": [
+    {
+      "material_name": "Ge",
+      "region_name": "source",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 2.4e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "Si",
+      "region_name": "channel",
+      "bounding_box": {
+        "min": {
+          "x": 2.4e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 5.6e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "Si",
+      "region_name": "drain",
+      "bounding_box": {
+        "min": {
+          "x": 5.6e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 8e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    }
+  ],
+  "doping_profiles": [
+    {
+      "dopant_type": "p",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 2.4e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      }
+    },
+    {
+      "dopant_type": "p",
+      "concentration": 1000000000000000.0,
+      "region": {
+        "min": {
+          "x": 2.4e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 5.6e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      }
+    },
+    {
+      "dopant_type": "n",
+      "concentration": 1e+20,
+      "region": {
+        "min": {
+          "x": 5.6e-08,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 8e-08,
+          "y": 5e-08,
+          "z": 5e-08
+        }
+      }
+    }
+  ],
+  "gate_structures": [
+    {
+      "gate_material": "TiN",
+      "gate_length": 3.2e-08,
+      "gate_width": 5e-08,
+      "gate_thickness": 1e-08,
+      "oxide_thickness": 1e-09,
+      "oxide_material": "HfO2",
+      "configuration": "single_gate"
+    }
+  ],
+  "contacts": [],
+  "mesh_parameters": {
+    "max_element_size": 5e-09,
+    "min_element_size": 1e-09,
+    "refinement_factor": 2.0,
+    "interface_refinement": 5e-10
+  },
+  "advanced_features": {
+    "enable_3d": false,
+    "enable_strain": true,
+    "enable_self_heating": false
+  }
+}

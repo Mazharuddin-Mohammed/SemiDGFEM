@@ -1,0 +1,234 @@
+{
+  "device_type": "quantum_well_device",
+  "dimensions": {
+    "length": 1e-07,
+    "width": 1e-07,
+    "height": 1.2999999999999997e-07
+  },
+  "substrate_material": "Si",
+  "material_regions": [
+    {
+      "material_name": "InP",
+      "region_name": "bottom_barrier",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 1.5e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "well_1",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.5e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 2.3e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InP",
+      "region_name": "barrier_1",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 2.3e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 3.7999999999999996e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "well_2",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 3.7999999999999996e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 4.5999999999999995e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InP",
+      "region_name": "barrier_2",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 4.5999999999999995e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 6.099999999999999e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "well_3",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 6.099999999999999e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 6.9e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InP",
+      "region_name": "barrier_3",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 6.9e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 8.4e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "well_4",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 8.4e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 9.2e-08
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InP",
+      "region_name": "barrier_4",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 9.2e-08
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 1.07e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InGaAs",
+      "region_name": "well_5",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.07e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 1.1500000000000001e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    },
+    {
+      "material_name": "InP",
+      "region_name": "top_barrier",
+      "bounding_box": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.1500000000000001e-07
+        },
+        "max": {
+          "x": 1e-07,
+          "y": 1e-07,
+          "z": 1.3e-07
+        }
+      },
+      "properties": {},
+      "interface_type": "abrupt",
+      "interface_width": 0.0
+    }
+  ],
+  "doping_profiles": [],
+  "gate_structures": [],
+  "contacts": [],
+  "mesh_parameters": {
+    "max_element_size": 2e-09,
+    "min_element_size": 2e-10,
+    "refinement_factor": 4.0,
+    "interface_refinement": 1e-10
+  },
+  "advanced_features": {
+    "enable_3d": false,
+    "enable_strain": true,
+    "enable_self_heating": false
+  }
+}
